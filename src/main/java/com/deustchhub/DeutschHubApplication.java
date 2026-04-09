@@ -8,10 +8,6 @@ import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
 
 @SpringBootApplication(
-        exclude = {
-                DataSourceAutoConfiguration.class,
-                org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration.class
-        }
 )
 public class DeutschHubApplication {
     public static void main(String[] args) {
