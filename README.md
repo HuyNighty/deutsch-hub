@@ -39,68 +39,55 @@ This project follows **Hexagonal Architecture (Ports & Adapters)** combined with
 Hexagonal Architecture v1
 ```bash
 deutsch-hub/
-├── src/
-│   ├── main/
-│   │   ├── java/
-│   │   │   └── com/deutschhub/
-│   │   │       ├── DeutschHubApplication.java          ← Main class
-│   │   │       │
-│   │   │       ├── common/                              ← Utilities 
-│   │   │       │   ├── exception/
-│   │   │       │   ├── util/
-│   │   │       │   └── annotation/
-│   │   │       │
-│   │   │       ├── domain/                              ← Core Domain ( Java core )
-│   │   │       │   ├── learning/                        ← Bounded Context: Learning (Core)
-│   │   │       │   │   ├── model/
-│   │   │       │   │   │   ├── aggregate/
-│   │   │       │   │   │   ├── entity/
-│   │   │       │   │   │   ├── valueobject/
-│   │   │       │   │   │   └── exception/
-│   │   │       │   │   │
-│   │   │       │   │   ├── service/                     ← Domain Services
-│   │   │       │   │   └── repository/                  ← Repository interfaces 
-│   │   │       │   │
-│   │   │       │   ├── content/                         ← Bounded Context: Content 
-│   │   │       │   │   ├── model/
-│   │   │       │   │   └── service/
-│   │   │       │   │
-│   │   │       │   └── shared/                          ← Value Objects, Events 
-│   │   │       │
-│   │   │       ├── application/                         ← Application Layer (Use Cases + Ports)
-│   │   │       │   ├── port/
-│   │   │       │   │   ├── in/                          ← Input Ports (Use Cases)
-│   │   │       │   │   │   ├── learning/
-│   │   │       │   │   │   └── content/
-│   │   │       │   │   └── out/                         ← Output Ports
-│   │   │       │   ├── usecase/                         ← Deploy Use Cases
-│   │   │       │   │   └── learning/
-│   │   │       │   └── dto/                             ← Command, Response, Mapper
-│   │   │       │       ├── request/
-│   │   │       │       └── response/
-│   │   │       │
-│   │   │       ├── infrastructure/                      ← Adapters (Spring-specific)
-│   │   │       │   ├── persistence/                     ← Database Adapters
-│   │   │       │   │   ├── jpa/
-│   │   │       │   │   │   ├── entity/
-│   │   │       │   │   │   └── repository/
-│   │   │       │   │   └── adapter/
-│   │   │       │   │
-│   │   │       │   ├── web/                             ← REST Controllers (Primary Adapter)
-│   │   │       │   │   ├── controller/
-│   │   │       │   │   │   └── learning/
-│   │   │       │   │   └── dto/
-│   │   │       │   │
-│   │   │       │   ├── config/                          ← Configuration
-│   │   │       │   └── external/                        ← External services (TTS, Email...)
-│   │   │       │
-│   │   └── resources/
-│   └── test/
-│       └── java/com/deutschhub/
+deutsch-hub/
+├── src/main/java/com/deutschhub/
 │
-├── .gitignore
-├── README.md
-└── pom.xml
+├── common/                          ← Utilities 
+│   ├── exception/
+│   ├── util/
+│   └── annotation/
+│
+├── domain/                          ← Core Domain (Pure Java)
+│   ├── learning/                    ← Bounded Context: Learning (Core)
+│   │   ├── model/
+│   │   │   ├── aggregate/           ← Course (Aggregate Root)
+│   │   │   ├── entity/              ← Lesson, Quiz...
+│   │   │   ├── valueobject/         ← CEFRLevel, Progress...
+│   │   │   └── exception/
+│   │   │
+│   │   └── service/                 ← Domain Services (business rules thuần)
+│   │
+│   ├── content/                     ← Bounded Context: Content
+│   └── shared/                      ← Shared Value Objects & Domain Events
+│
+├── application/                     ← Application Layer
+│   ├── learning/
+│   │   ├── port/
+│   │   │   ├── in/                  ← Input Ports (UseCase interfaces)
+│   │   │   └── out/                 ← Output Ports (RepositoryPort, ...)
+│   │   ├── usecase/                 ← Implementation của Use Cases
+│   │   └── dto/                     ← Request / Response cho Learning
+│   │
+│   └── content/                     ← Content Context
+│
+├── infrastructure/                  ← Adapters
+│   ├── persistence/
+│   │   ├── learning/                ← Separate according to the context
+│   │   │   ├── jpa/
+│   │   │   └── adapter/
+│   │   └── content/
+│   │
+│   ├── web/
+│   │   ├── controller/
+│   │   │   └── learning/
+│   │   └── dto/
+│   │
+│   ├── config/                      ← BeanConfig, SecurityConfig...
+│   └── external/                    ← TTS, Email, Payment...
+│
+└── resources/
+    ├── i18n/
+    └── application.yml
 ```
 1. **domain/** → The heart of the application (Pure Java, no Spring dependencies)
    - Contains Entities, Aggregates, Value Objects, Domain Services, and Domain Exceptions.
