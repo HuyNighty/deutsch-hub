@@ -1,4 +1,4 @@
-package com.deustchhub.infrastructure.config;
+package com.deutschhub.infrastructure.config;
 
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;

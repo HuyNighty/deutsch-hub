@@ -1,6 +1,6 @@
-package com.deustchhub.common.util;
+package com.deutschhub.common.util;
 
-import com.deustchhub.common.exception.ErrorCode;
+import com.deutschhub.common.exception.ErrorCode;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import org.springframework.context.MessageSource;
