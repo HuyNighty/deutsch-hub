@@ -15,21 +15,21 @@ import java.util.UUID;
 
 public class User {
 
-    private final UUID uuid;
+    private final UUID id;
     private String username;
-    private String password;
+    private Password password;
     private Email email;
     private FullName fullName;
     private String phoneNumber;
-    private Boolean isActive = true;
+    private boolean isActive = true;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime lastLoginAt;
 
     private final Set<Role> roles = new HashSet<>();
 
-    public User(String username, Email email, String password, FullName fullName, String phoneNumber) {
-        this.uuid = UUID.randomUUID();
+    public User(String username, Email email, Password password, FullName fullName, String phoneNumber) {
+        this.id = UUID.randomUUID();
         this.username = validateUserName(username);
         this.email = validateEmail(email);
         this.password = password;
@@ -61,7 +61,7 @@ public class User {
         if (permissionName == null || !isActive)
             return false;
         return roles.stream()
-                .anyMatch(r -> r.getName().equalsIgnoreCase(permissionName));
+                .anyMatch(r -> r.hasPermission(permissionName));
     }
 
     private String validateUserName(String username) {
@@ -79,7 +79,7 @@ public class User {
     }
 
     public UUID getUuid() {
-        return uuid;
+        return id;
     }
 
     public String getUsername() {

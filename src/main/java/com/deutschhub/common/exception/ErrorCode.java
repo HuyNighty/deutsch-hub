@@ -9,6 +9,8 @@ public enum ErrorCode {
     INVALID_EMAIL("error.identity.invalid.email", 3001),
     INVALID_ROLE_NAME("error.identity.invalid.role.name", 3002),
     INVALID_USERNAME("error.identity.invalid.username", 3003),
+
+    INVALID_PASSWORD("error.identity.invalid.password", 3004),
     ;
 
     private final String messageKey;
