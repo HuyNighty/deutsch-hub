@@ -2,7 +2,7 @@ package com.deutschhub.domain.identity.model.entity;
 
 import java.util.UUID;
 
-public class Permission {
+public final class Permission {
 
     private final UUID id;
     private final String name;

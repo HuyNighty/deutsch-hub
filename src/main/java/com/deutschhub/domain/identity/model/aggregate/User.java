@@ -17,8 +17,8 @@ public class User {
 
     private final UUID id;
     private String username;
-    private Password password;
     private Email email;
+    private Password password;
     private FullName fullName;
     private String phoneNumber;
     private boolean isActive = true;
@@ -30,41 +30,48 @@ public class User {
 
     public User(String username, Email email, Password password, FullName fullName, String phoneNumber) {
         this.id = UUID.randomUUID();
-        this.username = validateUserName(username);
+        this.username = validateUsername(username);
         this.email = validateEmail(email);
         this.password = password;
         this.fullName = fullName;
         this.phoneNumber = phoneNumber != null ? phoneNumber.trim() : null;
+
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
         this.lastLoginAt = LocalDateTime.now();
     }
 
     public void addRole(Role role) {
-        if (role == null)
+        if (role == null) {
             throw new BusinessException(ErrorCode.INVALID_ROLE_NAME);
+        }
         this.roles.add(role);
-        this.updatedAt = LocalDateTime.now();
+        touch();
     }
 
     public void updateLastLogin() {
-        this.updatedAt = LocalDateTime.now();
         this.lastLoginAt = LocalDateTime.now();
+        touch();
     }
 
     public void deactivate() {
         this.isActive = false;
-        this.updatedAt = LocalDateTime.now();
+        touch();
     }
 
     public boolean hasPermission(String permissionName) {
-        if (permissionName == null || !isActive)
+        if (permissionName == null || !isActive) {
             return false;
+        }
         return roles.stream()
-                .anyMatch(r -> r.hasPermission(permissionName));
+                .anyMatch(role -> role.hasPermission(permissionName));
     }
 
-    private String validateUserName(String username) {
+    public void touch() {
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    private String validateUsername(String username) {
         if (username == null || username.trim().isEmpty() || username.length() < 3) {
             throw new BusinessException(ErrorCode.INVALID_USERNAME);
         }
@@ -78,7 +85,7 @@ public class User {
         return email;
     }
 
-    public UUID getUuid() {
+    public UUID getId() {
         return id;
     }
 
@@ -90,6 +97,10 @@ public class User {
         return email;
     }
 
+    public Password getPassword() {
+        return password;
+    }
+
     public FullName getFullName() {
         return fullName;
     }
@@ -98,7 +109,7 @@ public class User {
         return phoneNumber;
     }
 
-    public Boolean getActive() {
+    public boolean isActive() {
         return isActive;
     }
 

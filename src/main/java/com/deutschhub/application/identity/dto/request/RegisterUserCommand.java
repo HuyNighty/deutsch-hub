@@ -10,5 +10,4 @@ public record RegisterUserCommand (
         Password password,
         FullName fullName,
         String phoneNumber
-) {
-}
+) {}

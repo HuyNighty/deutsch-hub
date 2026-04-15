@@ -5,7 +5,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
-public class Role {
+public final class Role {
 
     private final UUID id;
     private final String name;

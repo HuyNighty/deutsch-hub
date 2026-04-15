@@ -5,7 +5,7 @@ import com.deutschhub.common.exception.ErrorCode;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-public final class Password {
+public class Password {
 
     private static final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(12);
     private final String hashedValue;

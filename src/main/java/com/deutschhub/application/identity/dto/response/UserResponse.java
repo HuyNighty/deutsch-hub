@@ -1,9 +1,7 @@
 package com.deutschhub.application.identity.dto.response;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDateTime;
 import java.util.Set;
@@ -13,14 +11,15 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserResponse {
 
-    private UUID id;
-    private String username;
-    private String email;
-    private String fullName;
-    private String phoneNumber;
-    private boolean isActive;
-    private LocalDateTime createdAt;
-    private Set<String> roles;
+     UUID id;
+     String username;
+     String email;
+     String fullName;
+     String phoneNumber;
+     boolean isActive;
+     LocalDateTime createdAt;
+     Set<String> roles;
 }

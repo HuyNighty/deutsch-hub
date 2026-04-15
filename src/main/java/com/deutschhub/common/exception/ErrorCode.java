@@ -12,6 +12,11 @@ public enum ErrorCode {
     INVALID_PASSWORD("error.identity.invalid.password", 3004),
 
     USER_ALREADY_EXISTS("error.user.already.exists", 4001),
+
+    INVALID_COURSE_TITLE("error.course.invalid.title", 5001),
+    INVALID_CEFR_LEVEL("error.course.invalid.level", 5002),
+    INVALID_COURSE_PRICE("error.course.invalid.price", 5003),
+    COURSE_HAS_NO_LESSONS("error.course.has.no.lessons", 4001),
     ;
 
     private final String messageKey;

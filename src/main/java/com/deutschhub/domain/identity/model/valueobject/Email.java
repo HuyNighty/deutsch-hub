@@ -3,7 +3,7 @@ package com.deutschhub.domain.identity.model.valueobject;
 import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
 
-public final class Email {
+public class Email {
 
     private final String value;
 

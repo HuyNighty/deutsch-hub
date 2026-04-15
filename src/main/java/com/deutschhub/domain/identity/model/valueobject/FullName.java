@@ -1,6 +1,6 @@
 package com.deutschhub.domain.identity.model.valueobject;
 
-public final class FullName {
+public class FullName {
 
     private final String firstName;
     private final String lastName;
