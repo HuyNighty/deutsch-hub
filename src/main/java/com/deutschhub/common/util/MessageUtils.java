@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-public class MessageUtils {
+public final class MessageUtils {
 
     MessageSource messageSource;
 

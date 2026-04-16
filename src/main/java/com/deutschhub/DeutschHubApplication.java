@@ -7,12 +7,15 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
 
+import java.util.Locale;
+
 @SpringBootApplication(
         exclude = {
                 DataSourceAutoConfiguration.class,
                 org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration.class
         }
 )
+
 public class DeutschHubApplication {
     public static void main(String[] args) {
 
@@ -26,5 +29,6 @@ public class DeutschHubApplication {
         int code = error.getErrorCode();
 
         System.out.println(code + " - " + message);
+        System.out.println(messageUtils.getMessage(ErrorCode.UNCATEGORIZED_EXCEPTION, null, Locale.forLanguageTag("vi")));
     }
 }

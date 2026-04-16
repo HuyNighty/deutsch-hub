@@ -10,6 +10,7 @@ import com.deutschhub.domain.learning.model.valueobject.Money;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -21,20 +22,29 @@ public class Course implements Auditable, SoftDeletable {
     private CEFRLevel level;
     private Money price;
     private boolean published = false;
+    private UUID instructorId;
+    private int estimatedHours;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime deletedAt;
 
     private final List<Lesson> lessons = new ArrayList<>();
 
-    public Course(String title, String description, CEFRLevel level, Money price) {
-        this.id = UUID.randomUUID();
+    private Course(UUID id, String title, String description, CEFRLevel level, Money price, UUID instructorId) {
+        this.id = id;
         this.title = validateTitle(title);
         this.description = description != null ? description.trim() : "";
         this.level = validateLevel(level);
         this.price = validatePrice(price);
+        this.instructorId = instructorId;
+        this.estimatedHours = 0;
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
+    }
+
+    public static Course create(String title, String description, CEFRLevel level,
+                                Money price, UUID instructorId) {
+        return new Course(UUID.randomUUID(), title, description, level, price, instructorId);
     }
 
     private String validateTitle(String title) {
@@ -62,7 +72,30 @@ public class Course implements Auditable, SoftDeletable {
         if (lessons.isEmpty()) {
             throw new BusinessException(ErrorCode.COURSE_HAS_NO_LESSONS);
         }
+        if (published) {
+            throw new BusinessException(ErrorCode.COURSE_ALREADY_PUBLISHED);
+        }
         this.published = true;
+        this.touch();
+    }
+
+    public void addLesson(Lesson lesson) {
+        if (published) {
+            throw new BusinessException(ErrorCode.CANNOT_MODIFY_PUBLISHED_COURSE);
+        }
+        if (lesson == null) {
+            throw new BusinessException(ErrorCode.INVALID_LESSON);
+        }
+        this.lessons.add(lesson);
+        this.touch();
+        this.estimatedHours += lesson.getEstimatedMinutes() / 60;
+    }
+
+    public void removeLesson(UUID lessonId) {
+        if (published) {
+            throw new BusinessException(ErrorCode.CANNOT_MODIFY_PUBLISHED_COURSE);
+        }
+        lessons.removeIf(l -> l.getId().equals(lessonId));
         this.touch();
     }
 
@@ -117,4 +150,21 @@ public class Course implements Auditable, SoftDeletable {
     public Money getPrice() {
         return price;
     }
+
+    public boolean isPublished() {
+        return published;
+    }
+
+    public UUID getInstructorId() {
+        return instructorId;
+    }
+
+    public int getEstimatedHours() {
+        return estimatedHours;
+    }
+
+    public List<Lesson> getLessons() {
+        return Collections.unmodifiableList(lessons);
+    }
+
 }

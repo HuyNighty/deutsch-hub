@@ -16,7 +16,14 @@ public enum ErrorCode {
     INVALID_COURSE_TITLE("error.course.invalid.title", 5001),
     INVALID_CEFR_LEVEL("error.course.invalid.level", 5002),
     INVALID_COURSE_PRICE("error.course.invalid.price", 5003),
-    COURSE_HAS_NO_LESSONS("error.course.has.no.lessons", 4001),
+    COURSE_HAS_NO_LESSONS("error.course.has.no.lessons", 5004),
+    COURSE_ALREADY_PUBLISHED("error.course.already.published", 5005),
+    CANNOT_MODIFY_PUBLISHED_COURSE("error.course.cannot.modify.published", 5006),
+    INVALID_LESSON("error.course.invalid.lesson", 5007),
+
+    INVALID_LESSON_ORDER("error.lesson.invalid.order", 6001),
+    LESSON_INVALID_TITLE("error.lesson.invalid.title", 6002),
+    LESSON_INVALID_DURATION("error.lesson.invalid.duration", 6003),
     ;
 
     private final String messageKey;

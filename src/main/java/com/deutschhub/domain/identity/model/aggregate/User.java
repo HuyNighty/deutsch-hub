@@ -1,5 +1,6 @@
 package com.deutschhub.domain.identity.model.aggregate;
 
+import com.deutschhub.common.domain.Auditable;
 import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
 import com.deutschhub.domain.identity.model.entity.Role;
@@ -13,7 +14,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
-public class User {
+public class User implements Auditable {
 
     private final UUID id;
     private String username;

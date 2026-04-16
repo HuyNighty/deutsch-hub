@@ -12,6 +12,9 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 
+import java.util.Set;
+import java.util.stream.Collectors;
+
 @Mapper(componentModel = "spring")
 public interface UserMapper {
 
@@ -19,8 +22,8 @@ public interface UserMapper {
     @Mapping(target = "roles", source = "roles", qualifiedByName = "rolesToRoleNames")
     UserResponse toResponse(User user);
 
-    @Mapping(target = "email", source = "email", qualifiedByName = "stringToEmail")
-    @Mapping(target = "password", source = "password", qualifiedByName = "stringToPassword")
+    @Mapping(target = "email", source = "email")
+    @Mapping(target = "password", source = "password")
     @Mapping(target = "fullName", expression = "java(new com.deutschhub.domain.identity.model.valueobject.FullName(request.getFirstName(), request.getLastName()))")
     RegisterUserCommand toCommand(RegisterUserRequest request);
 
@@ -28,12 +31,18 @@ public interface UserMapper {
 
     User toDomain(JpaUserEntity entity);
 
-    @Named("stringToEmail")
+    default String map(Email email) {
+        return email != null ? email.getValue() : null;
+    }
+
+    default String map(Password password) {
+        return password != null ? password.getHashedValue() : null;
+    }
+
     default Email stringToEmail(String email) {
         return email != null ? new Email(email) : null;
     }
 
-    @Named("stringToPassword")
     default Password stringToPassword(String plainPassword) {
         return plainPassword != null ? Password.create(plainPassword) : null;
     }
@@ -44,10 +53,12 @@ public interface UserMapper {
     }
 
     @Named("rolesToRoleNames")
-    default java.util.Set<String> rolesToRoleNames(java.util.Set<com.deutschhub.domain.identity.model.entity.Role> roles) {
-        if (roles == null) return java.util.Set.of();
+    default Set<String> rolesToRoleNames(Set<com.deutschhub.domain.identity.model.entity.Role> roles) {
+        if (roles == null) {
+            return Set.of();
+        }
         return roles.stream()
                 .map(com.deutschhub.domain.identity.model.entity.Role::getName)
-                .collect(java.util.stream.Collectors.toSet());
+                .collect(Collectors.toSet());
     }
 }
