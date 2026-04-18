@@ -5,6 +5,7 @@ import com.deutschhub.common.domain.SoftDeletable;
 import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
 import com.deutschhub.domain.learning.model.entity.Lesson;
+import com.deutschhub.domain.learning.model.entity.Section;
 import com.deutschhub.domain.learning.model.valueobject.CEFRLevel;
 import com.deutschhub.domain.learning.model.valueobject.Money;
 
@@ -28,7 +29,7 @@ public class Course implements Auditable, SoftDeletable {
     private LocalDateTime updatedAt;
     private LocalDateTime deletedAt;
 
-    private final List<Lesson> lessons = new ArrayList<>();
+    private final List<Section> sections = new ArrayList<>();
 
     private Course(UUID id, String title, String description, CEFRLevel level, Money price, UUID instructorId) {
         this.id = id;
@@ -69,8 +70,8 @@ public class Course implements Auditable, SoftDeletable {
     }
 
     public void publish() {
-        if (lessons.isEmpty()) {
-            throw new BusinessException(ErrorCode.COURSE_HAS_NO_LESSONS);
+        if (sections.isEmpty()) {
+            throw new BusinessException(ErrorCode.COURSE_HAS_NO_SECTIONS);
         }
         if (published) {
             throw new BusinessException(ErrorCode.COURSE_ALREADY_PUBLISHED);
@@ -79,25 +80,36 @@ public class Course implements Auditable, SoftDeletable {
         this.touch();
     }
 
-    public void addLesson(Lesson lesson) {
+    public void addSection(Section section) {
         if (published) {
             throw new BusinessException(ErrorCode.CANNOT_MODIFY_PUBLISHED_COURSE);
         }
-        if (lesson == null) {
-            throw new BusinessException(ErrorCode.INVALID_LESSON);
+        if (section == null) {
+            throw new BusinessException(ErrorCode.SECTION_NOT_FOUND);
         }
-        this.lessons.add(lesson);
+        this.sections.add(section);
         this.touch();
-        this.estimatedHours += lesson.getEstimatedMinutes() / 60;
+        recalculateEstimatedHours();
     }
 
-    public void removeLesson(UUID lessonId) {
+    public void removeSection(UUID sectionId) {
         if (published) {
             throw new BusinessException(ErrorCode.CANNOT_MODIFY_PUBLISHED_COURSE);
         }
-        lessons.removeIf(l -> l.getId().equals(lessonId));
+        sections.removeIf(s -> s.getId().equals(sectionId));
         this.touch();
+        recalculateEstimatedHours();
     }
+
+    private void recalculateEstimatedHours() {
+        int totalMinutes = sections.stream()
+                .flatMap(section -> section.getLessons().stream())
+                .mapToInt(Lesson::getEstimatedMinutes)
+                .sum();
+
+        this.estimatedHours = totalMinutes / 60;
+    }
+
 
     @Override
     public void touch() {
@@ -163,8 +175,7 @@ public class Course implements Auditable, SoftDeletable {
         return estimatedHours;
     }
 
-    public List<Lesson> getLessons() {
-        return Collections.unmodifiableList(lessons);
+    public List<Section> getSections() {
+        return Collections.unmodifiableList(sections);
     }
-
 }

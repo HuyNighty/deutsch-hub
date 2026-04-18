@@ -34,15 +34,15 @@ public final class CEFRLevel {
     }
 
     public boolean isBeginner() {
-        return value.equals("A1") || value.equals("A2");
+        return "A1".equals(value) || "A2".equals(value);
     }
 
     public boolean isIntermediate() {
-        return value.equals("B1") || value.equals("B2");
+        return "B1".equals(value) || "B2".equals(value);
     }
 
     public boolean isAdvanced() {
-        return value.equals("C1") || value.equals("C2");
+        return "C1".equals(value) || "C2".equals(value);
     }
 
     @Override
