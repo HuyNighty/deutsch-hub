@@ -31,6 +31,10 @@ public enum ErrorCode {
     SECTION_NOT_FOUND("error.section.not.found", 7003),
 
     INVALID_ENROLLMENT_DATA("error.enrollment.invalid.data", 8001),
+    CANNOT_START_COMPLETED_ENROLLMENT("error.enrollment.cannot.start.completed", 8002),
+    CANNOT_DROP_COMPLETED_ENROLLMENT("error.enrollment.cannot.drop.completed", 8003),
+
+    INVALID_PROGRESS_DATA("error.progress.invalid.data", 8101),
     ;
 
     private final String messageKey;
