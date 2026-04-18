@@ -29,6 +29,8 @@ public enum ErrorCode {
     SECTION_INVALID_TITLE("error.section.invalid.title", 7001),
     INVALID_SECTION_ORDER("error.section.invalid.order", 7002),
     SECTION_NOT_FOUND("error.section.not.found", 7003),
+
+    INVALID_ENROLLMENT_DATA("error.enrollment.invalid.data", 8001),
     ;
 
     private final String messageKey;
