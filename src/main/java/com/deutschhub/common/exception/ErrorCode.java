@@ -36,7 +36,8 @@ public enum ErrorCode {
 
     INVALID_PROGRESS_DATA("error.progress.invalid.data", 8101),
 
-    INVALID_USER_PROGRESS_DATA("error.userprogress.invalid.data", 9001)
+    INVALID_USER_PROGRESS_DATA("error.userprogress.invalid.data", 9001),
+    USER_PROGRESS_ALREADY_COMPLETED("error.userprogress.already.completed", 9002),
     ;
 
     private final String messageKey;
