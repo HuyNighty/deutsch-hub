@@ -35,6 +35,8 @@ public enum ErrorCode {
     CANNOT_DROP_COMPLETED_ENROLLMENT("error.enrollment.cannot.drop.completed", 8003),
 
     INVALID_PROGRESS_DATA("error.progress.invalid.data", 8101),
+
+    INVALID_USER_PROGRESS_DATA("error.userprogress.invalid.data", 9001)
     ;
 
     private final String messageKey;
