@@ -28,18 +28,21 @@ public class UserProgress implements Auditable, SoftDeletable {
     private LocalDateTime updatedAt;
     private LocalDateTime deletedAt;
 
+    private static final double ALMOST_DONE_THRESHOLD = 80.0;
+
     private UserProgress(UUID id, UUID userId, UUID courseId, UUID enrollmentId, Progress currentProgress, UserProgressStatus status) {
         this.id = id;
         this.userId = validateNotNull(userId, "UserId");
         this.courseId = validateNotNull(courseId, "CourseId");
         this.enrollmentId = validateNotNull(enrollmentId, "EnrollmentId");
         this.currentProgress = currentProgress != null ? currentProgress : Progress.createInitial(0);
-        this.status = UserProgressStatus.NOT_STARTED;
+        this.status = status != null ? status : UserProgressStatus.NOT_STARTED;
         this.completedSections = 0;
         this.completedLessons = 0;
         this.totalStudyMinutes = 0;
-        this.startedAt = LocalDateTime.now();
-        this.lastActivityAt = LocalDateTime.now();
+        if (status == UserProgressStatus.NOT_STARTED) {
+            this.startedAt = LocalDateTime.now();
+        }        this.lastActivityAt = LocalDateTime.now();
         this.completedAt = null;
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
@@ -51,6 +54,7 @@ public class UserProgress implements Auditable, SoftDeletable {
     }
 
     public void recordLessonCompletion(int lessonMinutes) {
+        ensureModifiable();
         this.completedLessons++;
         this.totalStudyMinutes += Math.max(0, lessonMinutes);
         this.lastActivityAt = LocalDateTime.now();
@@ -60,7 +64,7 @@ public class UserProgress implements Auditable, SoftDeletable {
         if (this.currentProgress.isCompleted()) {
             this.status = UserProgressStatus.COMPLETED;
             this.completedAt = LocalDateTime.now();
-        } else if (this.currentProgress.getCompletionPercentage() >= 80.0) {
+        } else if (this.currentProgress.getCompletionPercentage() >= ALMOST_DONE_THRESHOLD) {
             this.status = UserProgressStatus.ALMOST_DONE;
         } else {
             this.status = UserProgressStatus.IN_PROGRESS;
@@ -70,8 +74,14 @@ public class UserProgress implements Auditable, SoftDeletable {
     }
 
     public void updateProgress(Progress newProgress) {
+        ensureModifiable();
+
         if (newProgress == null) {
             throw new BusinessException(ErrorCode.INVALID_PROGRESS_DATA);
+        }
+
+        if (newProgress.getCompletionPercentage() < currentProgress.getCompletionPercentage()) {
+            throw new BusinessException(ErrorCode.PROGRESS_CANNOT_DECREASE);
         }
 
         this.currentProgress = newProgress;
@@ -86,6 +96,7 @@ public class UserProgress implements Auditable, SoftDeletable {
     }
 
     public void markAsCompleted() {
+        ensureModifiable();
         if (this.status == UserProgressStatus.COMPLETED) {
             throw new BusinessException(ErrorCode.USER_PROGRESS_ALREADY_COMPLETED);
         }
@@ -96,12 +107,34 @@ public class UserProgress implements Auditable, SoftDeletable {
         this.touch();
     }
 
+    public void recordSectionCompletion() {
+        this.completedSections++;
+        touch();
+    }
+
+    private void ensureModifiable() {
+        ensureNotDeleted();
+        ensureActive();
+    }
+
     private <T> T validateNotNull(T value, String fieldName) {
         if (value == null) {
             throw new BusinessException(ErrorCode.INVALID_USER_PROGRESS_DATA,
                     fieldName + " cannot be null");
         }
         return value;
+    }
+
+    private void ensureActive() {
+        if (status == UserProgressStatus.COMPLETED) {
+            throw new BusinessException(ErrorCode.USER_PROGRESS_ALREADY_COMPLETED);
+        }
+    }
+
+    private void ensureNotDeleted() {
+        if (isDeleted()) {
+            throw new BusinessException(ErrorCode.USER_PROGRESS_ALREADY_DELETED);
+        }
     }
 
     @Override

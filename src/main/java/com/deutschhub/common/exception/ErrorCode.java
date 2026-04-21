@@ -45,6 +45,18 @@ public enum ErrorCode {
 
     INVALID_USER_PROGRESS_DATA("error.userprogress.invalid.data", 9001),
     USER_PROGRESS_ALREADY_COMPLETED("error.userprogress.already.completed", 9002),
+    USER_PROGRESS_ALREADY_DELETED("error.userprogress.already.deleted", 9003),
+    PROGRESS_CANNOT_DECREASE("error.userprogress.progress.cannot.decrease", 9101),
+
+
+    QUIZ_INVALID_TITLE("error.quiz.invalid.title", 10001),
+    QUIZ_INVALID_TIME_LIMIT("error.quiz.invalid.time.limit", 10002),
+    QUIZ_INVALID_MAX_SCORE("error.quiz.invalid.max.score", 10003),
+    QUIZ_INVALID_PASSING_SCORE("error.quiz.invalid.passing.score", 10004),
+    QUIZ_HAS_NO_QUESTIONS("error.quiz.has.no.questions", 10005),
+    QUIZ_ALREADY_PUBLISHED("error.quiz.already.published", 10006),
+    CANNOT_MODIFY_PUBLISHED_QUIZ("error.quiz.cannot.modify.published", 10007),
+    INVALID_QUESTION("error.quiz.invalid.question", 10008),
     ;
 
     private final String messageKey;
