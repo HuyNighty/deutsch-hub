@@ -20,6 +20,8 @@ public enum ErrorCode {
     COURSE_ALREADY_PUBLISHED("error.course.already.published", 5005),
     CANNOT_MODIFY_PUBLISHED_COURSE("error.course.cannot.modify.published", 5006),
     INVALID_LESSON("error.course.invalid.lesson", 5007),
+    INVALID_COURSE_INSTRUCTOR("error.course.invalid.instructor", 5008),
+    COURSE_ALREADY_DELETED("error.course.already.deleted", 5009),
 
     INVALID_LESSON_ORDER("error.lesson.invalid.order", 6001),
     LESSON_INVALID_TITLE("error.lesson.invalid.title", 6002),
@@ -33,6 +35,11 @@ public enum ErrorCode {
     INVALID_ENROLLMENT_DATA("error.enrollment.invalid.data", 8001),
     CANNOT_START_COMPLETED_ENROLLMENT("error.enrollment.cannot.start.completed", 8002),
     CANNOT_DROP_COMPLETED_ENROLLMENT("error.enrollment.cannot.drop.completed", 8003),
+    INVALID_ENROLLMENT_STATE("error.enrollment.invalid.state", 8004),
+    ENROLLMENT_NOT_ACTIVE("error.enrollment.not.active", 8005),
+    ENROLLMENT_ALREADY_DELETED("error.enrollment.already.deleted", 8006),
+    ENROLLMENT_PROGRESS_CANNOT_DECREASE("error.enrollment.progress.cannot.decrease", 8101),
+    INVALID_ENROLLMENT_PROGRESS_STATE("error.enrollment.progress.state", 8102),
 
     INVALID_PROGRESS_DATA("error.progress.invalid.data", 8101),
 

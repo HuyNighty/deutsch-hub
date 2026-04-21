@@ -42,29 +42,58 @@ public class Enrollment implements Auditable, SoftDeletable {
     }
 
     public void startLearning() {
-        if (status == EnrollmentStatus.COMPLETED || status == EnrollmentStatus.DROPPED) {
-            throw new BusinessException(ErrorCode.CANNOT_START_COMPLETED_ENROLLMENT);
+        ensureNotDeleted();
+
+        if (status != EnrollmentStatus.ENROLLED) {
+            throw new BusinessException(ErrorCode.INVALID_ENROLLMENT_STATE);
         }
+
         this.status = EnrollmentStatus.IN_PROGRESS;
         this.touch();
     }
 
     public void updateProgress(Progress newProgress) {
+        ensureModifiable();
         if (newProgress == null) {
             throw new BusinessException(ErrorCode.INVALID_PROGRESS_DATA);
+        }
+        if (newProgress.getCompletionPercentage() < this.progress.getCompletionPercentage()) {
+            throw new BusinessException(ErrorCode.ENROLLMENT_PROGRESS_CANNOT_DECREASE);
         }
 
         this.progress = newProgress;
 
         if (newProgress.isCompleted()) {
             this.status = EnrollmentStatus.COMPLETED;
-            this.completedAt = LocalDateTime.now();
+            this.completedAt = this.completedAt == null ? LocalDateTime.now() : this.completedAt;
+
+            if (!newProgress.isCompleted()) {
+                throw new BusinessException(ErrorCode.INVALID_ENROLLMENT_PROGRESS_STATE);
+            }
         }
 
         this.touch();
     }
 
+    private void ensureModifiable() {
+        ensureNotDeleted();
+        ensureActive();
+    }
+
+    private void ensureActive() {
+        if (status == EnrollmentStatus.COMPLETED || status == EnrollmentStatus.DROPPED) {
+            throw new BusinessException(ErrorCode.ENROLLMENT_NOT_ACTIVE);
+        }
+    }
+
+    private void ensureNotDeleted() {
+        if (isDeleted()) {
+            throw new BusinessException(ErrorCode.ENROLLMENT_ALREADY_DELETED);
+        }
+    }
+
     public void drop() {
+        ensureNotDeleted();
         if (status == EnrollmentStatus.COMPLETED) {
             throw new BusinessException(ErrorCode.CANNOT_DROP_COMPLETED_ENROLLMENT);
         }

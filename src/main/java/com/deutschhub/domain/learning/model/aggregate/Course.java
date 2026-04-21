@@ -37,7 +37,7 @@ public class Course implements Auditable, SoftDeletable {
         this.description = description != null ? description.trim() : "";
         this.level = validateLevel(level);
         this.price = validatePrice(price);
-        this.instructorId = instructorId;
+        this.instructorId = validateInstructorId(instructorId);
         this.estimatedHours = 0;
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
@@ -48,11 +48,18 @@ public class Course implements Auditable, SoftDeletable {
         return new Course(UUID.randomUUID(), title, description, level, price, instructorId);
     }
 
+    private UUID validateInstructorId(UUID instructorId) {
+        if (instructorId == null) {
+            throw new BusinessException(ErrorCode.INVALID_COURSE_INSTRUCTOR);
+        }
+        return this.instructorId =  instructorId;
+    }
+
     private String validateTitle(String title) {
         if (title == null || title.trim().isEmpty()) {
             throw new BusinessException(ErrorCode.INVALID_COURSE_TITLE);
         }
-        return title;
+        return title.trim();
     }
 
     private CEFRLevel validateLevel(CEFRLevel level) {
@@ -87,16 +94,28 @@ public class Course implements Auditable, SoftDeletable {
         if (section == null) {
             throw new BusinessException(ErrorCode.SECTION_NOT_FOUND);
         }
+        ensureNotDeleted();
         this.sections.add(section);
         this.touch();
         recalculateEstimatedHours();
+    }
+
+    private void ensureNotDeleted() {
+        if (isDeleted()) {
+            throw new BusinessException(ErrorCode.COURSE_ALREADY_DELETED);
+        }
     }
 
     public void removeSection(UUID sectionId) {
         if (published) {
             throw new BusinessException(ErrorCode.CANNOT_MODIFY_PUBLISHED_COURSE);
         }
-        sections.removeIf(s -> s.getId().equals(sectionId));
+        boolean removed = sections.removeIf(s -> s.getId().equals(sectionId));
+
+        if (!removed) {
+            throw new BusinessException(ErrorCode.SECTION_NOT_FOUND);
+        }
+
         this.touch();
         recalculateEstimatedHours();
     }
@@ -107,7 +126,7 @@ public class Course implements Auditable, SoftDeletable {
                 .mapToInt(Lesson::getEstimatedMinutes)
                 .sum();
 
-        this.estimatedHours = totalMinutes / 60;
+        this.estimatedHours = (int) Math.ceil(totalMinutes / 60.0);
     }
 
 
