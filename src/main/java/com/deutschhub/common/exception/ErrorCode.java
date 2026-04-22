@@ -74,6 +74,13 @@ public enum ErrorCode {
     ANSWER_NOT_FOUND("error.question.answer.not.found", 11102),
     TOO_MANY_ANSWERS("error.question.answer.too.many", 11103),
 
+    INVALID_QUIZ_ATTEMPT_DATA("error.quiz.attempt.invalid.data", 12001),
+    QUIZ_ATTEMPT_EMPTY("error.quiz.attempt.empty", 12002),
+    INVALID_QUIZ_ATTEMPT_STATE("error.quiz.attempt.invalid.state", 12003),
+    QUIZ_ATTEMPT_ALREADY_DELETED("error.quiz.attempt.already.deleted", 12004),
+    INVALID_USER_ANSWER("error.user.answer.invalid", 12101),
+    INVALID_USER_ANSWER_DATA("error.user.answer.invalid.data", 12102),
+
     ;
 
     private final String messageKey;
