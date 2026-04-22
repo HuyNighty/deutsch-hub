@@ -63,10 +63,6 @@ public class QuizAttempt implements Auditable, SoftDeletable {
 
         UUID questionId = answer.getQuestionId();
 
-        if (answers.containsKey(questionId)) {
-            throw new BusinessException(ErrorCode.DUPLICATE_ANSWER);
-        }
-
         answers.put(questionId, answer);
         touch();
     }
@@ -88,7 +84,22 @@ public class QuizAttempt implements Auditable, SoftDeletable {
         for (Question question : questions) {
             UserAnswer userAnswer = answers.get(question.getId());
 
-            if (userAnswer != null && userAnswer.isCorrect()) {
+            if (userAnswer == null) continue;
+
+            boolean isValidAnswer = question.getAnswers().stream()
+                    .anyMatch(a -> a.getId().equals(userAnswer.getSelectedAnswerId()));
+
+            if (!isValidAnswer) {
+                throw new BusinessException(ErrorCode.INVALID_USER_ANSWER);
+            }
+
+            boolean isCorrect = question.getAnswers().stream()
+                    .anyMatch(a ->
+                            a.getId().equals(userAnswer.getSelectedAnswerId())
+                                    && a.isCorrect()
+                    );
+
+            if (isCorrect) {
                 score += question.getScore();
             }
         }
