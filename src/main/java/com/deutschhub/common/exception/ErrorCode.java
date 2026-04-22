@@ -41,7 +41,7 @@ public enum ErrorCode {
     ENROLLMENT_PROGRESS_CANNOT_DECREASE("error.enrollment.progress.cannot.decrease", 8101),
     INVALID_ENROLLMENT_PROGRESS_STATE("error.enrollment.progress.state", 8102),
 
-    INVALID_PROGRESS_DATA("error.progress.invalid.data", 8101),
+    INVALID_PROGRESS_DATA("error.enrollment.progress.invalid.data", 8103),
 
     INVALID_USER_PROGRESS_DATA("error.userprogress.invalid.data", 9001),
     USER_PROGRESS_ALREADY_COMPLETED("error.userprogress.already.completed", 9002),
@@ -57,6 +57,23 @@ public enum ErrorCode {
     QUIZ_ALREADY_PUBLISHED("error.quiz.already.published", 10006),
     CANNOT_MODIFY_PUBLISHED_QUIZ("error.quiz.cannot.modify.published", 10007),
     INVALID_QUESTION("error.quiz.invalid.question", 10008),
+    QUIZ_SCORE_MISMATCH("error.quiz.score.mismatch", 10009),
+    INVALID_QUIZ_STATE("error.quiz.invalid.state", 10010),
+    QUIZ_SCORE_EXCEEDS_MAX("error.quiz.score.exceeds.max", 10011),
+    QUIZ_ALREADY_DELETED("error.quiz.already.deleted", 10012),
+
+    INVALID_QUESTION_CONTENT("error.question.invalid.content", 11001),
+    INVALID_QUESTION_SCORE("error.question.invalid.score", 11002),
+    QUESTION_NOT_ENOUGH_ANSWERS("error.question.not.enough.answers", 11003),
+    QUESTION_NO_CORRECT_ANSWER("error.question.no.correct.answer", 11004),
+    QUESTION_TOO_MANY_CORRECT_ANSWERS("error.question.too.many.correct.answers", 11005),
+    QUESTION_NOT_FOUND("error.question.not.found", 11006),
+    DUPLICATE_ANSWER("error.question.answer.duplicate", 11007),
+    QUESTION_TRUE_FALSE_INVALID("error.question.truefalse.invalid", 11008),
+    INVALID_ANSWER("error.question.answer.invalid", 11101),
+    ANSWER_NOT_FOUND("error.question.answer.not.found", 11102),
+    TOO_MANY_ANSWERS("error.question.answer.too.many", 11103),
+
     ;
 
     private final String messageKey;

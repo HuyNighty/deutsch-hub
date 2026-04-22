@@ -1,10 +1,5 @@
 package com.deutschhub.domain.learning.model.valueobject;
 
-/**
- * Trạng thái tiến độ học tập của User với một Course
- *
- * Khác với EnrollmentStatus ở chỗ nó tập trung vào "tiến độ thực tế"
- */
 public enum UserProgressStatus {
 
     NOT_STARTED("Not Started"),

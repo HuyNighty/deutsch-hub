@@ -4,15 +4,13 @@ import com.deutschhub.common.domain.Auditable;
 import com.deutschhub.common.domain.SoftDeletable;
 import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
+import com.deutschhub.domain.learning.model.entity.Question;
 import com.deutschhub.domain.learning.model.valueobject.DifficultyLevel;
 import com.deutschhub.domain.learning.model.valueobject.QuizStatus;
 import com.deutschhub.domain.learning.model.valueobject.QuizVisibility;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 
 public class Quiz implements Auditable, SoftDeletable {
 
@@ -67,17 +65,46 @@ public class Quiz implements Auditable, SoftDeletable {
     }
 
     public void publish() {
+        ensureNotDeleted();
+
         if (questions.isEmpty()) {
             throw new BusinessException(ErrorCode.QUIZ_HAS_NO_QUESTIONS);
         }
+
+        int totalScore = 0;
+
+        for (Question question : questions) {
+            question.validate();
+            totalScore += question.getScore();
+        }
+
+        if (totalScore != this.maxScore) {
+            throw new BusinessException(ErrorCode.QUIZ_SCORE_MISMATCH);
+        }
+
         if (status == QuizStatus.PUBLISHED) {
             throw new BusinessException(ErrorCode.QUIZ_ALREADY_PUBLISHED);
         }
+
+        if (status != QuizStatus.DRAFT) {
+            throw new BusinessException(ErrorCode.INVALID_QUIZ_STATE);
+        }
+
         this.status = QuizStatus.PUBLISHED;
         this.touch();
     }
 
+    public void unpublish() {
+        if (status != QuizStatus.PUBLISHED) {
+            throw new BusinessException(ErrorCode.INVALID_QUIZ_STATE);
+        }
+        this.status = QuizStatus.DRAFT;
+        touch();
+    }
+
     public void addQuestion(Question question) {
+        ensureNotDeleted();
+
         if (status == QuizStatus.PUBLISHED) {
             throw new BusinessException(ErrorCode.CANNOT_MODIFY_PUBLISHED_QUIZ);
         }
@@ -89,9 +116,18 @@ public class Quiz implements Auditable, SoftDeletable {
     }
 
     public void removeQuestion(UUID questionId) {
+        ensureNotDeleted();
+
         if (status == QuizStatus.PUBLISHED) {
             throw new BusinessException(ErrorCode.CANNOT_MODIFY_PUBLISHED_QUIZ);
         }
+
+        boolean removed = questions.removeIf(q -> q.getId().equals(questionId));
+
+        if (!removed) {
+            throw new BusinessException(ErrorCode.QUESTION_NOT_FOUND);
+        }
+
         questions.removeIf(q -> q.getId().equals(questionId));
         this.touch();
     }
@@ -112,7 +148,17 @@ public class Quiz implements Auditable, SoftDeletable {
     }
 
     public void updateMaxScore(int score) {
-        this.maxScore = validateMaxScore(score);
+        int newScore = validateMaxScore(score);
+
+        int totalQuestionScore = questions.stream()
+                .mapToInt(Question::getScore)
+                .sum();
+
+        if (totalQuestionScore > newScore) {
+            throw new BusinessException(ErrorCode.QUIZ_SCORE_EXCEEDS_MAX);
+        }
+
+        this.maxScore = newScore;
         touch();
     }
 
@@ -124,6 +170,12 @@ public class Quiz implements Auditable, SoftDeletable {
     public void changeVisibility(QuizVisibility visibility) {
         this.visibility = Objects.requireNonNull(visibility);
         touch();
+    }
+
+    private void ensureNotDeleted() {
+        if (isDeleted()) {
+            throw new BusinessException(ErrorCode.QUIZ_ALREADY_DELETED);
+        }
     }
 
     private String validateTitle(String title) {
