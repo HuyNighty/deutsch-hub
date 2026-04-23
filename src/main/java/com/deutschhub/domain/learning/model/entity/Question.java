@@ -9,6 +9,7 @@ import java.util.*;
 public class Question {
 
     private final UUID id;
+    private final UUID quizId;
     private String content;
     private int score;
     private QuestionType type;
@@ -18,15 +19,16 @@ public class Question {
     private static final int MIN_ANSWERS = 2;
     private static final int MAX_ANSWERS = 6;
 
-    private Question(UUID id, String content, int score, QuestionType type) {
+    private Question(UUID id, UUID quizId, String content, int score, QuestionType type) {
         this.id = Objects.requireNonNull(id);
+        this.quizId = Objects.requireNonNull(quizId);
         this.content = validateContent(content);
         this.score = validateScore(score);
         this.type = Objects.requireNonNull(type);
     }
 
-    public static Question create(String content, int score, QuestionType type) {
-        return new Question(UUID.randomUUID(), content, score, type);
+    public static Question create(UUID quizId, String content, int score, QuestionType type) {
+        return new Question(UUID.randomUUID(), quizId, content, score, type);
     }
 
     public void addAnswer(AnswerQuestion answer) {
@@ -110,6 +112,7 @@ public class Question {
         }
         return score;
     }
+    public UUID getQuizId() { return quizId; }
 
     public UUID getId() { return id; }
 

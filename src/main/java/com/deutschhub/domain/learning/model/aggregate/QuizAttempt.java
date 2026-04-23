@@ -4,12 +4,15 @@ import com.deutschhub.common.domain.Auditable;
 import com.deutschhub.common.domain.SoftDeletable;
 import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
+import com.deutschhub.domain.learning.model.entity.AnswerQuestion;
 import com.deutschhub.domain.learning.model.entity.Question;
 import com.deutschhub.domain.learning.model.entity.UserAnswer;
 import com.deutschhub.domain.learning.model.valueobject.AttemptStatus;
+import com.deutschhub.domain.learning.model.valueobject.QuestionType;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class QuizAttempt implements Auditable, SoftDeletable {
 
@@ -75,32 +78,57 @@ public class QuizAttempt implements Auditable, SoftDeletable {
             throw new BusinessException(ErrorCode.QUIZ_HAS_NO_QUESTIONS);
         }
 
-        if (answers.isEmpty()) {
-            throw new BusinessException(ErrorCode.QUIZ_ATTEMPT_EMPTY);
+        for (Question q : questions) {
+            if (!q.getQuizId().equals(this.quizId)) {
+                throw new BusinessException(ErrorCode.QUESTION_NOT_BELONG_TO_QUIZ);
+            }
+        }
+
+        if (answers.size() != questions.size()) {
+            throw new BusinessException(ErrorCode.QUIZ_ATTEMPT_NOT_ALL_ANSWERED);
         }
 
         int score = 0;
 
         for (Question question : questions) {
+            question.validate();
             UserAnswer userAnswer = answers.get(question.getId());
 
-            if (userAnswer == null) continue;
+            QuestionType type = question.getType();
 
-            boolean isValidAnswer = question.getAnswers().stream()
-                    .anyMatch(a -> a.getId().equals(userAnswer.getSelectedAnswerId()));
+            if (type == QuestionType.MULTIPLE_CHOICE) {
+                Set<UUID> selectedIds = userAnswer.getSelectedAnswerIds();
 
-            if (!isValidAnswer) {
-                throw new BusinessException(ErrorCode.INVALID_USER_ANSWER);
-            }
+                Set<UUID> correctIds = question.getAnswers().stream()
+                        .filter(AnswerQuestion::isCorrect)
+                        .map(AnswerQuestion::getId)
+                        .collect(Collectors.toSet());
 
-            boolean isCorrect = question.getAnswers().stream()
-                    .anyMatch(a ->
-                            a.getId().equals(userAnswer.getSelectedAnswerId())
-                                    && a.isCorrect()
-                    );
+                boolean allExist = selectedIds.stream()
+                        .allMatch(id -> question.getAnswers().stream().anyMatch(a -> a.getId().equals(id)));
 
-            if (isCorrect) {
-                score += question.getScore();
+                if (!allExist) {
+                    throw new BusinessException(ErrorCode.INVALID_USER_ANSWER);
+                }
+
+                boolean isCorrect = selectedIds.equals(correctIds);
+                if (isCorrect) {
+                    totalScore += question.getScore();
+                }
+            } else {
+                UUID selectedId = userAnswer.getSingleSelectedAnswerId();
+
+                boolean isValid = question.getAnswers().stream()
+                        .anyMatch(a -> a.getId().equals(selectedId));
+                if (!isValid) {
+                    throw new BusinessException(ErrorCode.INVALID_USER_ANSWER);
+                }
+
+                boolean isCorrect = question.getAnswers().stream()
+                        .anyMatch(a -> a.getId().equals(selectedId) && a.isCorrect());
+                if (isCorrect) {
+                    totalScore += question.getScore();
+                }
             }
         }
 

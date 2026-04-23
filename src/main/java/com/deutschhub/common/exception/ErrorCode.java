@@ -22,6 +22,7 @@ public enum ErrorCode {
     INVALID_LESSON("error.course.invalid.lesson", 5007),
     INVALID_COURSE_INSTRUCTOR("error.course.invalid.instructor", 5008),
     COURSE_ALREADY_DELETED("error.course.already.deleted", 5009),
+    COURSE_NOT_COMPLETED("error.course.not.completed", 5011),
 
     INVALID_LESSON_ORDER("error.lesson.invalid.order", 6001),
     LESSON_INVALID_TITLE("error.lesson.invalid.title", 6002),
@@ -61,6 +62,7 @@ public enum ErrorCode {
     INVALID_QUIZ_STATE("error.quiz.invalid.state", 10010),
     QUIZ_SCORE_EXCEEDS_MAX("error.quiz.score.exceeds.max", 10011),
     QUIZ_ALREADY_DELETED("error.quiz.already.deleted", 10012),
+    QUIZ_REQUIREMENT_NOT_MET("error.quiz.requirement.not.met", 10013),
 
     INVALID_QUESTION_CONTENT("error.question.invalid.content", 11001),
     INVALID_QUESTION_SCORE("error.question.invalid.score", 11002),
@@ -73,11 +75,13 @@ public enum ErrorCode {
     INVALID_ANSWER("error.question.answer.invalid", 11101),
     ANSWER_NOT_FOUND("error.question.answer.not.found", 11102),
     TOO_MANY_ANSWERS("error.question.answer.too.many", 11103),
+    QUESTION_NOT_BELONG_TO_QUIZ("error.question.not.belong.to.quiz", 11104),
 
     INVALID_QUIZ_ATTEMPT_DATA("error.quiz.attempt.invalid.data", 12001),
     QUIZ_ATTEMPT_EMPTY("error.quiz.attempt.empty", 12002),
     INVALID_QUIZ_ATTEMPT_STATE("error.quiz.attempt.invalid.state", 12003),
     QUIZ_ATTEMPT_ALREADY_DELETED("error.quiz.attempt.already.deleted", 12004),
+    QUIZ_ATTEMPT_NOT_ALL_ANSWERED("error.quiz.attempt.not.all.answered", 12005),
     INVALID_USER_ANSWER("error.user.answer.invalid", 12101),
     INVALID_USER_ANSWER_DATA("error.user.answer.invalid.data", 12102),
 
