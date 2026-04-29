@@ -29,6 +29,13 @@ public class Certificate implements Auditable {
 
     public static Certificate issue(UUID userId, UUID courseId, boolean courseCompleted,
                                     boolean quizRequirementMet, boolean isQuizRequired) {
+        return issue(userId, courseId, courseCompleted, quizRequirementMet, isQuizRequired, userId, false);
+    }
+
+    public static Certificate issue(UUID userId, UUID courseId, boolean courseCompleted,
+                                    boolean quizRequirementMet, boolean isQuizRequired,
+                                    UUID actorId, boolean isAdmin) {
+        ensureCanIssueFor(userId, actorId, isAdmin);
         if (!courseCompleted) {
             throw new BusinessException(ErrorCode.COURSE_NOT_COMPLETED);
         }
@@ -40,6 +47,15 @@ public class Certificate implements Auditable {
         return new Certificate(UUID.randomUUID(), userId, courseId, LocalDateTime.now(), certNumber);
     }
 
+    private static void ensureCanIssueFor(UUID userId, UUID actorId, boolean isAdmin) {
+        if (isAdmin) {
+            return;
+        }
+        if (actorId == null || !actorId.equals(userId)) {
+            throw new BusinessException(ErrorCode.CERTIFICATE_FORBIDDEN_ACTION);
+        }
+    }
+
     private static String generateCertificateNumber(UUID userId, UUID courseId) {
         return "CERT-" + userId.toString().substring(0,8) + "-" + courseId.toString().substring(0,8) + "-" + System.currentTimeMillis();
     }
@@ -48,16 +64,38 @@ public class Certificate implements Auditable {
         return this.userId.equals(userId) && this.courseId.equals(courseId);
     }
 
-    public UUID getId() { return id; }
-    public UUID getUserId() { return userId; }
-    public UUID getCourseId() { return courseId; }
-    public LocalDateTime getIssuedAt() { return issuedAt; }
-    public String getCertificateNumber() { return certificateNumber; }
+    public UUID getId() {
+        return id;
+    }
+
+    public UUID getUserId() {
+        return userId;
+    }
+
+    public UUID getCourseId() {
+        return courseId;
+    }
+
+    public LocalDateTime getIssuedAt() {
+        return issuedAt;
+    }
+
+    public String getCertificateNumber() {
+        return certificateNumber;
+    }
 
     @Override
-    public LocalDateTime getCreatedAt() { return createdAt; }
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
     @Override
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
     @Override
-    public void touch() { this.updatedAt = LocalDateTime.now(); }
+    public void touch() {
+        this.updatedAt = LocalDateTime.now();
+    }
 }

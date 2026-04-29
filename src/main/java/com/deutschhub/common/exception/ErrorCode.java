@@ -22,6 +22,7 @@ public enum ErrorCode {
     INVALID_LESSON("error.course.invalid.lesson", 5007),
     INVALID_COURSE_INSTRUCTOR("error.course.invalid.instructor", 5008),
     COURSE_ALREADY_DELETED("error.course.already.deleted", 5009),
+    COURSE_FORBIDDEN_ACTION("error.course.forbidden.action", 5010),
     COURSE_NOT_COMPLETED("error.course.not.completed", 5011),
 
     INVALID_LESSON_ORDER("error.lesson.invalid.order", 6001),
@@ -39,6 +40,7 @@ public enum ErrorCode {
     INVALID_ENROLLMENT_STATE("error.enrollment.invalid.state", 8004),
     ENROLLMENT_NOT_ACTIVE("error.enrollment.not.active", 8005),
     ENROLLMENT_ALREADY_DELETED("error.enrollment.already.deleted", 8006),
+    ENROLLMENT_FORBIDDEN_ACTION("error.enrollment.forbidden.action", 8007),
     ENROLLMENT_PROGRESS_CANNOT_DECREASE("error.enrollment.progress.cannot.decrease", 8101),
     INVALID_ENROLLMENT_PROGRESS_STATE("error.enrollment.progress.state", 8102),
 
@@ -47,6 +49,7 @@ public enum ErrorCode {
     INVALID_USER_PROGRESS_DATA("error.userprogress.invalid.data", 9001),
     USER_PROGRESS_ALREADY_COMPLETED("error.userprogress.already.completed", 9002),
     USER_PROGRESS_ALREADY_DELETED("error.userprogress.already.deleted", 9003),
+    USER_PROGRESS_FORBIDDEN_ACTION("error.userprogress.forbidden.action", 9004),
     PROGRESS_CANNOT_DECREASE("error.userprogress.progress.cannot.decrease", 9101),
 
 
@@ -63,6 +66,7 @@ public enum ErrorCode {
     QUIZ_SCORE_EXCEEDS_MAX("error.quiz.score.exceeds.max", 10011),
     QUIZ_ALREADY_DELETED("error.quiz.already.deleted", 10012),
     QUIZ_REQUIREMENT_NOT_MET("error.quiz.requirement.not.met", 10013),
+    QUIZ_FORBIDDEN_ACTION("error.quiz.forbidden.action", 10014),
 
     INVALID_QUESTION_CONTENT("error.question.invalid.content", 11001),
     INVALID_QUESTION_SCORE("error.question.invalid.score", 11002),
@@ -82,9 +86,11 @@ public enum ErrorCode {
     INVALID_QUIZ_ATTEMPT_STATE("error.quiz.attempt.invalid.state", 12003),
     QUIZ_ATTEMPT_ALREADY_DELETED("error.quiz.attempt.already.deleted", 12004),
     QUIZ_ATTEMPT_NOT_ALL_ANSWERED("error.quiz.attempt.not.all.answered", 12005),
+    QUIZ_ATTEMPT_FORBIDDEN_ACTION("error.quiz.attempt.forbidden.action", 12006),
     INVALID_USER_ANSWER("error.user.answer.invalid", 12101),
     INVALID_USER_ANSWER_DATA("error.user.answer.invalid.data", 12102),
 
+    CERTIFICATE_FORBIDDEN_ACTION("error.certificate.forbidden.action", 13001),
     ;
 
     private final String messageKey;

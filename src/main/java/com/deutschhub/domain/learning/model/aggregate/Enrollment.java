@@ -42,6 +42,16 @@ public class Enrollment implements Auditable, SoftDeletable {
     }
 
     public void startLearning() {
+        ensureCanMutateBy(userId, false);
+        startLearningInternal();
+    }
+
+    public void startLearning(UUID actorId, boolean isAdmin) {
+        ensureCanMutateBy(actorId, isAdmin);
+        startLearningInternal();
+    }
+
+    private void startLearningInternal() {
         ensureNotDeleted();
 
         if (status != EnrollmentStatus.ENROLLED) {
@@ -53,6 +63,17 @@ public class Enrollment implements Auditable, SoftDeletable {
     }
 
     public void updateProgress(Progress newProgress) {
+        ensureCanMutateBy(userId, false);
+        updateProgressInternal(newProgress);
+    }
+
+    public void updateProgress(Progress newProgress, UUID actorId, boolean isAdmin) {
+        ensureCanMutateBy(actorId, isAdmin);
+        updateProgressInternal(newProgress);
+    }
+
+
+    private void updateProgressInternal(Progress newProgress) {
         ensureModifiable();
         if (newProgress == null) {
             throw new BusinessException(ErrorCode.INVALID_PROGRESS_DATA);
@@ -92,7 +113,28 @@ public class Enrollment implements Auditable, SoftDeletable {
         }
     }
 
+    private void ensureCanMutateBy(UUID actorId, boolean isAdmin) {
+        ensureNotDeleted();
+        if (isAdmin) {
+            return;
+        }
+
+        if(!userId.equals(actorId)) {
+            throw new BusinessException(ErrorCode.ENROLLMENT_FORBIDDEN_ACTION);
+        }
+    }
+
     public void drop() {
+        ensureCanMutateBy(userId, false);
+        dropInternal();
+    }
+
+    public void drop(UUID actorId, boolean isAdmin) {
+        ensureCanMutateBy(actorId, isAdmin);
+        dropInternal();
+    }
+
+    private void dropInternal() {
         ensureNotDeleted();
         if (status == EnrollmentStatus.COMPLETED) {
             throw new BusinessException(ErrorCode.CANNOT_DROP_COMPLETED_ENROLLMENT);
@@ -121,6 +163,16 @@ public class Enrollment implements Auditable, SoftDeletable {
 
     @Override
     public void softDelete() {
+        ensureCanMutateBy(userId, false);
+        softDeleteInternal();
+    }
+
+    public void softDelete(UUID actorId, boolean isAdmin) {
+        ensureCanMutateBy(actorId, isAdmin);
+        softDeleteInternal();
+    }
+
+    private void softDeleteInternal() {
         this.deletedAt = LocalDateTime.now();
         this.touch();
     }

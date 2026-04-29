@@ -48,6 +48,18 @@ public class Course implements Auditable, SoftDeletable {
         return new Course(UUID.randomUUID(), title, description, level, price, instructorId);
     }
 
+    public void updateMetadata(String title, String description, CEFRLevel level, Money price, UUID actorId, boolean isAdmin) {
+        ensureCanMutateBy(actorId, isAdmin);
+        if (published) {
+            throw new BusinessException(ErrorCode.CANNOT_MODIFY_PUBLISHED_COURSE);
+        }
+        this.title = validateTitle(title);
+        this.description = description != null ? description.trim() : "";
+        this.level = validateLevel(level);
+        this.price = validatePrice(price);
+        this.touch();
+    }
+
     private UUID validateInstructorId(UUID instructorId) {
         if (instructorId == null) {
             throw new BusinessException(ErrorCode.INVALID_COURSE_INSTRUCTOR);
@@ -77,6 +89,16 @@ public class Course implements Auditable, SoftDeletable {
     }
 
     public void publish() {
+        ensureCanMutateBy(instructorId, false);
+        publishInternal();
+    }
+
+    public void publish(UUID actorId, boolean isAdmin) {
+        ensureCanMutateBy(actorId, isAdmin);
+        publishInternal();
+    }
+
+    private void publishInternal() {
         if (sections.isEmpty()) {
             throw new BusinessException(ErrorCode.COURSE_HAS_NO_SECTIONS);
         }
@@ -88,6 +110,16 @@ public class Course implements Auditable, SoftDeletable {
     }
 
     public void addSection(Section section) {
+        ensureCanMutateBy(instructorId, false);
+        addSectionInternal(section);
+    }
+
+    public void addSection(Section section, UUID actorId, boolean isAdmin) {
+        ensureCanMutateBy(actorId, isAdmin);
+        addSectionInternal(section);
+    }
+
+    private void addSectionInternal(Section section) {
         if (published) {
             throw new BusinessException(ErrorCode.CANNOT_MODIFY_PUBLISHED_COURSE);
         }
@@ -107,6 +139,16 @@ public class Course implements Auditable, SoftDeletable {
     }
 
     public void removeSection(UUID sectionId) {
+        ensureCanMutateBy(instructorId, false);
+        removeSectionInternal(sectionId);
+    }
+
+    public void removeSection(UUID sectionId, UUID actorId, boolean isAdmin) {
+        ensureCanMutateBy(actorId, isAdmin);
+        removeSectionInternal(sectionId);
+    }
+
+    private void removeSectionInternal(UUID sectionId) {
         if (published) {
             throw new BusinessException(ErrorCode.CANNOT_MODIFY_PUBLISHED_COURSE);
         }
@@ -142,9 +184,30 @@ public class Course implements Auditable, SoftDeletable {
 
     @Override
     public void softDelete() {
+        ensureCanMutateBy(instructorId, false);
+        softDeleteInternal();
+    }
+
+    public void softDelete(UUID actorId, boolean isAdmin) {
+        ensureCanMutateBy(actorId, isAdmin);
+        softDeleteInternal();
+    }
+
+    private void softDeleteInternal() {
         this.deletedAt = LocalDateTime.now();
         this.touch();
     }
+
+    private void ensureCanMutateBy(UUID actorId, boolean isAdmin) {
+        ensureNotDeleted();
+        if (isAdmin) {
+            return;
+        }
+        if (!instructorId.equals(actorId)) {
+            throw new BusinessException(ErrorCode.COURSE_FORBIDDEN_ACTION);
+        }
+    }
+
 
     @Override
     public LocalDateTime getCreatedAt() {
