@@ -4,9 +4,9 @@ import com.deutschhub.common.domain.Auditable;
 import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
 import com.deutschhub.domain.identity.model.entity.Role;
-import com.deutschhub.domain.identity.model.valueobject.Email;
-import com.deutschhub.domain.identity.model.valueobject.FullName;
-import com.deutschhub.domain.identity.model.valueobject.Password;
+import com.deutschhub.domain.identity.model.valueObject.Email;
+import com.deutschhub.domain.identity.model.valueObject.FullName;
+import com.deutschhub.domain.identity.model.valueObject.Password;
 
 import java.time.LocalDateTime;
 import java.util.Collections;

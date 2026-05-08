@@ -1,4 +1,4 @@
-package com.deutschhub.domain.identity.model.valueobject;
+package com.deutschhub.domain.identity.model.valueObject;
 
 import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;

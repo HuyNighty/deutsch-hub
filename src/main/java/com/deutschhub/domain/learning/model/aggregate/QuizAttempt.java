@@ -7,8 +7,8 @@ import com.deutschhub.common.exception.ErrorCode;
 import com.deutschhub.domain.learning.model.entity.AnswerQuestion;
 import com.deutschhub.domain.learning.model.entity.Question;
 import com.deutschhub.domain.learning.model.entity.UserAnswer;
-import com.deutschhub.domain.learning.model.valueobject.AttemptStatus;
-import com.deutschhub.domain.learning.model.valueobject.QuestionType;
+import com.deutschhub.domain.learning.model.valueObject.AttemptStatus;
+import com.deutschhub.domain.learning.model.valueObject.QuestionType;
 
 import java.time.LocalDateTime;
 import java.util.*;

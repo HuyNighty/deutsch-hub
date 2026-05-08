@@ -4,8 +4,8 @@ import com.deutschhub.common.domain.Auditable;
 import com.deutschhub.common.domain.SoftDeletable;
 import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
-import com.deutschhub.domain.learning.model.valueobject.EnrollmentStatus;
-import com.deutschhub.domain.learning.model.valueobject.Progress;
+import com.deutschhub.domain.learning.model.valueObject.EnrollmentStatus;
+import com.deutschhub.domain.learning.model.valueObject.Progress;
 
 import java.time.LocalDateTime;
 import java.util.UUID;

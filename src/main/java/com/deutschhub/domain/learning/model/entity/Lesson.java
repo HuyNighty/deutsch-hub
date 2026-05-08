@@ -4,7 +4,7 @@ import com.deutschhub.common.domain.Auditable;
 import com.deutschhub.common.domain.SoftDeletable;
 import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
-import com.deutschhub.domain.learning.model.valueobject.CEFRLevel;
+import com.deutschhub.domain.learning.model.valueObject.CEFRLevel;
 
 import java.time.LocalDateTime;
 import java.util.UUID;

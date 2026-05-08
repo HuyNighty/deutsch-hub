@@ -6,8 +6,8 @@ import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
 import com.deutschhub.domain.learning.model.entity.Lesson;
 import com.deutschhub.domain.learning.model.entity.Section;
-import com.deutschhub.domain.learning.model.valueobject.CEFRLevel;
-import com.deutschhub.domain.learning.model.valueobject.Money;
+import com.deutschhub.domain.learning.model.valueObject.CEFRLevel;
+import com.deutschhub.domain.learning.model.valueObject.Money;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;

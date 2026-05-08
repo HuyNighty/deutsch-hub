@@ -1,8 +1,8 @@
 package com.deutschhub.application.identity.dto.request;
 
-import com.deutschhub.domain.identity.model.valueobject.Email;
-import com.deutschhub.domain.identity.model.valueobject.FullName;
-import com.deutschhub.domain.identity.model.valueobject.Password;
+import com.deutschhub.domain.identity.model.valueObject.Email;
+import com.deutschhub.domain.identity.model.valueObject.FullName;
+import com.deutschhub.domain.identity.model.valueObject.Password;
 
 public record RegisterUserCommand (
         String username,
