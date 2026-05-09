@@ -10,8 +10,15 @@ public enum ErrorCode {
     INVALID_ROLE_NAME("error.identity.invalid.role.name", 3002),
     INVALID_USERNAME("error.identity.invalid.username", 3003),
     INVALID_PASSWORD("error.identity.invalid.password", 3004),
+    INVALID_FULL_NAME("error.identity.invalid.full.name", 3005),
 
     USER_ALREADY_EXISTS("error.user.already.exists", 4001),
+    USER_MUST_HAVE_AT_LEAST_ONE_ROLE("error.identity.user.must.have.at.least.one.role", 4002),
+    USER_ALREADY_ACTIVE("error.identity.user.already.active", 4003),
+    USER_ALREADY_DEACTIVATED("error.identity.user.already.deactivated", 4004),
+    USER_DEACTIVATED("error.identity.user.deactivated", 4005),
+    PASSWORD_ALREADY_USED("error.identity.password.already.used", 4006),
+    EMAIL_ALREADY_USED("error.identity.email.already.used", 4007),
 
     INVALID_COURSE_TITLE("error.course.invalid.title", 5001),
     INVALID_CEFR_LEVEL("error.course.invalid.level", 5002),

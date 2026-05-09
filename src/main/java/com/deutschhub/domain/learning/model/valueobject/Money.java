@@ -1,4 +1,4 @@
-package com.deutschhub.domain.learning.model.valueObject;
+package com.deutschhub.domain.learning.model.valueobject;
 
 import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;

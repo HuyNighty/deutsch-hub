@@ -1,6 +1,7 @@
 package com.deutschhub.infrastructure.persistence.identity.jpa.entity;
 
-import com.deutschhub.domain.identity.model.entity.Role;
+import com.deutschhub.domain.identity.model.enumtype.Role;
+import com.deutschhub.domain.identity.model.enumtype.RoleType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -47,5 +48,5 @@ public class JpaUserEntity {
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "role_id")
     )
-    private Set<Role> roles = new HashSet<>(); //Will fix it later
+    private Set<RoleType> roles = new HashSet<>(); //Will fix it later
 }

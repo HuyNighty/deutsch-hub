@@ -1,4 +1,4 @@
-package com.deutschhub.domain.learning.model.valueObject;
+package com.deutschhub.domain.learning.model.valueobject;
 
 public enum QuizStatus {
 

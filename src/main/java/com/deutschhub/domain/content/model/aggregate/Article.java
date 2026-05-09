@@ -2,8 +2,6 @@ package com.deutschhub.domain.content.model.aggregate;
 
 import com.deutschhub.common.domain.Auditable;
 import com.deutschhub.common.domain.SoftDeletable;
-import com.deutschhub.common.exception.BusinessException;
-import com.deutschhub.common.exception.ErrorCode;
 import com.deutschhub.domain.content.model.valueObject.ArticleStatus;
 import com.deutschhub.domain.content.model.valueObject.Slug;
 

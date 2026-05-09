@@ -104,4 +104,4 @@ deutsch-hub/
    - config/: Configuration classes (BeanConfig, SecurityConfig, etc.).
    - external/: Adapters for third-party services (TTS, Email, Payment, etc.).
 
-   4. **common/** → Shared utilities and cross-cutting concerns for the entire project
+4. **common/** → Shared utilities and cross-cutting concerns for the entire project

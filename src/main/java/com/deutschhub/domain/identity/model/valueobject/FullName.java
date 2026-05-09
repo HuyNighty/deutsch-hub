@@ -1,4 +1,4 @@
-package com.deutschhub.domain.identity.model.valueObject;
+package com.deutschhub.domain.identity.model.valueobject;
 
 public class FullName {
 

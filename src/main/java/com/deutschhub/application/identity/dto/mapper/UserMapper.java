@@ -4,9 +4,9 @@ import com.deutschhub.application.identity.dto.request.RegisterUserCommand;
 import com.deutschhub.application.identity.dto.request.RegisterUserRequest;
 import com.deutschhub.application.identity.dto.response.UserResponse;
 import com.deutschhub.domain.identity.model.aggregate.User;
-import com.deutschhub.domain.identity.model.valueObject.Email;
-import com.deutschhub.domain.identity.model.valueObject.FullName;
-import com.deutschhub.domain.identity.model.valueObject.Password;
+import com.deutschhub.domain.identity.model.valueobject.Email;
+import com.deutschhub.domain.identity.model.valueobject.FullName;
+import com.deutschhub.domain.identity.model.valueobject.Password;
 import com.deutschhub.infrastructure.persistence.identity.jpa.entity.JpaUserEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -53,12 +53,12 @@ public interface UserMapper {
     }
 
     @Named("rolesToRoleNames")
-    default Set<String> rolesToRoleNames(Set<com.deutschhub.domain.identity.model.entity.Role> roles) {
+    default Set<String> rolesToRoleNames(Set<com.deutschhub.domain.identity.model.enumtype.Role> roles) {
         if (roles == null) {
             return Set.of();
         }
         return roles.stream()
-                .map(com.deutschhub.domain.identity.model.entity.Role::getName)
+                .map(com.deutschhub.domain.identity.model.enumtype.Role::getName)
                 .collect(Collectors.toSet());
     }
 }

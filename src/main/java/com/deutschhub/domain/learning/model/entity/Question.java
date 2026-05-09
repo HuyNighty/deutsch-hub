@@ -2,7 +2,7 @@ package com.deutschhub.domain.learning.model.entity;
 
 import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
-import com.deutschhub.domain.learning.model.valueObject.QuestionType;
+import com.deutschhub.domain.learning.model.valueobject.QuestionType;
 
 import java.util.*;
 

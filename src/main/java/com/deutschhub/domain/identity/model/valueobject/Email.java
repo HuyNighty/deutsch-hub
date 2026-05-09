@@ -1,4 +1,4 @@
-package com.deutschhub.domain.identity.model.valueObject;
+package com.deutschhub.domain.identity.model.valueobject;
 
 import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
@@ -6,7 +6,8 @@ import com.deutschhub.common.exception.ErrorCode;
 public class Email {
 
     private final String value;
-
+    private static final String EMAIL_REGEX =
+            "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$";
     public Email(String value) {
         this.value = validate(value);
     }
@@ -18,7 +19,7 @@ public class Email {
 
         String trimmedEmail = email.trim().toLowerCase();
 
-        if (!trimmedEmail.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+        if (!trimmedEmail.matches(EMAIL_REGEX)) {
             throw new BusinessException(ErrorCode.INVALID_EMAIL, trimmedEmail);
         }
 
