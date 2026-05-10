@@ -34,12 +34,22 @@ public class User implements Auditable {
     private final Set<RoleType> roles = new HashSet<>();
 
     private User(
+            UUID id,
             Username username,
             Email email,
             Password password,
             FullName fullName,
-            String phoneNumber
+            String phoneNumber,
+            boolean isActive,
+            LocalDateTime createdAt,
+            LocalDateTime updatedAt,
+            LocalDateTime lastLoginAt,
+            Set<RoleType> roles
     ) {
+
+        if (id == null) {
+            throw new BusinessException(ErrorCode.USER_ID_CAN_NOT_NULL);
+        }
 
         if (username == null) {
             throw new BusinessException(ErrorCode.INVALID_USERNAME);
@@ -57,28 +67,57 @@ public class User implements Auditable {
             throw new BusinessException(ErrorCode.INVALID_FULL_NAME);
         }
 
-        this.id = UUID.randomUUID();
-
+        this.id = id;
         this.username = username;
         this.email = email;
         this.password = password;
         this.fullName = fullName;
 
-        this.phoneNumber = phoneNumber != null ? phoneNumber.trim() : null;
+        this.phoneNumber =
+                phoneNumber != null
+                        ? phoneNumber.trim()
+                        : null;
 
-        this.isActive = true;
+        this.isActive = isActive;
 
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+        this.lastLoginAt = lastLoginAt;
 
-        this.lastLoginAt = null;
+        if (roles != null) {
+            this.roles.addAll(roles);
+        }
     }
 
     public static User register(Username username, Email email, Password password,
                                 FullName fullName, String phoneNumber) {
 
-        User user = new User(username, email, password, fullName, phoneNumber);
+        User user = new User(UUID.randomUUID(), username, email, password, fullName, phoneNumber,
+                true, LocalDateTime.now(), LocalDateTime.now(), null,
+                new HashSet<>());
         user.addRole(RoleType.USER);
+        return user;
+    }
+
+    public static User restore(UUID id, Username username, Email email, Password password,
+                               FullName fullName, String phoneNumber, boolean isActive,
+                               LocalDateTime createdAt, LocalDateTime updatedAt,
+                               LocalDateTime lastLoginAt, Set<RoleType> roles) {
+
+        User user = new User(
+                id,
+                username,
+                email,
+                password,
+                fullName,
+                phoneNumber,
+                isActive,
+                createdAt,
+                updatedAt,
+                lastLoginAt,
+                roles
+        );
+
         return user;
     }
 

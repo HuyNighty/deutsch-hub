@@ -1,6 +1,8 @@
 package com.deutschhub.application.identity.port.out;
 
 import com.deutschhub.domain.identity.model.aggregate.User;
+import com.deutschhub.domain.identity.model.valueobject.Email;
+import com.deutschhub.domain.identity.model.valueobject.Username;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -9,13 +11,7 @@ public interface UserRepositoryPort {
 
     User save(User user);
 
-    Optional<User> findById(UUID id);
+    boolean existsByEmail(Email email);
 
-    Optional<User> findByEmail(String email);
-
-    Optional<User> findByUsername(String username);
-
-    boolean existsByEmail(String email);
-
-    boolean existsByUsername(String username);
+    boolean existsByUsername(Username username);
 }

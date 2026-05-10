@@ -1,6 +1,6 @@
-package com.deutschhub.application.identity.dto.request;
+package com.deutschhub.infrastructure.identity.web.request;
 
-public record RegisterUserCommand(
+public record RegisterUserRequest(
         String username,
         String email,
         String password,

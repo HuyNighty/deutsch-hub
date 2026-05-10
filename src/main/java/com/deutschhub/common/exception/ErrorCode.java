@@ -19,6 +19,9 @@ public enum ErrorCode {
     USER_DEACTIVATED("error.identity.user.deactivated", 4005),
     PASSWORD_ALREADY_USED("error.identity.password.already.used", 4006),
     EMAIL_ALREADY_USED("error.identity.email.already.used", 4007),
+    EMAIL_ALREADY_EXISTS("error.identity.email.already.exists", 4008),
+    USERNAME_ALREADY_EXISTS("error.identity.username.already.exists", 4009),
+    USER_ID_CAN_NOT_NULL("error.identity.user.id.cannot.null", 40010),
 
     INVALID_COURSE_TITLE("error.course.invalid.title", 5001),
     INVALID_CEFR_LEVEL("error.course.invalid.level", 5002),
