@@ -1,107 +1,122 @@
-# DeutschHub
+# DeutschHub 🇩🇪
 
-A full-stack German learning and culture exploration platform built with **Hexagonal Architecture** + **Domain-Driven Design (DDD)**.
+DeutschHub is a full-stack German learning and cultural exploration platform built with **Java Spring Boot**, following **Hexagonal Architecture** and **Domain-Driven Design (DDD)** principles.
 
-Combines interactive German language courses (A1–B2) with rich cultural content about Germany, featuring progress tracking, quizzes, recommendations, and a clean, maintainable codebase.
-
----
-## Tech Stack
-
-### Backend
-- **Language**: Java 21
-- **Framework**: Spring Boot 3.4
-- **Architecture**: Hexagonal Architecture (Ports & Adapters) + Domain-Driven Design (DDD)
-- **Database**: MySQL (primary), MongoDB (planned for content/search)
-- **ORM**: Spring Data JPA + Hibernate
-- **Mapping**: MapStruct
-- **Validation**: Jakarta Validation
-- **Security**: Spring Security + JWT (OAuth2 Resource Server)
-- **Utilities**: Lombok, Jackson (Java Time support)
-
-### Frontend (Planned)
-- React.js + Vite
-- TypeScript
-- Tailwind CSS + Shadcn/UI
-- TanStack Query (for API state management)
-
-### DevOps & Tools
-- **Build Tool**: Maven
-- **Containerization**: Docker + Docker Compose
-- **Testing**: JUnit 5, Spring Boot Test, JaCoCo (planned)
-- **Code Quality**: Spotless (code formatter)
+The project focuses on building a clean, scalable, and maintainable backend architecture while delivering an interactive learning experience for German learners from A1 → B2.
 
 ---
-## Architecture
 
-This project follows **Hexagonal Architecture (Ports & Adapters)** combined with **Domain-Driven Design (DDD)** principles.
+# Vision
 
-### Project Structure
-Hexagonal Architecture v1
+DeutschHub is not just a CRUD learning platform.
+
+The goal is to build a real-world enterprise-style system that combines:
+
+- German language learning
+- Cultural exploration
+- User progress tracking
+- Quiz and assessment systems
+- Personalized learning experiences
+- Modular and maintainable architecture
+
+---
+
+# Core Concepts
+
+This project is heavily focused on:
+
+- Domain-Driven Design (DDD)
+- Hexagonal Architecture (Ports & Adapters)
+- Rich Domain Models
+- Clean Architecture Boundaries
+- Business-first design
+- Modular Monolith architecture
+
+---
+
+# Tech Stack
+
+## Backend
+
+| Technology | Description |
+|---|---|
+| Java 21 | Main programming language |
+| Spring Boot 3.4 | Backend framework |
+| Spring Security | Authentication & Authorization |
+| JWT | Stateless authentication |
+| Spring Data JPA | ORM abstraction |
+| Hibernate | JPA implementation |
+| MySQL | Primary relational database |
+| MapStruct | DTO mapping |
+| Lombok | Boilerplate reduction |
+| Jakarta Validation | Request validation |
+| Jackson | JSON serialization |
+| Maven | Build tool |
+
+---
+
+## Frontend (Planned)
+
+| Technology | Description |
+|---|---|
+| React + Vite | Frontend framework |
+| TypeScript | Type-safe frontend |
+| TailwindCSS | UI styling |
+| Shadcn/UI | UI components |
+| TanStack Query | API state management |
+
+---
+
+## DevOps & Tools
+
+| Tool | Purpose |
+|---|---|
+| Docker | Containerization |
+| Docker Compose | Local environment |
+| JUnit 5 | Unit testing |
+| JaCoCo | Code coverage |
+| Spotless | Code formatting |
+
+---
+
+# Architecture
+
+DeutschHub follows:
+
+# Hexagonal Architecture + Domain-Driven Design (DDD)
+
+The project is organized around business domains instead of technical layers.
+
+---
+
+# Project Structure
+
 ```bash
-deutsch-hub/
-deutsch-hub/
-├── src/main/java/com/deutschhub/
+src/main/java/com/deutschhub
 │
-├── common/                          ← Utilities 
+├── common/                        # Shared utilities and cross-cutting concerns
 │   ├── exception/
 │   ├── util/
 │   └── annotation/
 │
-├── domain/                          ← Core Domain (Pure Java)
-│   ├── learning/                    ← Bounded Context: Learning (Core)
-│   │   ├── model/
-│   │   │   ├── aggregate/           ← Course (Aggregate Root)
-│   │   │   ├── entity/              ← Lesson, Quiz...
-│   │   │   ├── valueobject/         ← CEFRLevel, Progress...
-│   │   │   └── exception/
-│   │   │
-│   │   └── service/                 ← Domain Services (business rules thuần)
-│   │
-│   ├── content/                     ← Bounded Context: Content
-│   └── shared/                      ← Shared Value Objects & Domain Events
-│
-├── application/                     ← Application Layer
+├── domain/                        # Pure business logic (NO Spring)
+│   ├── identity/
 │   ├── learning/
-│   │   ├── port/
-│   │   │   ├── in/                  ← Input Ports (UseCase interfaces)
-│   │   │   └── out/                 ← Output Ports (RepositoryPort, ...)
-│   │   ├── usecase/                 ← Implementation của Use Cases
-│   │   └── dto/                     ← Request / Response cho Learning
-│   │
-│   └── content/                     ← Content Context
+│   ├── content/
+│   └── shared/
 │
-├── infrastructure/                  ← Adapters
-│   ├── persistence/
-│   │   ├── learning/                ← Separate according to the context
-│   │   │   ├── jpa/
-│   │   │   └── adapter/
-│   │   └── content/
-│   │
+├── application/                   # Use cases and orchestration layer
+│   ├── identity/
+│   ├── learning/
+│   └── content/
+│
+├── infrastructure/                # Technical implementation layer
+│   ├── identity/
+│   ├── learning/
 │   ├── web/
-│   │   ├── controller/
-│   │   │   └── learning/
-│   │   └── dto/
-│   │
-│   ├── config/                      ← BeanConfig, SecurityConfig...
-│   └── external/                    ← TTS, Email, Payment...
+│   ├── config/
+│   └── external/
 │
 └── resources/
     ├── i18n/
     └── application.yml
-```
-1. **domain/** → The heart of the application (Pure Java, no Spring dependencies)
-   - Contains Entities, Aggregates, Value Objects, Domain Services, and Domain Exceptions.
-   - This layer represents the Ubiquitous Language and core business rules.
-
-2. **application/** → Use Cases and Ports Layer
-   - Input Ports: Interfaces defining what the outside world can call (Use Cases).
-   - Output Ports: Interfaces defining what the domain needs from the outside (e.g., ...).
-   - UseCase Implementations: Actual business logic orchestration.
-
-3. **infrastructure/** → Adapters Layer (Spring-specific code)
-   - persistence/: JPA entities and Repository Adapters (implementation of Output Ports).
-   - web/: REST Controllers (Primary/Driving Adapters).
-   - config/: Configuration classes (BeanConfig, SecurityConfig, etc.).
-   - external/: Adapters for third-party services (TTS, Email, Payment, etc.).
-
-4. **common/** → Shared utilities and cross-cutting concerns for the entire project
