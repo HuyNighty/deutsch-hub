@@ -4,6 +4,8 @@ import com.deutschhub.domain.identity.model.enumtype.RoleType;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -21,6 +23,7 @@ import java.util.UUID;
 public class UserJpaEntity {
 
     @Id
+    @JdbcTypeCode(SqlTypes.VARCHAR)
     UUID id;
     @Column(nullable = false, unique = true)
     String username;

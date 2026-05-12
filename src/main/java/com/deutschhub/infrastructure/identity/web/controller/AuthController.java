@@ -24,15 +24,9 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<UserResponse> register(@RequestBody RegisterUserRequest request) {
 
-        RegisterUserCommand command =
-                new RegisterUserCommand(
-                        request.username(),
-                        request.email(),
-                        request.password(),
-                        request.firstName(),
-                        request.lastName(),
-                        request.phoneNumber()
-                );
+        RegisterUserCommand command = new RegisterUserCommand(request.username(),
+                request.email(), request.password(), request.firstName(), request.lastName(),
+                        request.phoneNumber());
 
         UserResponse response = registerUserUseCase.register(command);
 
