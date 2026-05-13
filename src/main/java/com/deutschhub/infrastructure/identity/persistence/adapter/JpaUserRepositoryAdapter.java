@@ -8,14 +8,48 @@ import com.deutschhub.domain.identity.model.valueobject.Password;
 import com.deutschhub.domain.identity.model.valueobject.Username;
 import com.deutschhub.infrastructure.identity.persistence.entity.UserJpaEntity;
 import com.deutschhub.infrastructure.identity.persistence.repository.SpringDataUserRepository;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Component;
+
+import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE,  makeFinal = true)
 public class JpaUserRepositoryAdapter implements UserRepositoryPort {
 
-    private final SpringDataUserRepository repository;
+    SpringDataUserRepository repository;
+
+    @Override
+    public Optional<User> findByUsername(String username) {
+        return repository.findByUsername(username).map(this::toDomain);
+    }
+
+    @Override
+    public Optional<User> findByEmail(String email) {
+        return repository.findByEmail(email).map(this::toDomain);
+    }
+
+    @Override
+    public User save(User user) {
+        UserJpaEntity entity = toEntity(user);
+
+        UserJpaEntity saved = repository.save(entity);
+
+        return toDomain(saved);
+    }
+
+    @Override
+    public boolean existsByEmail(Email email) {
+        return repository.existsByEmail(email.getValue());
+    }
+
+    @Override
+    public boolean existsByUsername(Username username) {
+        return repository.existsByUsername(username.getValue());
+    }
 
     private UserJpaEntity toEntity(User user) {
 
@@ -52,22 +86,4 @@ public class JpaUserRepositoryAdapter implements UserRepositoryPort {
         );
     }
 
-    @Override
-    public User save(User user) {
-        UserJpaEntity entity = toEntity(user);
-
-        UserJpaEntity saved = repository.save(entity);
-
-        return toDomain(saved);
-    }
-
-    @Override
-    public boolean existsByEmail(Email email) {
-        return repository.existsByEmail(email.getValue());
-    }
-
-    @Override
-    public boolean existsByUsername(Username username) {
-        return repository.existsByUsername(username.getValue());
-    }
 }

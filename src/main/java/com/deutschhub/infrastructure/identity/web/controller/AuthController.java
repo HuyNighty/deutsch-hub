@@ -1,7 +1,10 @@
 package com.deutschhub.infrastructure.identity.web.controller;
 
+import com.deutschhub.application.identity.dto.request.LoginUserCommand;
+import com.deutschhub.application.identity.dto.request.LoginUserRequest;
 import com.deutschhub.application.identity.dto.request.RegisterUserCommand;
 import com.deutschhub.application.identity.dto.response.UserResponse;
+import com.deutschhub.application.identity.port.in.LoginUserUseCase;
 import com.deutschhub.application.identity.port.in.RegisterUserUseCase;
 import com.deutschhub.infrastructure.identity.web.request.RegisterUserRequest;
 import lombok.AccessLevel;
@@ -20,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     RegisterUserUseCase registerUserUseCase;
+    LoginUserUseCase loginUserUseCase;
 
     @PostMapping("/register")
     public ResponseEntity<UserResponse> register(@RequestBody RegisterUserRequest request) {
@@ -29,6 +33,19 @@ public class AuthController {
                         request.phoneNumber());
 
         UserResponse response = registerUserUseCase.register(command);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<UserResponse> login(@RequestBody LoginUserRequest request) {
+
+        LoginUserCommand command = new LoginUserCommand(
+                request.usernameOrEmail(),
+                request.password()
+        );
+
+        UserResponse response = loginUserUseCase.login(command);
 
         return ResponseEntity.ok(response);
     }

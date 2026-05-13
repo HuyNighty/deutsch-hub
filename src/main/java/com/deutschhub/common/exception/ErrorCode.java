@@ -11,6 +11,7 @@ public enum ErrorCode {
     INVALID_USERNAME("error.identity.invalid.username", 3003),
     INVALID_PASSWORD("error.identity.invalid.password", 3004),
     INVALID_FULL_NAME("error.identity.invalid.full.name", 3005),
+    INVALID_CREDENTIALS("error.identity.invalid.credentials", 3006),
 
     USER_ALREADY_EXISTS("error.user.already.exists", 4001),
     USER_MUST_HAVE_AT_LEAST_ONE_ROLE("error.identity.user.must.have.at.least.one.role", 4002),
