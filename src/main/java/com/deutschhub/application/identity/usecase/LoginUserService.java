@@ -1,9 +1,12 @@
 package com.deutschhub.application.identity.usecase;
 
 import com.deutschhub.application.identity.dto.request.LoginUserCommand;
+import com.deutschhub.application.identity.dto.response.LoginResponse;
 import com.deutschhub.application.identity.dto.response.UserResponse;
 import com.deutschhub.application.identity.port.in.LoginUserUseCase;
+import com.deutschhub.application.identity.port.out.GeneratedToken;
 import com.deutschhub.application.identity.port.out.PasswordEncoderPort;
+import com.deutschhub.application.identity.port.out.TokenGenerator;
 import com.deutschhub.application.identity.port.out.UserRepositoryPort;
 import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
@@ -17,16 +20,17 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Optional;
 
 @Service
-@Transactional(readOnly = true)
+@Transactional
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class LoginUserService implements LoginUserUseCase {
 
     UserRepositoryPort userRepositoryPort;
     PasswordEncoderPort passwordEncoderPort;
+    TokenGenerator tokenGenerator;
 
     @Override
-    public UserResponse login(LoginUserCommand command) {
+    public LoginResponse login(LoginUserCommand command) {
 
         Optional<User> userOptional;
 
@@ -49,8 +53,12 @@ public class LoginUserService implements LoginUserUseCase {
         }
 
         user.updateLastLogin();
+        User savedUser = userRepositoryPort.save(user);
+        GeneratedToken accessToken = tokenGenerator.generateAccessToken(savedUser);
 
-        return new UserResponse(user.getId(), user.getUsername().getValue(),
+        UserResponse userResponse =new UserResponse(user.getId(), user.getUsername().getValue(),
                 user.getEmail().getValue(), user.getFullName().getFullName());
+
+        return new LoginResponse(userResponse, accessToken.value(), accessToken.expiresIn());
     }
 }

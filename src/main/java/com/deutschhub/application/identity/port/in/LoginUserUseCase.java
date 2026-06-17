@@ -1,9 +1,9 @@
 package com.deutschhub.application.identity.port.in;
 
 import com.deutschhub.application.identity.dto.request.LoginUserCommand;
-import com.deutschhub.application.identity.dto.response.UserResponse;
+import com.deutschhub.application.identity.dto.response.LoginResponse;
 
 public interface LoginUserUseCase {
 
-    UserResponse login(LoginUserCommand command);
+    LoginResponse login(LoginUserCommand command);
 }
