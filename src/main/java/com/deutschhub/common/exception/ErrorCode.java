@@ -22,6 +22,7 @@ public enum ErrorCode {
     EMAIL_ALREADY_USED("error.identity.email.already.used", 4007),
     EMAIL_ALREADY_EXISTS("error.identity.email.already.exists", 4008),
     USERNAME_ALREADY_EXISTS("error.identity.username.already.exists", 4009),
+    USER_NOT_FOUND("error.identity.user.not.found", 4010),
     USER_ID_CAN_NOT_NULL("error.identity.user.id.cannot.null", 40010),
 
     INVALID_COURSE_TITLE("error.course.invalid.title", 5001),

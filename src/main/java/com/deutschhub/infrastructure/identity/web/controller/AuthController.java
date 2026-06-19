@@ -4,6 +4,7 @@ import com.deutschhub.application.identity.dto.request.LoginUserCommand;
 import com.deutschhub.application.identity.dto.request.RegisterUserCommand;
 import com.deutschhub.application.identity.dto.response.LoginResponse;
 import com.deutschhub.application.identity.dto.response.UserResponse;
+import com.deutschhub.application.identity.port.in.GetMyProfileUseCase;
 import com.deutschhub.application.identity.port.in.LoginUserUseCase;
 import com.deutschhub.application.identity.port.in.RegisterUserUseCase;
 import com.deutschhub.infrastructure.identity.web.request.LoginUserRequest;
@@ -13,10 +14,11 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -26,6 +28,7 @@ public class AuthController {
 
     RegisterUserUseCase registerUserUseCase;
     LoginUserUseCase loginUserUseCase;
+    GetMyProfileUseCase getMyProfileUseCase;
 
     @PostMapping("/register")
     public ResponseEntity<UserResponse> register(@RequestBody @Valid RegisterUserRequest request) {
@@ -49,6 +52,13 @@ public class AuthController {
 
         LoginResponse response = loginUserUseCase.login(command);
 
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<UserResponse> me(@AuthenticationPrincipal Jwt jwt) {
+        UUID userId = UUID.fromString(jwt.getSubject());
+        UserResponse response = getMyProfileUseCase.getMyProfile(userId);
         return ResponseEntity.ok(response);
     }
 }

@@ -35,9 +35,9 @@ public class JwtTokenGenerator implements TokenGenerator {
                 .subject(user.getId().toString())
                 .issuedAt(issuedAt)
                 .expiresAt(expiresAt)
-                .claim(JwtClaims.EMAIL, user.getEmail().getValue())
+//                .claim(JwtClaims.EMAIL, user.getEmail().getValue())
                 .claim(JwtClaims.ROLES, user.getRoles().stream().map(Enum::name).toList())
-                .claim(JwtClaims.USERNAME, user.getUsername().getValue())
+//                .claim(JwtClaims.USERNAME, user.getUsername().getValue())
                 .build();
 
         JwsHeader header = JwsHeader.with(MacAlgorithm.HS512).build();
