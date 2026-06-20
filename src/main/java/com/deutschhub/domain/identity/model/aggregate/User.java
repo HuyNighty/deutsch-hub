@@ -104,7 +104,7 @@ public class User implements Auditable {
                                LocalDateTime createdAt, LocalDateTime updatedAt,
                                LocalDateTime lastLoginAt, Set<RoleType> roles) {
 
-        User user = new User(
+        return new User(
                 id,
                 username,
                 email,
@@ -117,8 +117,6 @@ public class User implements Auditable {
                 lastLoginAt,
                 roles
         );
-
-        return user;
     }
 
     public void addRole(RoleType role) {

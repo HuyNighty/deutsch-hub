@@ -25,21 +25,28 @@ public class UserJpaEntity {
     @Id
     @JdbcTypeCode(SqlTypes.VARCHAR)
     UUID id;
+
     @Column(nullable = false, unique = true)
     String username;
+
     @Column(nullable = false, unique = true)
     String email;
+
     @Column(nullable = false)
     String password;
+
     @Column(nullable = false)
     String firstName;
+
     @Column(nullable = false)
     String lastName;
+
     String phoneNumber;
     boolean isActive;
     LocalDateTime createdAt;
     LocalDateTime updatedAt;
     LocalDateTime lastLoginAt;
+
     @ElementCollection(fetch = FetchType.EAGER)
     @Enumerated(EnumType.STRING)
     @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))

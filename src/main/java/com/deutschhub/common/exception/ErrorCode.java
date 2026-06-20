@@ -23,6 +23,12 @@ public enum ErrorCode {
     EMAIL_ALREADY_EXISTS("error.identity.email.already.exists", 4008),
     USERNAME_ALREADY_EXISTS("error.identity.username.already.exists", 4009),
     USER_NOT_FOUND("error.identity.user.not.found", 4010),
+    HASH_TOKEN_CAN_NOT_NULL("error.identity.hash.token.cannot.null", 4011),
+    SESSION_ID_CAN_NOT_NULL("error.identity.session.id.cannot.null", 4012),
+    INVALID_SESSION_TIME("error.identity.invalid.session.time", 4013),
+    INVALID_SESSION_EXPIRATION("error.identity.invalid.session.expiration", 4014),
+    SESSION_REVOKED("error.identity.session.revoked", 4015),
+    SESSION_EXPIRED("error.identity.session.expired", 4016),
     USER_ID_CAN_NOT_NULL("error.identity.user.id.cannot.null", 40010),
 
     INVALID_COURSE_TITLE("error.course.invalid.title", 5001),
