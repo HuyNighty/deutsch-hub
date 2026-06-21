@@ -3,15 +3,18 @@ package com.deutschhub.application.identity.usecase;
 import com.deutschhub.application.identity.dto.request.RefreshTokenCommand;
 import com.deutschhub.application.identity.dto.response.RefreshTokenResponse;
 import com.deutschhub.application.identity.port.in.RefreshTokenUseCase;
-import com.deutschhub.application.identity.port.out.RefreshTokenProvider;
-import com.deutschhub.application.identity.port.out.TokenGenerator;
-import com.deutschhub.application.identity.port.out.UserRepositoryPort;
-import com.deutschhub.application.identity.port.out.UserSessionRepositoryPort;
+import com.deutschhub.application.identity.port.out.*;
+import com.deutschhub.common.exception.BusinessException;
+import com.deutschhub.common.exception.ErrorCode;
+import com.deutschhub.domain.identity.model.aggregate.User;
+import com.deutschhub.domain.identity.model.aggregate.UserSession;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
 
 @Service
 @Transactional
@@ -26,6 +29,31 @@ public class RefreshTokenService implements RefreshTokenUseCase {
 
     @Override
     public RefreshTokenResponse refresh(RefreshTokenCommand command) {
-        return null;
+        String currentTokenHash = refreshTokenProvider.hash(command.refreshToken());
+
+        UserSession session = userSessionRepositoryPort
+                .findByRefreshTokenHash(currentTokenHash)
+                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN));
+
+        session.validateCanRefresh(LocalDateTime.now());
+
+        User user = userRepositoryPort.findById(session.getUserId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        user.validateCanLogin();
+
+        GeneratedToken newAccessToken = tokenGenerator.generateAccessToken(user);
+
+        GeneratedRefreshToken newRefreshToken = refreshTokenProvider.generate();
+
+        session.rotateRefreshToken(newRefreshToken.hash());
+
+        userSessionRepositoryPort.save(session);
+
+        return new RefreshTokenResponse(
+                newAccessToken.value(),
+                newRefreshToken.value(),
+                newAccessToken.expiresIn()
+        );
     }
 }

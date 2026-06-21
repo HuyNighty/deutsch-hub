@@ -1,13 +1,17 @@
 package com.deutschhub.infrastructure.identity.web.controller;
 
 import com.deutschhub.application.identity.dto.request.LoginUserCommand;
+import com.deutschhub.application.identity.dto.request.RefreshTokenCommand;
 import com.deutschhub.application.identity.dto.request.RegisterUserCommand;
 import com.deutschhub.application.identity.dto.response.LoginResponse;
+import com.deutschhub.application.identity.dto.response.RefreshTokenResponse;
 import com.deutschhub.application.identity.dto.response.UserResponse;
 import com.deutschhub.application.identity.port.in.GetMyProfileUseCase;
 import com.deutschhub.application.identity.port.in.LoginUserUseCase;
+import com.deutschhub.application.identity.port.in.RefreshTokenUseCase;
 import com.deutschhub.application.identity.port.in.RegisterUserUseCase;
 import com.deutschhub.infrastructure.identity.web.request.LoginUserRequest;
+import com.deutschhub.infrastructure.identity.web.request.RefreshTokenRequest;
 import com.deutschhub.infrastructure.identity.web.request.RegisterUserRequest;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
@@ -29,6 +33,7 @@ public class AuthController {
     RegisterUserUseCase registerUserUseCase;
     LoginUserUseCase loginUserUseCase;
     GetMyProfileUseCase getMyProfileUseCase;
+    RefreshTokenUseCase refreshTokenUseCase;
 
     @PostMapping("/register")
     public ResponseEntity<UserResponse> register(@RequestBody @Valid RegisterUserRequest request) {
@@ -59,6 +64,15 @@ public class AuthController {
     public ResponseEntity<UserResponse> me(@AuthenticationPrincipal Jwt jwt) {
         UUID userId = UUID.fromString(jwt.getSubject());
         UserResponse response = getMyProfileUseCase.getMyProfile(userId);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<RefreshTokenResponse> refreshToken(@RequestBody @Valid RefreshTokenRequest request) {
+        RefreshTokenCommand command =  new RefreshTokenCommand(request.refreshToken());
+
+        RefreshTokenResponse response = refreshTokenUseCase.refresh(command);
+
         return ResponseEntity.ok(response);
     }
 }

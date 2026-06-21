@@ -53,13 +53,13 @@ public class SecureRefreshTokenProvider implements RefreshTokenProvider {
         }
 
         try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-512");
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
 
             byte[] hashedBytes = digest.digest(refreshToken.getBytes(StandardCharsets.UTF_8));
 
             return HexFormat.of().formatHex(hashedBytes);
         } catch (NoSuchAlgorithmException exception) {
-            throw new IllegalStateException("SHA-512 algorithm is not available", exception);
+            throw new IllegalStateException("SHA-256 algorithm is not available", exception);
         }
     }
 }
