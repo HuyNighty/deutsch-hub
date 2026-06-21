@@ -1,9 +1,8 @@
 package com.deutschhub.application.identity.dto.response;
 
-public record LoginResponse(
-        UserResponse user,
+public record RefreshTokenResponse(
         String accessToken,
         String refreshToken,
-        long accessTokenExpiresIn
+        long expiresIn
 ) {
 }
