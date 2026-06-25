@@ -1,16 +1,16 @@
 package com.deutschhub.infrastructure.identity.web.controller;
 
 import com.deutschhub.application.identity.dto.request.LoginUserCommand;
+import com.deutschhub.application.identity.dto.request.LogoutCommand;
 import com.deutschhub.application.identity.dto.request.RefreshTokenCommand;
 import com.deutschhub.application.identity.dto.request.RegisterUserCommand;
 import com.deutschhub.application.identity.dto.response.LoginResponse;
 import com.deutschhub.application.identity.dto.response.RefreshTokenResponse;
 import com.deutschhub.application.identity.dto.response.UserResponse;
-import com.deutschhub.application.identity.port.in.GetMyProfileUseCase;
-import com.deutschhub.application.identity.port.in.LoginUserUseCase;
-import com.deutschhub.application.identity.port.in.RefreshTokenUseCase;
-import com.deutschhub.application.identity.port.in.RegisterUserUseCase;
+import com.deutschhub.application.identity.port.in.*;
+import com.deutschhub.common.util.ApiResponse;
 import com.deutschhub.infrastructure.identity.web.request.LoginUserRequest;
+import com.deutschhub.infrastructure.identity.web.request.LogoutUserRequest;
 import com.deutschhub.infrastructure.identity.web.request.RefreshTokenRequest;
 import com.deutschhub.infrastructure.identity.web.request.RegisterUserRequest;
 import jakarta.validation.Valid;
@@ -34,9 +34,10 @@ public class AuthController {
     LoginUserUseCase loginUserUseCase;
     GetMyProfileUseCase getMyProfileUseCase;
     RefreshTokenUseCase refreshTokenUseCase;
+    LogoutUseCase logoutUseCase;
 
     @PostMapping("/register")
-    public ResponseEntity<UserResponse> register(@RequestBody @Valid RegisterUserRequest request) {
+    public ResponseEntity<ApiResponse<UserResponse>> register(@RequestBody @Valid RegisterUserRequest request) {
 
         RegisterUserCommand command = new RegisterUserCommand(request.username(),
                 request.email(), request.password(), request.firstName(), request.lastName(),
@@ -44,11 +45,13 @@ public class AuthController {
 
         UserResponse response = registerUserUseCase.register(command);
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(ApiResponse.<UserResponse>builder()
+                        .result(response)
+                .build());
     }
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(@RequestBody @Valid LoginUserRequest request) {
+    public ResponseEntity<ApiResponse<LoginResponse>> login(@RequestBody @Valid LoginUserRequest request) {
 
         LoginUserCommand command = new LoginUserCommand(
                 request.usernameOrEmail(),
@@ -57,22 +60,38 @@ public class AuthController {
 
         LoginResponse response = loginUserUseCase.login(command);
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(ApiResponse.<LoginResponse>builder()
+                        .result(response)
+                .build());
     }
 
     @GetMapping("/me")
-    public ResponseEntity<UserResponse> me(@AuthenticationPrincipal Jwt jwt) {
+    public ResponseEntity<ApiResponse<UserResponse>> me(@AuthenticationPrincipal Jwt jwt) {
         UUID userId = UUID.fromString(jwt.getSubject());
         UserResponse response = getMyProfileUseCase.getMyProfile(userId);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(ApiResponse.<UserResponse>builder()
+                        .result(response)
+                .build());
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<RefreshTokenResponse> refreshToken(@RequestBody @Valid RefreshTokenRequest request) {
+    public ResponseEntity<ApiResponse<RefreshTokenResponse>> refreshToken(@RequestBody @Valid RefreshTokenRequest request) {
         RefreshTokenCommand command =  new RefreshTokenCommand(request.refreshToken());
 
         RefreshTokenResponse response = refreshTokenUseCase.refresh(command);
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(ApiResponse.<RefreshTokenResponse>builder()
+                        .result(response)
+                .build());
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<Void>> logout(@RequestBody @Valid LogoutUserRequest request) {
+        LogoutCommand command = new LogoutCommand(request.refreshToken());
+
+        logoutUseCase.logout(command);
+        return ResponseEntity.ok(ApiResponse.<Void>builder()
+                        .message("Logout successfully")
+                .build());
     }
 }
