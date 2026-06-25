@@ -1,7 +1,9 @@
 package com.deutschhub.infrastructure.identity.web.controller;
 
 import com.deutschhub.application.identity.dto.request.GetUsersQuery;
+import com.deutschhub.application.identity.dto.response.UserDetailResponse;
 import com.deutschhub.application.identity.dto.response.UserSummaryResponse;
+import com.deutschhub.application.identity.port.in.GetUserDetailUseCase;
 import com.deutschhub.application.identity.port.in.GetUsersUseCase;
 import com.deutschhub.common.util.ApiResponse;
 import com.deutschhub.common.util.PageResponse;
@@ -10,10 +12,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/admin/users")
@@ -23,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AdminUserController {
 
     GetUsersUseCase getUsersUseCase;
+    GetUserDetailUseCase getUserDetailUseCase;
 
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<UserSummaryResponse>>> getUsers(
@@ -36,6 +38,18 @@ public class AdminUserController {
         return ResponseEntity.ok(
                 ApiResponse.<PageResponse<UserSummaryResponse>>builder()
                         .message("Get users successfully")
+                        .result(response)
+                        .build()
+        );
+    }
+
+    @GetMapping("/{userId}")
+    public ResponseEntity<ApiResponse<UserDetailResponse>> getUserDetail(@PathVariable UUID userId) {
+        UserDetailResponse response = getUserDetailUseCase.getUserDetail(userId);
+
+        return ResponseEntity.ok(
+                ApiResponse.<UserDetailResponse>builder()
+                        .message("Get user detail successfully")
                         .result(response)
                         .build()
         );
