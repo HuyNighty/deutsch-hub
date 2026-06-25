@@ -1,6 +1,7 @@
 package com.deutschhub.infrastructure.identity.persistence.adapter;
 
 import com.deutschhub.application.identity.port.out.UserRepositoryPort;
+import com.deutschhub.common.util.PageResponse;
 import com.deutschhub.domain.identity.model.aggregate.User;
 import com.deutschhub.domain.identity.model.valueobject.Email;
 import com.deutschhub.domain.identity.model.valueobject.FullName;
@@ -8,6 +9,10 @@ import com.deutschhub.domain.identity.model.valueobject.Password;
 import com.deutschhub.domain.identity.model.valueobject.Username;
 import com.deutschhub.infrastructure.identity.persistence.entity.UserJpaEntity;
 import com.deutschhub.infrastructure.identity.persistence.repository.SpringDataUserRepository;
+import com.deutschhub.common.util.PageResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -36,6 +41,24 @@ public class JpaUserRepositoryAdapter implements UserRepositoryPort {
     @Override
     public Optional<User> findById(UUID id) {
         return repository.findById(id).map(this::toDomain);
+    }
+
+    @Override
+    public PageResponse<User> findAll(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+
+        Page<UserJpaEntity> userPage = repository.findAll(pageable);
+
+        return PageResponse.<User>builder()
+                .items(userPage.getContent()
+                        .stream()
+                        .map(this::toDomain)
+                        .toList())
+                .page(userPage.getNumber())
+                .size(userPage.getSize())
+                .totalElements(userPage.getTotalElements())
+                .totalPages(userPage.getTotalPages())
+                .build();
     }
 
     @Override

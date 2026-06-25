@@ -1,5 +1,6 @@
 package com.deutschhub.application.identity.port.out;
 
+import com.deutschhub.common.util.PageResponse;
 import com.deutschhub.domain.identity.model.aggregate.User;
 import com.deutschhub.domain.identity.model.valueobject.Email;
 import com.deutschhub.domain.identity.model.valueobject.Username;
@@ -20,4 +21,7 @@ public interface UserRepositoryPort {
     Optional<User> findByEmail(String email);
 
     Optional<User> findById(UUID id);
+
+    PageResponse<User> findAll(int page, int size);
+
 }
