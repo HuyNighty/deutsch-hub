@@ -22,6 +22,6 @@ public interface UserRepositoryPort {
 
     Optional<User> findById(UUID id);
 
-    PageResponse<User> findAll(int page, int size);
+    PageResponse<User> findAll(String keyword, int page, int size);
 
 }

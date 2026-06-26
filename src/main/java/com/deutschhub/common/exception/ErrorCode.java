@@ -29,6 +29,7 @@ public enum ErrorCode {
     INVALID_SESSION_EXPIRATION("error.identity.invalid.session.expiration", 4014),
     SESSION_REVOKED("error.identity.session.revoked", 4015),
     SESSION_EXPIRED("error.identity.session.expired", 4016),
+    CANNOT_DEACTIVATE_YOURSELF("error.identity.cannot.deactivate.yourself", 4017),
     INVALID_REFRESH_TOKEN("error.identity.refresh.token.invalid", 4107),
     USER_ID_CAN_NOT_NULL("error.identity.user.id.cannot.null", 40010),
 

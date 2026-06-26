@@ -25,7 +25,7 @@ public class GetUsersService implements GetUsersUseCase {
 
     @Override
     public PageResponse<UserSummaryResponse> getUsers(GetUsersQuery query) {
-        PageResponse<User> users = userRepositoryPort.findAll(query.page(), query.size());
+        PageResponse<User> users = userRepositoryPort.findAll(query.keyword(), query.page(), query.size());
 
         return PageResponse.<UserSummaryResponse>builder()
                 .items(users.items().stream()

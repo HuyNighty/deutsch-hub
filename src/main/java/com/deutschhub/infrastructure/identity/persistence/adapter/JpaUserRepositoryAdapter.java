@@ -44,10 +44,10 @@ public class JpaUserRepositoryAdapter implements UserRepositoryPort {
     }
 
     @Override
-    public PageResponse<User> findAll(int page, int size) {
+    public PageResponse<User> findAll(String keyword, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
 
-        Page<UserJpaEntity> userPage = repository.findAll(pageable);
+        Page<UserJpaEntity> userPage = repository.searchUsers(keyword, pageable);
 
         return PageResponse.<User>builder()
                 .items(userPage.getContent()
