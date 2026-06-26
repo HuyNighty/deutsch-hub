@@ -1,7 +1,7 @@
 package com.deutschhub.application.identity.usecase;
 
 import com.deutschhub.application.identity.dto.response.UserDetailResponse;
-import com.deutschhub.application.identity.port.in.DeactivateUserUseCase;
+import com.deutschhub.application.identity.port.in.ActivateUserUseCase;
 import com.deutschhub.application.identity.port.out.UserRepositoryPort;
 import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
@@ -20,20 +20,16 @@ import java.util.stream.Collectors;
 @Transactional
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-public class DeactivateUserService implements DeactivateUserUseCase {
+public class ActivateUserService implements ActivateUserUseCase {
 
     UserRepositoryPort userRepositoryPort;
 
     @Override
-    public UserDetailResponse deactivate(UUID userId, UUID currentAdminId) {
-        if (userId.equals(currentAdminId)) {
-            throw new BusinessException(ErrorCode.CANNOT_DEACTIVATE_YOURSELF);
-        }
-
+    public UserDetailResponse activate(UUID userId) {
         User user = userRepositoryPort.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        user.deactivate();
+        user.activate();
 
         User savedUser = userRepositoryPort.save(user);
 

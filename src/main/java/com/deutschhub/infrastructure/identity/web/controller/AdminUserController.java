@@ -6,6 +6,7 @@ import com.deutschhub.application.identity.dto.response.UserSummaryResponse;
 import com.deutschhub.application.identity.port.in.DeactivateUserUseCase;
 import com.deutschhub.application.identity.port.in.GetUserDetailUseCase;
 import com.deutschhub.application.identity.port.in.GetUsersUseCase;
+import com.deutschhub.application.identity.usecase.ActivateUserService;
 import com.deutschhub.common.util.ApiResponse;
 import com.deutschhub.common.util.PageResponse;
 import lombok.AccessLevel;
@@ -29,6 +30,7 @@ public class AdminUserController {
     GetUsersUseCase getUsersUseCase;
     GetUserDetailUseCase getUserDetailUseCase;
     DeactivateUserUseCase deactivateUserUseCase;
+    ActivateUserService activateUserUseCase;
 
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<UserSummaryResponse>>> getUsers(
@@ -72,6 +74,18 @@ public class AdminUserController {
         return ResponseEntity.ok(
                 ApiResponse.<UserDetailResponse>builder()
                         .message("Deactivate user successfully")
+                        .result(response)
+                        .build()
+        );
+    }
+
+    @PatchMapping("/{userId}/activate")
+    public ResponseEntity<ApiResponse<UserDetailResponse>> activateUser(@PathVariable UUID userId) {
+        UserDetailResponse response = activateUserUseCase.activate(userId);
+
+        return ResponseEntity.ok(
+                ApiResponse.<UserDetailResponse>builder()
+                        .message("Activate user successfully")
                         .result(response)
                         .build()
         );
