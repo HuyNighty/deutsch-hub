@@ -130,17 +130,13 @@ public class User implements Auditable {
         touch();
     }
 
-    public void removeRole(RoleType role) {
-        if (role == null) {
-            throw new BusinessException(ErrorCode.INVALID_ROLE_NAME);
-        }
-        if (!roles.contains(role)) {
-            return;
-        }
-        if (roles.size() == 1) {
+    public void replaceRoles(Set<RoleType> roles) {
+        if (roles == null || roles.isEmpty()) {
             throw new BusinessException(ErrorCode.USER_MUST_HAVE_AT_LEAST_ONE_ROLE);
         }
-        roles.remove(role);
+
+        this.roles.clear();
+        this.roles.addAll(roles);
         touch();
     }
 
@@ -169,40 +165,6 @@ public class User implements Auditable {
     public void updateLastLogin() {
         validateCanLogin();
         this.lastLoginAt = LocalDateTime.now();
-        touch();
-    }
-
-    public void changePassword(Password newPassword) {
-        if (newPassword == null) {throw new BusinessException(ErrorCode.INVALID_PASSWORD);
-        }
-        if (this.password.equals(newPassword)) {
-            throw new BusinessException(ErrorCode.PASSWORD_ALREADY_USED);
-        }
-        this.password = newPassword;
-        touch();
-    }
-
-    public void changeEmail(Email newEmail) {
-        if (newEmail == null) {
-            throw new BusinessException(ErrorCode.INVALID_EMAIL);
-        }
-        if (this.email.equals(newEmail)) {
-            throw new BusinessException(ErrorCode.EMAIL_ALREADY_USED);
-        }
-        this.email = newEmail;
-        touch();
-    }
-
-    public void changeFullName(FullName newFullName) {
-        if (newFullName == null) {
-            throw new BusinessException(ErrorCode.INVALID_FULL_NAME);
-        }
-        this.fullName = newFullName;
-        touch();
-    }
-
-    public void changePhoneNumber(String newPhoneNumber) {
-        this.phoneNumber = newPhoneNumber != null ? newPhoneNumber.trim() : null;
         touch();
     }
 

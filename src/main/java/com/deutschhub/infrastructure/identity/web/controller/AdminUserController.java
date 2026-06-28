@@ -1,14 +1,18 @@
 package com.deutschhub.infrastructure.identity.web.controller;
 
 import com.deutschhub.application.identity.dto.request.GetUsersQuery;
+import com.deutschhub.application.identity.dto.request.UpdateUserRolesCommand;
 import com.deutschhub.application.identity.dto.response.UserDetailResponse;
 import com.deutschhub.application.identity.dto.response.UserSummaryResponse;
 import com.deutschhub.application.identity.port.in.DeactivateUserUseCase;
 import com.deutschhub.application.identity.port.in.GetUserDetailUseCase;
 import com.deutschhub.application.identity.port.in.GetUsersUseCase;
+import com.deutschhub.application.identity.port.in.UpdateUserRolesUseCase;
 import com.deutschhub.application.identity.usecase.ActivateUserService;
 import com.deutschhub.common.util.ApiResponse;
 import com.deutschhub.common.util.PageResponse;
+import com.deutschhub.infrastructure.identity.web.request.UpdateUserRolesRequest;
+import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -31,6 +35,7 @@ public class AdminUserController {
     GetUserDetailUseCase getUserDetailUseCase;
     DeactivateUserUseCase deactivateUserUseCase;
     ActivateUserService activateUserUseCase;
+    UpdateUserRolesUseCase updateUserRolesUseCase;
 
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<UserSummaryResponse>>> getUsers(
@@ -86,6 +91,30 @@ public class AdminUserController {
         return ResponseEntity.ok(
                 ApiResponse.<UserDetailResponse>builder()
                         .message("Activate user successfully")
+                        .result(response)
+                        .build()
+        );
+    }
+
+    @PutMapping("/{userId}/roles")
+    public ResponseEntity<ApiResponse<UserDetailResponse>> updateUserRoles(
+            @PathVariable UUID userId,
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestBody @Valid UpdateUserRolesRequest request
+    ) {
+        UUID currentAdminId = UUID.fromString(jwt.getSubject());
+
+        UpdateUserRolesCommand command = new UpdateUserRolesCommand(
+                userId,
+                currentAdminId,
+                request.roles()
+        );
+
+        UserDetailResponse response = updateUserRolesUseCase.updateRoles(command);
+
+        return ResponseEntity.ok(
+                ApiResponse.<UserDetailResponse>builder()
+                        .message("Update user roles successfully")
                         .result(response)
                         .build()
         );
