@@ -9,7 +9,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -29,6 +32,17 @@ public class JpaUserSessionRepositoryAdapter implements UserSessionRepositoryPor
     @Override
     public Optional<UserSession> findByRefreshTokenHash(String refreshTokenHash) {
         return repository.findByRefreshTokenHash(refreshTokenHash).map(this::toDomain);
+    }
+
+    @Override
+    public List<UserSession> findByUserId(UUID userId) {
+        return repository.findByUserIdOrderByCreatedAtDesc(userId)
+                .stream().map(this::toDomain).toList();
+    }
+
+    @Override
+    public void revokeAllByUserId(UUID userId) {
+        repository.revokeAllByUserId(userId, LocalDateTime.now());
     }
 
     private UserSessionJpaEntity toEntity(UserSession userSession) {

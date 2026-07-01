@@ -1,7 +1,8 @@
 package com.deutschhub.application.identity.usecase;
 
+import com.deutschhub.application.identity.dto.request.UpdateMyProfileCommand;
 import com.deutschhub.application.identity.dto.response.UserResponse;
-import com.deutschhub.application.identity.port.in.GetMyProfileUseCase;
+import com.deutschhub.application.identity.port.in.UpdateMyProfileUseCase;
 import com.deutschhub.application.identity.port.out.UserRepositoryPort;
 import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
@@ -12,28 +13,35 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.UUID;
-
 @Service
 @Transactional
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-public class GetMyProfileService implements GetMyProfileUseCase {
+public class UpdateMyProfileService implements UpdateMyProfileUseCase {
 
     UserRepositoryPort userRepositoryPort;
 
     @Override
-    public UserResponse getMyProfile(UUID userId) {
-
-        User user = userRepositoryPort.findById(userId)
+    public UserResponse updateMyProfile(UpdateMyProfileCommand command) {
+        User user = userRepositoryPort.findById(command.userId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
+        user.validateCanLogin();
+
+        user.updateMyProfile(
+                command.firstName(),
+                command.lastName(),
+                command.phoneNumber()
+        );
+
+        User savedUser = userRepositoryPort.save(user);
+
         return new UserResponse(
-                user.getId(),
-                user.getUsername().getValue(),
-                user.getEmail().getValue(),
-                user.getFullName().getFullName(),
-                user.getPhoneNumber()
+                savedUser.getId(),
+                savedUser.getUsername().getValue(),
+                savedUser.getEmail().getValue(),
+                savedUser.getFullName().getFullName(),
+                savedUser.getPhoneNumber()
         );
     }
 }

@@ -31,6 +31,9 @@ public enum ErrorCode {
     SESSION_EXPIRED("error.identity.session.expired", 4016),
     CANNOT_DEACTIVATE_YOURSELF("error.identity.cannot.deactivate.yourself", 4017),
     CANNOT_REMOVE_YOUR_OWN_ADMIN_ROLE("error.identity.cannot.remove.your.own.admin.role", 4018),
+    CURRENT_PASSWORD_INCORRECT("error.identity.current.password.incorrect", 4019),
+    NEW_PASSWORD_MUST_BE_DIFFERENT("error.identity.new.password.must.be.different", 4020),
+    PASSWORD_CONFIRMATION_NOT_MATCH("error.identity.password.confirmation.not.match", 4021),
     INVALID_REFRESH_TOKEN("error.identity.refresh.token.invalid", 4107),
     USER_ID_CAN_NOT_NULL("error.identity.user.id.cannot.null", 40010),
 

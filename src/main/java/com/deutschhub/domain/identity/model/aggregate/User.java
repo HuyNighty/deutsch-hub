@@ -168,6 +168,33 @@ public class User implements Auditable {
         touch();
     }
 
+    public void updateMyProfile(String firstName, String lastName, String phoneNumber) {
+        String newFirstName = firstName != null
+                ? firstName
+                : this.fullName.getFirstName();
+
+        String newLastName = lastName != null
+                ? lastName
+                : this.fullName.getLastName();
+
+        String newPhoneNumber = phoneNumber != null
+                ? phoneNumber
+                : this.phoneNumber;
+
+        this.fullName = FullName.of(newFirstName, newLastName);
+        this.phoneNumber = newPhoneNumber;
+        touch();
+    }
+
+    public void changePassword(Password newPassword) {
+        if (newPassword == null) {
+            throw new BusinessException(ErrorCode.INVALID_PASSWORD);
+        }
+
+        this.password = newPassword;
+        touch();
+    }
+
     @Override
     public void touch() {
         this.updatedAt = LocalDateTime.now();

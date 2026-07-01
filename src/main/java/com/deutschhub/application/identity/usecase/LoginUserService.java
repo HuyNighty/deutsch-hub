@@ -64,7 +64,7 @@ public class LoginUserService implements LoginUserUseCase {
         userSessionRepositoryPort.save(userSession);
 
         UserResponse userResponse =new UserResponse(user.getId(), user.getUsername().getValue(),
-                user.getEmail().getValue(), user.getFullName().getFullName());
+                user.getEmail().getValue(), user.getFullName().getFullName(), user.getPhoneNumber());
 
         return new LoginResponse(userResponse, accessToken.value(), refreshToken.value(), accessToken.expiresIn());
     }

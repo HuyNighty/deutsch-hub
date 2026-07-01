@@ -61,6 +61,6 @@ public class RegisterUserService implements RegisterUserUseCase {
         User savedUser = userRepositoryPort.save(user);
 
         return new UserResponse(savedUser.getId(), savedUser.getUsername().getValue(),
-                savedUser.getEmail().getValue(), savedUser.getFullName().getFullName());
+                savedUser.getEmail().getValue(), savedUser.getFullName().getFullName(), savedUser.getPhoneNumber());
     }
 }

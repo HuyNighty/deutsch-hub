@@ -33,4 +33,8 @@ public class FullName {
     public String getLastName() {
         return lastName;
     }
+
+    public static FullName of(String firstName, String lastName) {
+        return new FullName(firstName, lastName);
+    }
 }
