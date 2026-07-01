@@ -35,6 +35,11 @@ public class JpaUserSessionRepositoryAdapter implements UserSessionRepositoryPor
     }
 
     @Override
+    public Optional<UserSession> findById(UUID sessionId) {
+        return repository.findById(sessionId).map(this::toDomain);
+    }
+
+    @Override
     public List<UserSession> findByUserId(UUID userId) {
         return repository.findByUserIdOrderByCreatedAtDesc(userId)
                 .stream().map(this::toDomain).toList();

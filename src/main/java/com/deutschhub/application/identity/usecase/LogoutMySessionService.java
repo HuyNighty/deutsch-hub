@@ -1,7 +1,6 @@
 package com.deutschhub.application.identity.usecase;
 
-import com.deutschhub.application.identity.dto.response.UserSessionResponse;
-import com.deutschhub.application.identity.port.in.GetMySessionsUseCase;
+import com.deutschhub.application.identity.port.in.LogoutMySessionUseCase;
 import com.deutschhub.application.identity.port.out.UserRepositoryPort;
 import com.deutschhub.application.identity.port.out.UserSessionRepositoryPort;
 import com.deutschhub.common.exception.BusinessException;
@@ -15,40 +14,33 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.UUID;
 
 @Service
-@RequiredArgsConstructor
 @Transactional
+@RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-public class GetMySessionsService implements GetMySessionsUseCase {
+public class LogoutMySessionService implements LogoutMySessionUseCase {
 
-    UserSessionRepositoryPort userSessionRepositoryPort;
     UserRepositoryPort userRepositoryPort;
+    UserSessionRepositoryPort userSessionRepositoryPort;
 
     @Override
-    public List<UserSessionResponse> getMySessions(UUID userId) {
+    public void logoutMySession(UUID userId, UUID sessionId) {
         User user = userRepositoryPort.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         user.validateCanLogin();
 
-        LocalDateTime now = LocalDateTime.now();
+        UserSession session = userSessionRepositoryPort.findById(sessionId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.SESSION_NOT_FOUND));
 
-        return userSessionRepositoryPort.findByUserId(userId)
-                .stream()
-                .map(userSession -> toResponse(userSession, now))
-                .toList();
-    }
+        if (!session.getUserId().equals(userId)) {
+            throw new BusinessException(ErrorCode.SESSION_NOT_FOUND);
+        }
 
-    private UserSessionResponse toResponse(UserSession userSession, LocalDateTime now) {
-        return new UserSessionResponse(
-                userSession.getId(),
-                userSession.getCreatedAt(),
-                userSession.getExpiresAt(),
-                userSession.getRevokedAt(),
-                userSession.isActive(now)
-        );
+        session.revoke(LocalDateTime.now());
+
+        userSessionRepositoryPort.save(session);
     }
 }

@@ -34,6 +34,7 @@ public enum ErrorCode {
     CURRENT_PASSWORD_INCORRECT("error.identity.current.password.incorrect", 4019),
     NEW_PASSWORD_MUST_BE_DIFFERENT("error.identity.new.password.must.be.different", 4020),
     PASSWORD_CONFIRMATION_NOT_MATCH("error.identity.password.confirmation.not.match", 4021),
+    SESSION_NOT_FOUND("error.identity.session.not.found", 4022),
     INVALID_REFRESH_TOKEN("error.identity.refresh.token.invalid", 4107),
     USER_ID_CAN_NOT_NULL("error.identity.user.id.cannot.null", 40010),
 

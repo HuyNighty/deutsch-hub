@@ -1,15 +1,14 @@
 package com.deutschhub.infrastructure.identity.web.controller;
 
 import com.deutschhub.application.identity.dto.request.ChangeMyPasswordCommand;
+import com.deutschhub.application.identity.dto.request.DeactivateMyAccountCommand;
 import com.deutschhub.application.identity.dto.request.UpdateMyProfileCommand;
 import com.deutschhub.application.identity.dto.response.UserResponse;
 import com.deutschhub.application.identity.dto.response.UserSessionResponse;
-import com.deutschhub.application.identity.port.in.ChangeMyPasswordUseCase;
-import com.deutschhub.application.identity.port.in.GetMySessionsUseCase;
-import com.deutschhub.application.identity.port.in.LogoutAllMySessionsUseCase;
-import com.deutschhub.application.identity.port.in.UpdateMyProfileUseCase;
+import com.deutschhub.application.identity.port.in.*;
 import com.deutschhub.common.util.ApiResponse;
 import com.deutschhub.infrastructure.identity.web.request.ChangeMyPasswordRequest;
+import com.deutschhub.infrastructure.identity.web.request.DeactivateMyAccountRequest;
 import com.deutschhub.infrastructure.identity.web.request.UpdateMyProfileRequest;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
@@ -33,6 +32,8 @@ public class UserController {
     ChangeMyPasswordUseCase changeMyPasswordUseCase;
     LogoutAllMySessionsUseCase logoutAllMySessionsUseCase;
     GetMySessionsUseCase getMySessionsUseCase;
+    LogoutMySessionUseCase logoutMySessionUseCase;
+    DeactivateMyAccountUseCase deactivateMyAccountUseCase;
 
     @PatchMapping("/me/profile")
     public ResponseEntity<ApiResponse<UserResponse>> updateMyProfile(
@@ -111,4 +112,40 @@ public class UserController {
         );
     }
 
+    @DeleteMapping("/me/sessions/{sessionId}")
+    public ResponseEntity<ApiResponse<Void>> logoutMySession(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable UUID sessionId
+    ) {
+        UUID userId = UUID.fromString(jwt.getSubject());
+
+        logoutMySessionUseCase.logoutMySession(userId, sessionId);
+
+        return ResponseEntity.ok(
+                ApiResponse.<Void>builder()
+                        .message("Logout session successfully")
+                        .build()
+        );
+    }
+
+    @PatchMapping("/me/deactivate")
+    public ResponseEntity<ApiResponse<Void>> deactivateMyAccount(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestBody @Valid DeactivateMyAccountRequest request
+    ) {
+        UUID userId = UUID.fromString(jwt.getSubject());
+
+        DeactivateMyAccountCommand command = new DeactivateMyAccountCommand(
+                userId,
+                request.password()
+        );
+
+        deactivateMyAccountUseCase.deactivateMyAccount(command);
+
+        return ResponseEntity.ok(
+                ApiResponse.<Void>builder()
+                        .message("Deactivate account successfully")
+                        .build()
+        );
+    }
 }

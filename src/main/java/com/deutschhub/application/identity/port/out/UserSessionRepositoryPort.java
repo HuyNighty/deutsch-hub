@@ -15,4 +15,6 @@ public interface UserSessionRepositoryPort {
     void revokeAllByUserId(UUID userId);
 
     List<UserSession> findByUserId(UUID userId);
+
+    Optional<UserSession> findById(UUID sessionId);
 }
