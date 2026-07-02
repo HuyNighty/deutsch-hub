@@ -1,6 +1,7 @@
 package com.deutschhub.common.util;
 
 import lombok.Builder;
+import lombok.Getter;
 
 import java.util.List;
 

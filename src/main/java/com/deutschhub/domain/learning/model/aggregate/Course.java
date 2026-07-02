@@ -81,9 +81,84 @@ public class Course implements Auditable, SoftDeletable {
         this.sections.add(section);
     }
 
+    public void publish(UUID actorId, boolean isAdmin) {
+        ensureCanMutateBy(actorId, isAdmin);
+        ensureNotDeleted();
+
+        if (published) {
+            throw new BusinessException(ErrorCode.COURSE_ALREADY_PUBLISHED);
+        }
+
+        boolean hasActiveSection = sections.stream()
+                .anyMatch(section -> !section.isDeleted());
+
+        if (!hasActiveSection) {
+            throw new BusinessException(ErrorCode.COURSE_MUST_HAVE_SECTION_BEFORE_PUBLISH);
+        }
+
+        this.published = true;
+        touch();
+    }
+
+    public void unpublish(UUID actorId, boolean isAdmin) {
+        ensureCanMutateBy(actorId, isAdmin);
+        ensureNotDeleted();
+
+        if (!published) {
+            throw new BusinessException(ErrorCode.COURSE_NOT_PUBLISHED);
+        }
+
+        this.published = false;
+        touch();
+    }
+
     public void addSection(Section section, UUID actorId, boolean isAdmin) {
         ensureCanMutateBy(actorId, isAdmin);
         addSectionInternal(section);
+    }
+
+    public Section updateSection( UUID sectionId, String title, String description,
+                                  Integer orderIndex, UUID actorId, boolean isAdmin) {
+        ensureCanMutateBy(actorId, isAdmin);
+
+        if (published) {
+            throw new BusinessException(ErrorCode.CANNOT_MODIFY_PUBLISHED_COURSE);
+        }
+
+        ensureNotDeleted();
+
+        Section section = sections.stream()
+                .filter(item -> item.getId().equals(sectionId))
+                .filter(item -> !item.isDeleted())
+                .findFirst()
+                .orElseThrow(() -> new BusinessException(ErrorCode.SECTION_NOT_FOUND));
+
+        section.update(title, description, orderIndex);
+
+        touch();
+
+        recalculateEstimatedHours();
+
+        return section;
+    }
+
+    public void deleteSection(UUID sectionId, UUID actorId, boolean isAdmin) {
+        ensureCanMutateBy(actorId, isAdmin);
+        if (published) {
+            throw new BusinessException(ErrorCode.CANNOT_MODIFY_PUBLISHED_COURSE);
+        }
+
+        ensureNotDeleted();
+
+        Section section = sections.stream()
+                .filter(item -> item.getId().equals(sectionId))
+                .filter(item -> !item.isDeleted())
+                .findFirst()
+                .orElseThrow(() -> new BusinessException(ErrorCode.SECTION_NOT_FOUND));
+
+        section.softDelete();
+        touch();
+        recalculateEstimatedHours();
     }
 
     private void addSectionInternal(Section section) {

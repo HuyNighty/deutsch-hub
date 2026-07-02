@@ -13,4 +13,8 @@ public interface CourseRepositoryPort {
     Optional<Course> findById(UUID courseId);
 
     PageResponse<Course> findAll(String keyword, int page, int size);
+
+    PageResponse<Course> findPublishedCourses(String keyword, int page, int size);
+
+    Optional<Course> findPublishedById(UUID courseId);
 }

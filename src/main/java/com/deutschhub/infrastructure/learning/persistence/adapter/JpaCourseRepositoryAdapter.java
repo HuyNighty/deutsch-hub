@@ -59,6 +59,29 @@ public class JpaCourseRepositoryAdapter implements CourseRepositoryPort {
                 .build();
     }
 
+    @Override
+    public PageResponse<Course> findPublishedCourses(String keyword, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+
+        Page<CourseJpaEntity> coursePage = repository.searchPublishedCourses(keyword, pageable);
+
+        return PageResponse.<Course>builder()
+                .items(coursePage.getContent()
+                        .stream()
+                        .map(this::toDomain)
+                        .toList())
+                .page(coursePage.getNumber())
+                .size(coursePage.getSize())
+                .totalElements(coursePage.getTotalElements())
+                .totalPages(coursePage.getTotalPages())
+                .build();
+    }
+
+    @Override
+    public Optional<Course> findPublishedById(UUID courseId) {
+        return repository.findPublishedById(courseId).map(this::toDomain);
+    }
+
     private CourseJpaEntity toEntity(Course course) {
         CourseJpaEntity entity =  CourseJpaEntity.builder()
                 .id(course.getId())

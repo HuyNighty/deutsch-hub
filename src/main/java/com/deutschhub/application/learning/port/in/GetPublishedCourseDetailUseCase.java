@@ -4,7 +4,7 @@ import com.deutschhub.application.learning.dto.response.CourseDetailResponse;
 
 import java.util.UUID;
 
-public interface GetCourseDetailUseCase {
+public interface GetPublishedCourseDetailUseCase {
 
-    CourseDetailResponse getCourseDetail(UUID courseId);
+    CourseDetailResponse getPublishedCourseDetail(UUID courseId);
 }

@@ -1,13 +1,11 @@
 package com.deutschhub.application.learning.usecase;
 
-import com.deutschhub.application.learning.dto.response.CourseDetailResponse;
-import com.deutschhub.application.learning.dto.response.CourseResponse;
 import com.deutschhub.application.learning.dto.response.SectionResponse;
-import com.deutschhub.application.learning.port.in.GetCourseDetailUseCase;
+import com.deutschhub.application.learning.port.in.GetCourseSectionUseCase;
+import com.deutschhub.application.learning.port.out.CourseRepositoryPort;
 import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
 import com.deutschhub.domain.learning.model.aggregate.Course;
-import com.deutschhub.application.learning.port.out.CourseRepositoryPort;
 import com.deutschhub.domain.learning.model.entity.Section;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -21,14 +19,14 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly=true)
-@FieldDefaults(level = AccessLevel.PRIVATE,  makeFinal = true)
-public class GetCourseDetailService implements GetCourseDetailUseCase {
+@Transactional
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+public class GetCourseSectionService implements GetCourseSectionUseCase {
 
     CourseRepositoryPort courseRepositoryPort;
 
     @Override
-    public CourseDetailResponse getCourseDetail(UUID courseId) {
+    public List<SectionResponse> getSections(UUID courseId) {
         Course course = courseRepositoryPort.findById(courseId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.COURSE_NOT_FOUND));
 
@@ -36,34 +34,15 @@ public class GetCourseDetailService implements GetCourseDetailUseCase {
             throw new BusinessException(ErrorCode.COURSE_NOT_FOUND);
         }
 
-        return toResponse(course);
-    }
-
-    private CourseDetailResponse toResponse(Course course) {
-        List<SectionResponse> sections = course.getSections()
+        return course.getSections()
                 .stream()
                 .filter(section -> !section.isDeleted())
                 .sorted(Comparator.comparingInt(Section::getOrderIndex))
-                .map(this::toSectionResponse)
+                .map(this::toResponse)
                 .toList();
-
-        return new CourseDetailResponse(
-                course.getId(),
-                course.getTitle(),
-                course.getDescription(),
-                course.getLevel().toString(),
-                course.getPrice().getAmount(),
-                course.getPrice().getCurrency(),
-                course.isPublished(),
-                course.getInstructorId(),
-                course.getEstimatedHours(),
-                sections,
-                course.getCreatedAt(),
-                course.getUpdatedAt()
-        );
     }
 
-    private SectionResponse toSectionResponse(Section section) {
+    private SectionResponse toResponse(Section section) {
         return new SectionResponse(
                 section.getId(),
                 section.getTitle(),

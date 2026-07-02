@@ -50,6 +50,8 @@ public enum ErrorCode {
     COURSE_FORBIDDEN_ACTION("error.course.forbidden.action", 5010),
     COURSE_NOT_COMPLETED("error.course.not.completed", 5011),
     COURSE_NOT_FOUND("error.course.not.found", 5012),
+    COURSE_NOT_PUBLISHED("error.learning.course.not.published",5013),
+    COURSE_MUST_HAVE_SECTION_BEFORE_PUBLISH("error.learning.course.must.have.section.before.publish", 50001),
 
     INVALID_LESSON_ORDER("error.lesson.invalid.order", 6001),
     LESSON_INVALID_TITLE("error.lesson.invalid.title", 6002),

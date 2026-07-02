@@ -46,6 +46,22 @@ public class Section implements Auditable, SoftDeletable {
         return section;
     }
 
+    public void update(String title, String description, Integer orderIndex) {
+        if (this.title != null) {
+            changeTitle(title);
+        }
+
+        if (this.description != null) {
+            this.description = description.trim();
+        }
+
+        if (orderIndex != null) {
+            changeOrderIndex(orderIndex);
+        }
+
+        touch();
+    }
+
     public void addLesson(Lesson lesson) {
         if (lesson == null) {
             throw new BusinessException(ErrorCode.LESSON_INVALID_CONTENT);
@@ -97,6 +113,13 @@ public class Section implements Auditable, SoftDeletable {
         return orderIndex;
     }
 
+    private void changeTitle(String title) {
+        if (title == null || title.trim().isBlank()) {
+            throw new BusinessException(ErrorCode.SECTION_INVALID_TITLE);
+        }
+
+        this.title = title.trim();
+    }
 
     @Override
     public LocalDateTime getCreatedAt() {

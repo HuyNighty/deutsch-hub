@@ -1,9 +1,7 @@
 package com.deutschhub.infrastructure.learning.web.controller;
 
-import com.deutschhub.application.learning.dto.request.AddSectionCommand;
-import com.deutschhub.application.learning.dto.request.CreateCourseCommand;
-import com.deutschhub.application.learning.dto.request.GetCoursesQuery;
-import com.deutschhub.application.learning.dto.request.UpdateCourseCommand;
+import com.deutschhub.application.learning.dto.request.*;
+import com.deutschhub.application.learning.dto.response.CourseDetailResponse;
 import com.deutschhub.application.learning.dto.response.CourseResponse;
 import com.deutschhub.application.learning.dto.response.SectionResponse;
 import com.deutschhub.application.learning.port.in.*;
@@ -12,6 +10,7 @@ import com.deutschhub.common.util.PageResponse;
 import com.deutschhub.infrastructure.learning.web.request.AddSectionRequest;
 import com.deutschhub.infrastructure.learning.web.request.CreateCourseRequest;
 import com.deutschhub.infrastructure.learning.web.request.UpdateCourseRequest;
+import com.deutschhub.infrastructure.learning.web.request.UpdateSectionRequest;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +21,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 
@@ -37,6 +37,12 @@ public class AdminCourseController {
     GetCourseDetailUseCase getCourseDetailUseCase;
     DeleteCourseUseCase deleteCourseUseCase;
     AddSectionToCourseUseCase addSectionToCourseUseCase;
+    GetCourseSectionUseCase getCourseSectionUseCase;
+    UpdateSectionUseCase updateSectionUseCase;
+    DeleteSectionUseCase deleteSectionUseCase;
+    PublishCourseUseCase publishCourseUseCase;
+    UnpublishCourseUseCase unpublishCourseUseCase;
+    UpdateCourseUseCase updateCourseUseCase;
 
     @PostMapping
     public ResponseEntity<ApiResponse<CourseResponse>> createCourse(
@@ -83,11 +89,11 @@ public class AdminCourseController {
     }
 
     @GetMapping("/{courseId}")
-    public ResponseEntity<ApiResponse<CourseResponse>> getCourseDetails(@PathVariable UUID courseId) {
-        CourseResponse response = getCourseDetailUseCase.getCourseDetail(courseId);
+    public ResponseEntity<ApiResponse<CourseDetailResponse>> getCourseDetails(@PathVariable UUID courseId) {
+        CourseDetailResponse response = getCourseDetailUseCase.getCourseDetail(courseId);
 
         return ResponseEntity.ok(
-                ApiResponse.<CourseResponse>builder()
+                ApiResponse.<CourseDetailResponse>builder()
                         .message("Get course detail successfully")
                         .result(response)
                         .build()
@@ -111,7 +117,7 @@ public class AdminCourseController {
                 true
         );
 
-        CourseResponse response = getCourseDetailUseCase.getCourseDetail(courseId);
+        CourseResponse response = updateCourseUseCase.updateCourse(command);
 
         return ResponseEntity.ok(
                 ApiResponse.<CourseResponse>builder()
@@ -159,6 +165,101 @@ public class AdminCourseController {
         return ResponseEntity.ok(
                 ApiResponse.<SectionResponse>builder()
                         .message("Add section successfully")
+                        .result(response)
+                        .build()
+        );
+    }
+
+    @GetMapping("/{courseId}/sections")
+    public ResponseEntity<ApiResponse<List<SectionResponse>>> getSection(@PathVariable UUID courseId) {
+        List<SectionResponse> responses = getCourseSectionUseCase.getSections(courseId);
+
+        return ResponseEntity.ok(
+                ApiResponse.<List<SectionResponse>>builder()
+                        .message("Get section successfully")
+                        .result(responses)
+                        .build()
+        );
+    }
+
+    @PatchMapping("/{courseId}/sections/{sectionId}")
+    public ResponseEntity<ApiResponse<SectionResponse>> updateSection(@PathVariable UUID courseId,
+                                                                      @PathVariable UUID sectionId,
+                                                                      @AuthenticationPrincipal Jwt jwt,
+                                                                      @Valid @RequestBody UpdateSectionRequest request) {
+        UUID actorId = UUID.fromString(jwt.getSubject());
+
+        UpdateSectionCommand command = new UpdateSectionCommand(courseId, sectionId, actorId,
+                request.title(), request.description(), request.orderIndex(), true);
+
+        SectionResponse response = updateSectionUseCase.updateSection(command);
+
+        return ResponseEntity.ok(
+                ApiResponse.<SectionResponse>builder()
+                        .message("Update section successfully")
+                        .result(response)
+                        .build());
+    }
+
+    @DeleteMapping("/{courseId}/sections/{sectionId}")
+    public ResponseEntity<ApiResponse<Void>> deleteSection(
+            @PathVariable UUID courseId,
+            @PathVariable UUID sectionId,
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        UUID actorId = UUID.fromString(jwt.getSubject());
+
+        deleteSectionUseCase.deleteSection(
+                courseId,
+                sectionId,
+                actorId,
+                true
+        );
+
+        return ResponseEntity.ok(
+                ApiResponse.<Void>builder()
+                        .message("Delete section successfully")
+                        .build()
+        );
+    }
+
+    @PostMapping("/{courseId}/publish")
+    public ResponseEntity<ApiResponse<CourseResponse>> publishCourse(
+            @PathVariable UUID courseId,
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        UUID actorId = UUID.fromString(jwt.getSubject());
+
+        CourseResponse response = publishCourseUseCase.publishCourse(
+                courseId,
+                actorId,
+                true
+        );
+
+        return ResponseEntity.ok(
+                ApiResponse.<CourseResponse>builder()
+                        .message("Publish course successfully")
+                        .result(response)
+                        .build()
+        );
+    }
+
+    @PostMapping("/{courseId}/unpublish")
+    public ResponseEntity<ApiResponse<CourseResponse>> unpublishCourse(
+            @PathVariable UUID courseId,
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        UUID actorId = UUID.fromString(jwt.getSubject());
+
+        CourseResponse response = unpublishCourseUseCase.unpublishCourse(
+                courseId,
+                actorId,
+                true
+        );
+
+        return ResponseEntity.ok(
+                ApiResponse.<CourseResponse>builder()
+                        .message("Unpublish course successfully")
                         .result(response)
                         .build()
         );

@@ -1,13 +1,12 @@
 package com.deutschhub.application.learning.usecase;
 
 import com.deutschhub.application.learning.dto.response.CourseDetailResponse;
-import com.deutschhub.application.learning.dto.response.CourseResponse;
 import com.deutschhub.application.learning.dto.response.SectionResponse;
-import com.deutschhub.application.learning.port.in.GetCourseDetailUseCase;
+import com.deutschhub.application.learning.port.in.GetPublishedCourseDetailUseCase;
+import com.deutschhub.application.learning.port.out.CourseRepositoryPort;
 import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
 import com.deutschhub.domain.learning.model.aggregate.Course;
-import com.deutschhub.application.learning.port.out.CourseRepositoryPort;
 import com.deutschhub.domain.learning.model.entity.Section;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -20,21 +19,17 @@ import java.util.List;
 import java.util.UUID;
 
 @Service
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
-@Transactional(readOnly=true)
-@FieldDefaults(level = AccessLevel.PRIVATE,  makeFinal = true)
-public class GetCourseDetailService implements GetCourseDetailUseCase {
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+public class GetPublishedCourseDetailService implements GetPublishedCourseDetailUseCase {
 
     CourseRepositoryPort courseRepositoryPort;
 
     @Override
-    public CourseDetailResponse getCourseDetail(UUID courseId) {
-        Course course = courseRepositoryPort.findById(courseId)
+    public CourseDetailResponse getPublishedCourseDetail(UUID courseId) {
+        Course course = courseRepositoryPort.findPublishedById(courseId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.COURSE_NOT_FOUND));
-
-        if (course.isDeleted()) {
-            throw new BusinessException(ErrorCode.COURSE_NOT_FOUND);
-        }
 
         return toResponse(course);
     }
