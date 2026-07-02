@@ -8,7 +8,7 @@ import com.deutschhub.domain.learning.model.valueobject.Money;
 import com.deutschhub.infrastructure.learning.persistence.entity.CourseJpaEntity;
 import com.deutschhub.infrastructure.learning.persistence.entity.SectionJpaEntity;
 import com.deutschhub.infrastructure.learning.persistence.repository.SpringDataCourseRepository;
-import com.deutschhub.infrastructure.learning.port.out.CourseRepositoryPort;
+import com.deutschhub.application.learning.port.out.CourseRepositoryPort;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -80,8 +80,11 @@ public class JpaCourseRepositoryAdapter implements CourseRepositoryPort {
                 .map(section -> toSectionEntity(section, entity))
                 .toList();
 
-        entity.setSections(sections);
-        entity.getSections().addAll(sections);
+        entity.getSections().clear();
+        course.getSections()
+                .stream()
+                .map(section -> toSectionEntity(section, entity))
+                .forEach(entity.getSections()::add);
         return entity;
     }
 
@@ -100,10 +103,12 @@ public class JpaCourseRepositoryAdapter implements CourseRepositoryPort {
                 entity.getDeletedAt()
         );
 
-        entity.getSections()
-                .stream()
-                .map(this::toSectionDomain)
-                .forEach(course::restoreSection);
+        if (entity.getSections() != null) {
+            entity.getSections()
+                    .stream()
+                    .map(this::toSectionDomain)
+                    .forEach(course::restoreSection);
+        }
 
         return course;
     }

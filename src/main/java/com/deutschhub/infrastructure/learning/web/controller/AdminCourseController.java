@@ -1,15 +1,15 @@
 package com.deutschhub.infrastructure.learning.web.controller;
 
+import com.deutschhub.application.learning.dto.request.AddSectionCommand;
 import com.deutschhub.application.learning.dto.request.CreateCourseCommand;
 import com.deutschhub.application.learning.dto.request.GetCoursesQuery;
 import com.deutschhub.application.learning.dto.request.UpdateCourseCommand;
 import com.deutschhub.application.learning.dto.response.CourseResponse;
-import com.deutschhub.application.learning.port.in.CreateCourseUseCase;
-import com.deutschhub.application.learning.port.in.DeleteCourseUseCase;
-import com.deutschhub.application.learning.port.in.GetCourseDetailUseCase;
-import com.deutschhub.application.learning.port.in.GetCoursesUseCase;
+import com.deutschhub.application.learning.dto.response.SectionResponse;
+import com.deutschhub.application.learning.port.in.*;
 import com.deutschhub.common.util.ApiResponse;
 import com.deutschhub.common.util.PageResponse;
+import com.deutschhub.infrastructure.learning.web.request.AddSectionRequest;
 import com.deutschhub.infrastructure.learning.web.request.CreateCourseRequest;
 import com.deutschhub.infrastructure.learning.web.request.UpdateCourseRequest;
 import jakarta.validation.Valid;
@@ -36,6 +36,7 @@ public class AdminCourseController {
     GetCoursesUseCase getCoursesUseCase;
     GetCourseDetailUseCase getCourseDetailUseCase;
     DeleteCourseUseCase deleteCourseUseCase;
+    AddSectionToCourseUseCase addSectionToCourseUseCase;
 
     @PostMapping
     public ResponseEntity<ApiResponse<CourseResponse>> createCourse(
@@ -132,6 +133,33 @@ public class AdminCourseController {
         return ResponseEntity.ok(
                 ApiResponse.<Void>builder()
                         .message("Delete course successfully")
+                        .build()
+        );
+    }
+
+    @PostMapping("/{courseId}/sections")
+    public ResponseEntity<ApiResponse<SectionResponse>> addSection(
+            @PathVariable UUID courseId,
+            @AuthenticationPrincipal Jwt jwt,
+            @Valid @RequestBody AddSectionRequest request
+    ) {
+        UUID actorId = UUID.fromString(jwt.getSubject());
+
+        AddSectionCommand command = new AddSectionCommand(
+                courseId,
+                actorId,
+                request.title(),
+                request.description(),
+                request.orderIndex(),
+                true
+        );
+
+        SectionResponse response = addSectionToCourseUseCase.addSection(command);
+
+        return ResponseEntity.ok(
+                ApiResponse.<SectionResponse>builder()
+                        .message("Add section successfully")
+                        .result(response)
                         .build()
         );
     }

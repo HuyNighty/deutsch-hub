@@ -1,4 +1,4 @@
-package com.deutschhub.infrastructure.learning.port.out;
+package com.deutschhub.application.learning.port.out;
 
 import com.deutschhub.common.util.PageResponse;
 import com.deutschhub.domain.learning.model.aggregate.Course;

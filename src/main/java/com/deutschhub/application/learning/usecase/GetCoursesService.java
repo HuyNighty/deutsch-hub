@@ -5,7 +5,7 @@ import com.deutschhub.application.learning.dto.response.CourseResponse;
 import com.deutschhub.application.learning.port.in.GetCoursesUseCase;
 import com.deutschhub.common.util.PageResponse;
 import com.deutschhub.domain.learning.model.aggregate.Course;
-import com.deutschhub.infrastructure.learning.port.out.CourseRepositoryPort;
+import com.deutschhub.application.learning.port.out.CourseRepositoryPort;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;

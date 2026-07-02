@@ -6,7 +6,7 @@ import com.deutschhub.application.learning.port.in.CreateCourseUseCase;
 import com.deutschhub.domain.learning.model.aggregate.Course;
 import com.deutschhub.domain.learning.model.valueobject.CEFRLevel;
 import com.deutschhub.domain.learning.model.valueobject.Money;
-import com.deutschhub.infrastructure.learning.port.out.CourseRepositoryPort;
+import com.deutschhub.application.learning.port.out.CourseRepositoryPort;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
