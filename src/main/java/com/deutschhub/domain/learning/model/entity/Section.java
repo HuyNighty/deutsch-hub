@@ -37,6 +37,15 @@ public class Section implements Auditable, SoftDeletable {
         return new Section(UUID.randomUUID(), title, description, orderIndex);
     }
 
+    public static Section restore( UUID id, String title, String description, int orderIndex,
+                                 LocalDateTime createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt) {
+        Section section = new Section(id, title, description, orderIndex);
+        section.createdAt = createdAt;
+        section.updatedAt = updatedAt;
+        section.deletedAt = deletedAt;
+        return section;
+    }
+
     public void addLesson(Lesson lesson) {
         if (lesson == null) {
             throw new BusinessException(ErrorCode.LESSON_INVALID_CONTENT);

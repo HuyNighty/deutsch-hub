@@ -2,9 +2,11 @@ package com.deutschhub.infrastructure.learning.persistence.adapter;
 
 import com.deutschhub.common.util.PageResponse;
 import com.deutschhub.domain.learning.model.aggregate.Course;
+import com.deutschhub.domain.learning.model.entity.Section;
 import com.deutschhub.domain.learning.model.valueobject.CEFRLevel;
 import com.deutschhub.domain.learning.model.valueobject.Money;
 import com.deutschhub.infrastructure.learning.persistence.entity.CourseJpaEntity;
+import com.deutschhub.infrastructure.learning.persistence.entity.SectionJpaEntity;
 import com.deutschhub.infrastructure.learning.persistence.repository.SpringDataCourseRepository;
 import com.deutschhub.infrastructure.learning.port.out.CourseRepositoryPort;
 import lombok.AccessLevel;
@@ -15,6 +17,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -57,7 +60,7 @@ public class JpaCourseRepositoryAdapter implements CourseRepositoryPort {
     }
 
     private CourseJpaEntity toEntity(Course course) {
-        return CourseJpaEntity.builder()
+        CourseJpaEntity entity =  CourseJpaEntity.builder()
                 .id(course.getId())
                 .title(course.getTitle())
                 .description(course.getDescription())
@@ -71,10 +74,19 @@ public class JpaCourseRepositoryAdapter implements CourseRepositoryPort {
                 .updatedAt(course.getUpdatedAt())
                 .deletedAt(course.getDeletedAt())
                 .build();
+
+        List<SectionJpaEntity> sections = course.getSections()
+                .stream()
+                .map(section -> toSectionEntity(section, entity))
+                .toList();
+
+        entity.setSections(sections);
+        entity.getSections().addAll(sections);
+        return entity;
     }
 
     private Course toDomain(CourseJpaEntity entity) {
-        return  Course.restore(
+        Course course = Course.restore(
                 entity.getId(),
                 entity.getTitle(),
                 entity.getDescription(),
@@ -83,6 +95,38 @@ public class JpaCourseRepositoryAdapter implements CourseRepositoryPort {
                 entity.isPublished(),
                 entity.getInstructorId(),
                 entity.getEstimatedHours(),
+                entity.getCreatedAt(),
+                entity.getUpdatedAt(),
+                entity.getDeletedAt()
+        );
+
+        entity.getSections()
+                .stream()
+                .map(this::toSectionDomain)
+                .forEach(course::restoreSection);
+
+        return course;
+    }
+
+    private SectionJpaEntity toSectionEntity(Section section, CourseJpaEntity entity) {
+        return SectionJpaEntity.builder()
+                .id(section.getId())
+                .title(section.getTitle())
+                .description(section.getDescription())
+                .orderIndex(section.getOrderIndex())
+                .createdAt(section.getCreatedAt())
+                .updatedAt(section.getUpdatedAt())
+                .deletedAt(section.getDeletedAt())
+                .course(entity)
+                .build();
+    }
+
+    private Section toSectionDomain(SectionJpaEntity entity) {
+        return Section.restore(
+                entity.getId(),
+                entity.getTitle(),
+                entity.getDescription(),
+                entity.getOrderIndex(),
                 entity.getCreatedAt(),
                 entity.getUpdatedAt(),
                 entity.getDeletedAt()

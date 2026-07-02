@@ -73,6 +73,32 @@ public class Course implements Auditable, SoftDeletable {
         return course;
     }
 
+    public void restoreSection(Section section) {
+        if (section == null) {
+            return;
+        }
+
+        this.sections.add(section);
+    }
+
+    public void addSection(Section section, UUID actorId, boolean isAdmin) {
+        ensureCanMutateBy(actorId, isAdmin);
+        addSectionInternal(section);
+    }
+
+    private void addSectionInternal(Section section) {
+        if (published) {
+            throw new BusinessException(ErrorCode.CANNOT_MODIFY_PUBLISHED_COURSE);
+        }
+        if (section == null) {
+            throw new BusinessException(ErrorCode.SECTION_NOT_FOUND);
+        }
+        ensureNotDeleted();
+        this.sections.add(section);
+        this.touch();
+        recalculateEstimatedHours();
+    }
+
     private UUID validateInstructorId(UUID instructorId) {
         if (instructorId == null) {
             throw new BusinessException(ErrorCode.INVALID_COURSE_INSTRUCTOR);
@@ -115,7 +141,6 @@ public class Course implements Auditable, SoftDeletable {
 
         this.estimatedHours = (int) Math.ceil(totalMinutes / 60.0);
     }
-
 
     @Override
     public void touch() {

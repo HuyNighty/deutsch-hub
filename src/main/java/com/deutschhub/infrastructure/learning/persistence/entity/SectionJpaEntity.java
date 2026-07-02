@@ -6,21 +6,18 @@ import lombok.experimental.FieldDefaults;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "courses")
+@Table(name = "course_sections")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class CourseJpaEntity {
+public class SectionJpaEntity {
 
     @Id
     @JdbcTypeCode(SqlTypes.VARCHAR)
@@ -29,32 +26,18 @@ public class CourseJpaEntity {
     @Column(nullable = false)
     String title;
 
-    @Column(length = 2000)
+    @Column(length = 1000)
     String description;
 
     @Column(nullable = false)
-    String level;
-
-    @Column(nullable = false)
-    BigDecimal priceAmount;
-
-    @Column(nullable = false)
-    String priceCurrency;
-
-    boolean published;
-
-    @Column(nullable = false)
-    @JdbcTypeCode(SqlTypes.VARCHAR)
-    UUID instructorId;
-
-    int estimatedHours;
+    int orderIndex;
 
     LocalDateTime createdAt;
     LocalDateTime updatedAt;
     LocalDateTime deletedAt;
 
-    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
-    @OrderBy("orderIndex ASC")
-    @Builder.Default
-    List<SectionJpaEntity> sections = new ArrayList<>();
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "course_id", nullable = false)
+    CourseJpaEntity course;
+
 }

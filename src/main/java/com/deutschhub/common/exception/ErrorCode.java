@@ -49,6 +49,7 @@ public enum ErrorCode {
     COURSE_ALREADY_DELETED("error.course.already.deleted", 5009),
     COURSE_FORBIDDEN_ACTION("error.course.forbidden.action", 5010),
     COURSE_NOT_COMPLETED("error.course.not.completed", 5011),
+    COURSE_NOT_FOUND("error.course.not.found", 5012),
 
     INVALID_LESSON_ORDER("error.lesson.invalid.order", 6001),
     LESSON_INVALID_TITLE("error.lesson.invalid.title", 6002),

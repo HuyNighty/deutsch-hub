@@ -2,23 +2,30 @@ package com.deutschhub.infrastructure.learning.web.controller;
 
 import com.deutschhub.application.learning.dto.request.CreateCourseCommand;
 import com.deutschhub.application.learning.dto.request.GetCoursesQuery;
+import com.deutschhub.application.learning.dto.request.UpdateCourseCommand;
 import com.deutschhub.application.learning.dto.response.CourseResponse;
 import com.deutschhub.application.learning.port.in.CreateCourseUseCase;
+import com.deutschhub.application.learning.port.in.DeleteCourseUseCase;
+import com.deutschhub.application.learning.port.in.GetCourseDetailUseCase;
 import com.deutschhub.application.learning.port.in.GetCoursesUseCase;
 import com.deutschhub.common.util.ApiResponse;
 import com.deutschhub.common.util.PageResponse;
 import com.deutschhub.infrastructure.learning.web.request.CreateCourseRequest;
+import com.deutschhub.infrastructure.learning.web.request.UpdateCourseRequest;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
+
+@PreAuthorize("hasRole('ADMIN')")
 @RestController
 @RequestMapping("/api/v1/admin/courses")
 @RequiredArgsConstructor
@@ -27,6 +34,8 @@ public class AdminCourseController {
 
     CreateCourseUseCase createCourseUseCase;
     GetCoursesUseCase getCoursesUseCase;
+    GetCourseDetailUseCase getCourseDetailUseCase;
+    DeleteCourseUseCase deleteCourseUseCase;
 
     @PostMapping
     public ResponseEntity<ApiResponse<CourseResponse>> createCourse(
@@ -68,6 +77,61 @@ public class AdminCourseController {
                 ApiResponse.<PageResponse<CourseResponse>>builder()
                         .message("Get courses successfully")
                         .result(response)
+                        .build()
+        );
+    }
+
+    @GetMapping("/{courseId}")
+    public ResponseEntity<ApiResponse<CourseResponse>> getCourseDetails(@PathVariable UUID courseId) {
+        CourseResponse response = getCourseDetailUseCase.getCourseDetail(courseId);
+
+        return ResponseEntity.ok(
+                ApiResponse.<CourseResponse>builder()
+                        .message("Get course detail successfully")
+                        .result(response)
+                        .build()
+        );
+    }
+
+    @PatchMapping("/{courseId}")
+    public ResponseEntity<ApiResponse<CourseResponse>> updateCourse(@PathVariable UUID courseId,
+                                                                    @AuthenticationPrincipal Jwt jwt,
+                                                                    @Valid @RequestBody UpdateCourseRequest request) {
+        UUID actorId = UUID.fromString(jwt.getSubject());
+
+        UpdateCourseCommand command = new UpdateCourseCommand(
+                courseId,
+                actorId,
+                request.title(),
+                request.description(),
+                request.level(),
+                request.price(),
+                request.currency(),
+                true
+        );
+
+        CourseResponse response = getCourseDetailUseCase.getCourseDetail(courseId);
+
+        return ResponseEntity.ok(
+                ApiResponse.<CourseResponse>builder()
+                        .message("Update course successfully")
+                        .result(response)
+                        .build()
+        );
+    }
+
+    @DeleteMapping("/{courseId}")
+    public ResponseEntity<ApiResponse<Void>> deleteCourse(
+            @PathVariable UUID courseId,
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        UUID actorId = UUID.fromString(jwt.getSubject());
+
+        deleteCourseUseCase.deleteCourse(courseId, actorId);
+
+        return ResponseEntity.ok(
+                ApiResponse.<Void>builder()
+                        .message("Delete course successfully")
                         .build()
         );
     }
