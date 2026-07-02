@@ -60,6 +60,19 @@ public class Course implements Auditable, SoftDeletable {
         this.touch();
     }
 
+    public static Course restore( UUID id, String title, String description, CEFRLevel level, Money price,
+                                  boolean published, UUID instructorId, int estimatedHours, LocalDateTime createdAt, LocalDateTime updatedAt,
+                                  LocalDateTime deletedAt) {
+        Course course = new Course(id, title, description, level, price, instructorId);
+        course.published = published;
+        course.estimatedHours = estimatedHours;
+        course.createdAt = createdAt;
+        course.updatedAt = updatedAt;
+        course.deletedAt = deletedAt;
+
+        return course;
+    }
+
     private UUID validateInstructorId(UUID instructorId) {
         if (instructorId == null) {
             throw new BusinessException(ErrorCode.INVALID_COURSE_INSTRUCTOR);
@@ -88,78 +101,10 @@ public class Course implements Auditable, SoftDeletable {
         return price;
     }
 
-    public void publish() {
-        ensureCanMutateBy(instructorId, false);
-        publishInternal();
-    }
-
-    public void publish(UUID actorId, boolean isAdmin) {
-        ensureCanMutateBy(actorId, isAdmin);
-        publishInternal();
-    }
-
-    private void publishInternal() {
-        if (sections.isEmpty()) {
-            throw new BusinessException(ErrorCode.COURSE_HAS_NO_SECTIONS);
-        }
-        if (published) {
-            throw new BusinessException(ErrorCode.COURSE_ALREADY_PUBLISHED);
-        }
-        this.published = true;
-        this.touch();
-    }
-
-    public void addSection(Section section) {
-        ensureCanMutateBy(instructorId, false);
-        addSectionInternal(section);
-    }
-
-    public void addSection(Section section, UUID actorId, boolean isAdmin) {
-        ensureCanMutateBy(actorId, isAdmin);
-        addSectionInternal(section);
-    }
-
-    private void addSectionInternal(Section section) {
-        if (published) {
-            throw new BusinessException(ErrorCode.CANNOT_MODIFY_PUBLISHED_COURSE);
-        }
-        if (section == null) {
-            throw new BusinessException(ErrorCode.SECTION_NOT_FOUND);
-        }
-        ensureNotDeleted();
-        this.sections.add(section);
-        this.touch();
-        recalculateEstimatedHours();
-    }
-
     private void ensureNotDeleted() {
         if (isDeleted()) {
             throw new BusinessException(ErrorCode.COURSE_ALREADY_DELETED);
         }
-    }
-
-    public void removeSection(UUID sectionId) {
-        ensureCanMutateBy(instructorId, false);
-        removeSectionInternal(sectionId);
-    }
-
-    public void removeSection(UUID sectionId, UUID actorId, boolean isAdmin) {
-        ensureCanMutateBy(actorId, isAdmin);
-        removeSectionInternal(sectionId);
-    }
-
-    private void removeSectionInternal(UUID sectionId) {
-        if (published) {
-            throw new BusinessException(ErrorCode.CANNOT_MODIFY_PUBLISHED_COURSE);
-        }
-        boolean removed = sections.removeIf(s -> s.getId().equals(sectionId));
-
-        if (!removed) {
-            throw new BusinessException(ErrorCode.SECTION_NOT_FOUND);
-        }
-
-        this.touch();
-        recalculateEstimatedHours();
     }
 
     private void recalculateEstimatedHours() {

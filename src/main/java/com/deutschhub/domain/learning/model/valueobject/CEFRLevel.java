@@ -19,7 +19,7 @@ public final class CEFRLevel {
     }
 
     private String validate(String level) {
-        if (value == null || value.trim().isEmpty()) {
+        if (level == null || level.trim().isEmpty()) {
             throw new BusinessException(ErrorCode.INVALID_CEFR_LEVEL, "Level cannot be empty");
         }
 
