@@ -117,6 +117,32 @@ public class Course implements Auditable, SoftDeletable {
         addSectionInternal(section);
     }
 
+    public Lesson addLessonToSection(UUID sectionId, Lesson lesson, UUID actorId, boolean isAdmin) {
+        ensureCanMutateBy(actorId, isAdmin);
+
+        if (published) {
+            throw new BusinessException(ErrorCode.CANNOT_MODIFY_PUBLISHED_COURSE);
+        }
+
+        ensureNotDeleted();
+
+        if (lesson == null) {
+            throw new BusinessException(ErrorCode.LESSON_NOT_FOUND);
+        }
+
+        Section section = sections.stream()
+                .filter(item -> item.getId().equals(sectionId))
+                .filter(item -> !item.isDeleted())
+                .findFirst()
+                .orElseThrow(() -> new BusinessException(ErrorCode.SECTION_NOT_FOUND));
+
+        section.addLesson(lesson);
+
+        touch();
+        recalculateEstimatedHours();
+        return lesson;
+    }
+
     public Section updateSection( UUID sectionId, String title, String description,
                                   Integer orderIndex, UUID actorId, boolean isAdmin) {
         ensureCanMutateBy(actorId, isAdmin);
@@ -305,4 +331,5 @@ public class Course implements Auditable, SoftDeletable {
     public List<Section> getSections() {
         return Collections.unmodifiableList(sections);
     }
+
 }

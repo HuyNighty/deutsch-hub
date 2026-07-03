@@ -35,26 +35,19 @@ public class Lesson implements Auditable, SoftDeletable {
         this.updatedAt = LocalDateTime.now();
     }
 
-    public static Lesson create(String title, String description, String content, int estimatedMinutes, CEFRLevel level, int orderIndex) {
+    public static Lesson create(String title, String description, String content, int estimatedMinutes,
+                                CEFRLevel level, int orderIndex) {
         return new Lesson(UUID.randomUUID(), title, description, content, estimatedMinutes, level, orderIndex, false);
     }
 
-    public void updateContent(String newContent) {
-        this.content = newContent != null ? newContent.trim() : "";
-        this.touch();
-    }
-
-    public void maskAsFreePreview() {
-        this.isFreePreview = true;
-        this.touch();
-    }
-
-    public void changeOrder(int newOrderIndex) {
-        if (newOrderIndex < 0) {
-            throw new BusinessException(ErrorCode.INVALID_LESSON_ORDER);
-        }
-        this.orderIndex = newOrderIndex;
-        this.touch();
+    public static Lesson restore(UUID id, String title, String description, String content, int estimatedMinutes,
+                                 CEFRLevel level, int orderIndex, boolean freePreview, LocalDateTime createdAt,
+                                 LocalDateTime updatedAt, LocalDateTime deletedAt) {
+        Lesson lesson = new Lesson(id, title, description, content, estimatedMinutes, level, orderIndex, freePreview);
+        lesson.createdAt = createdAt;
+        lesson.updatedAt = updatedAt;
+        lesson.deletedAt = deletedAt;
+        return lesson;
     }
 
     @Override

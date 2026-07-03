@@ -57,6 +57,7 @@ public enum ErrorCode {
     LESSON_INVALID_TITLE("error.lesson.invalid.title", 6002),
     LESSON_INVALID_DURATION("error.lesson.invalid.duration", 6003),
     LESSON_INVALID_CONTENT("error.lesson.invalid.content", 6004),
+    LESSON_NOT_FOUND( "error.learning.lesson.not.found", 6005),
 
     SECTION_INVALID_TITLE("error.section.invalid.title", 7001),
     INVALID_SECTION_ORDER("error.section.invalid.order", 7002),

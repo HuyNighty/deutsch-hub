@@ -1,13 +1,12 @@
 package com.deutschhub.application.learning.usecase;
 
-import com.deutschhub.application.learning.dto.response.CourseDetailResponse;
-import com.deutschhub.application.learning.dto.response.CourseResponse;
-import com.deutschhub.application.learning.dto.response.SectionResponse;
+import com.deutschhub.application.learning.dto.response.*;
 import com.deutschhub.application.learning.port.in.GetCourseDetailUseCase;
 import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
 import com.deutschhub.domain.learning.model.aggregate.Course;
 import com.deutschhub.application.learning.port.out.CourseRepositoryPort;
+import com.deutschhub.domain.learning.model.entity.Lesson;
 import com.deutschhub.domain.learning.model.entity.Section;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -40,11 +39,11 @@ public class GetCourseDetailService implements GetCourseDetailUseCase {
     }
 
     private CourseDetailResponse toResponse(Course course) {
-        List<SectionResponse> sections = course.getSections()
+        List<SectionDetailResponse> sections = course.getSections()
                 .stream()
                 .filter(section -> !section.isDeleted())
                 .sorted(Comparator.comparingInt(Section::getOrderIndex))
-                .map(this::toSectionResponse)
+                .map(this::toSectionDetailResponse)
                 .toList();
 
         return new CourseDetailResponse(
@@ -63,14 +62,35 @@ public class GetCourseDetailService implements GetCourseDetailUseCase {
         );
     }
 
-    private SectionResponse toSectionResponse(Section section) {
-        return new SectionResponse(
+    private SectionDetailResponse toSectionDetailResponse(Section section) {
+        List<LessonResponse> lessons = section.getLessons()
+                .stream()
+                .filter(lesson -> !lesson.isDeleted())
+                .sorted(Comparator.comparingInt(Lesson::getOrderIndex))
+                .map(this::toLessonResponse)
+                .toList();
+
+        return new SectionDetailResponse(
                 section.getId(),
                 section.getTitle(),
                 section.getDescription(),
                 section.getOrderIndex(),
+                lessons,
                 section.getCreatedAt(),
                 section.getUpdatedAt()
         );
+    }
+
+    private LessonResponse toLessonResponse(Lesson lesson) {
+        return new LessonResponse(   lesson.getId(),
+                lesson.getTitle(),
+                lesson.getDescription(),
+                lesson.getContent(),
+                lesson.getEstimatedMinutes(),
+                lesson.getLevel().toString(),
+                lesson.getOrderIndex(),
+                lesson.isFreePreview(),
+                lesson.getCreatedAt(),
+                lesson.getUpdatedAt());
     }
 }

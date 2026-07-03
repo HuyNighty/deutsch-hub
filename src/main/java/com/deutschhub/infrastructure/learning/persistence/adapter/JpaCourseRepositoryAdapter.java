@@ -2,10 +2,12 @@ package com.deutschhub.infrastructure.learning.persistence.adapter;
 
 import com.deutschhub.common.util.PageResponse;
 import com.deutschhub.domain.learning.model.aggregate.Course;
+import com.deutschhub.domain.learning.model.entity.Lesson;
 import com.deutschhub.domain.learning.model.entity.Section;
 import com.deutschhub.domain.learning.model.valueobject.CEFRLevel;
 import com.deutschhub.domain.learning.model.valueobject.Money;
 import com.deutschhub.infrastructure.learning.persistence.entity.CourseJpaEntity;
+import com.deutschhub.infrastructure.learning.persistence.entity.LessonJpaEntity;
 import com.deutschhub.infrastructure.learning.persistence.entity.SectionJpaEntity;
 import com.deutschhub.infrastructure.learning.persistence.repository.SpringDataCourseRepository;
 import com.deutschhub.application.learning.port.out.CourseRepositoryPort;
@@ -137,7 +139,7 @@ public class JpaCourseRepositoryAdapter implements CourseRepositoryPort {
     }
 
     private SectionJpaEntity toSectionEntity(Section section, CourseJpaEntity entity) {
-        return SectionJpaEntity.builder()
+        SectionJpaEntity sectionEntity = SectionJpaEntity.builder()
                 .id(section.getId())
                 .title(section.getTitle())
                 .description(section.getDescription())
@@ -147,14 +149,62 @@ public class JpaCourseRepositoryAdapter implements CourseRepositoryPort {
                 .deletedAt(section.getDeletedAt())
                 .course(entity)
                 .build();
+
+        section.getLessons()
+                .stream()
+                .map(lesson -> toLessonEntity(lesson, sectionEntity))
+                .forEach(sectionEntity.getLessons()::add);
+
+        return sectionEntity;
+    }
+    private LessonJpaEntity toLessonEntity(Lesson lesson, SectionJpaEntity sectionEntity) {
+        return LessonJpaEntity.builder()
+                .id(lesson.getId())
+                .title(lesson.getTitle())
+                .description(lesson.getDescription())
+                .content(lesson.getContent())
+                .estimatedMinutes(lesson.getEstimatedMinutes())
+                .level(lesson.getLevel().toString())
+                .orderIndex(lesson.getOrderIndex())
+                .freePreview(lesson.isFreePreview())
+                .createdAt(lesson.getCreatedAt())
+                .updatedAt(lesson.getUpdatedAt())
+                .deletedAt(lesson.getDeletedAt())
+                .section(sectionEntity)
+                .build();
     }
 
     private Section toSectionDomain(SectionJpaEntity entity) {
-        return Section.restore(
+        Section section = Section.restore(
                 entity.getId(),
                 entity.getTitle(),
                 entity.getDescription(),
                 entity.getOrderIndex(),
+                entity.getCreatedAt(),
+                entity.getUpdatedAt(),
+                entity.getDeletedAt()
+        );
+
+        if (entity.getLessons() != null) {
+            entity.getLessons()
+                    .stream()
+                    .map(this::toLessonDomain)
+                    .forEach(section::restoreLesson);
+        }
+
+        return section;
+    }
+
+    private Lesson toLessonDomain(LessonJpaEntity entity) {
+        return Lesson.restore(
+                entity.getId(),
+                entity.getTitle(),
+                entity.getDescription(),
+                entity.getContent(),
+                entity.getEstimatedMinutes(),
+                new CEFRLevel(entity.getLevel()),
+                entity.getOrderIndex(),
+                entity.isFreePreview(),
                 entity.getCreatedAt(),
                 entity.getUpdatedAt(),
                 entity.getDeletedAt()

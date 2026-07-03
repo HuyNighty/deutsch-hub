@@ -3,14 +3,12 @@ package com.deutschhub.infrastructure.learning.web.controller;
 import com.deutschhub.application.learning.dto.request.*;
 import com.deutschhub.application.learning.dto.response.CourseDetailResponse;
 import com.deutschhub.application.learning.dto.response.CourseResponse;
+import com.deutschhub.application.learning.dto.response.LessonResponse;
 import com.deutschhub.application.learning.dto.response.SectionResponse;
 import com.deutschhub.application.learning.port.in.*;
 import com.deutschhub.common.util.ApiResponse;
 import com.deutschhub.common.util.PageResponse;
-import com.deutschhub.infrastructure.learning.web.request.AddSectionRequest;
-import com.deutschhub.infrastructure.learning.web.request.CreateCourseRequest;
-import com.deutschhub.infrastructure.learning.web.request.UpdateCourseRequest;
-import com.deutschhub.infrastructure.learning.web.request.UpdateSectionRequest;
+import com.deutschhub.infrastructure.learning.web.request.*;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -43,6 +41,7 @@ public class AdminCourseController {
     PublishCourseUseCase publishCourseUseCase;
     UnpublishCourseUseCase unpublishCourseUseCase;
     UpdateCourseUseCase updateCourseUseCase;
+    AddLessonToSectionUseCase addLessonToSectionUseCase;
 
     @PostMapping
     public ResponseEntity<ApiResponse<CourseResponse>> createCourse(
@@ -260,6 +259,38 @@ public class AdminCourseController {
         return ResponseEntity.ok(
                 ApiResponse.<CourseResponse>builder()
                         .message("Unpublish course successfully")
+                        .result(response)
+                        .build()
+        );
+    }
+
+    @PostMapping("/{courseId}/sections/{sectionId}/lessons")
+    public ResponseEntity<ApiResponse<LessonResponse>> addLesson(
+            @PathVariable UUID courseId,
+            @PathVariable UUID sectionId,
+            @AuthenticationPrincipal Jwt jwt,
+            @Valid @RequestBody AddLessonRequest request
+    ) {
+        UUID actorId = UUID.fromString(jwt.getSubject());
+
+        AddLessonCommand command = new AddLessonCommand(
+                courseId,
+                sectionId,
+                actorId,
+                request.title(),
+                request.description(),
+                request.content(),
+                request.estimatedMinutes(),
+                request.level(),
+                request.orderIndex(),
+                true
+        );
+
+        LessonResponse response = addLessonToSectionUseCase.addLessonToSection(command);
+
+        return ResponseEntity.ok(
+                ApiResponse.<LessonResponse>builder()
+                        .message("Add lesson successfully")
                         .result(response)
                         .build()
         );

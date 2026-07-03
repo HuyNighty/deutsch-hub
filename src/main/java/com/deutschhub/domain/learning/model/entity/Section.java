@@ -46,6 +46,14 @@ public class Section implements Auditable, SoftDeletable {
         return section;
     }
 
+    public void restoreLesson(Lesson lesson) {
+        if (lesson == null) {
+            return;
+        }
+
+        this.lessons.add(lesson);
+    }
+
     public void update(String title, String description, Integer orderIndex) {
         if (this.title != null) {
             changeTitle(title);
@@ -67,11 +75,6 @@ public class Section implements Auditable, SoftDeletable {
             throw new BusinessException(ErrorCode.LESSON_INVALID_CONTENT);
         }
         lessons.add(lesson);
-        this.touch();
-    }
-
-    public void removeLesson(UUID lessonId) {
-        lessons.removeIf(lesson -> lesson.getId().equals(lessonId));
         this.touch();
     }
 
