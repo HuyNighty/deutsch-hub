@@ -18,7 +18,23 @@ public enum EnrollmentStatus {
     }
 
     public boolean canTransitionTo(EnrollmentStatus newStatus) {
-        return this != COMPLETED && this != IN_PROGRESS && this != ENROLLED;
+        if (newStatus == null) {
+            return false;
+        }
+
+        if (this == COMPLETED || this == DROPPED || this == EXPIRED) {
+            return false;
+        }
+
+        if (this == ENROLLED) {
+            return newStatus == IN_PROGRESS || newStatus == DROPPED || newStatus == EXPIRED;
+        }
+
+        if (this == IN_PROGRESS) {
+            return newStatus == COMPLETED || newStatus == DROPPED || newStatus == EXPIRED;
+        }
+
+        return false;
     }
 
     public boolean isCompleted() {

@@ -1,7 +1,6 @@
 package com.deutschhub.domain.learning.model.aggregate;
 
 import com.deutschhub.common.domain.Auditable;
-import com.deutschhub.common.domain.SoftDeletable;
 import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
 import com.deutschhub.domain.learning.model.valueobject.EnrollmentStatus;
@@ -10,171 +9,119 @@ import com.deutschhub.domain.learning.model.valueobject.Progress;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-public class Enrollment implements Auditable, SoftDeletable {
+public class Enrollment implements Auditable {
 
     private final UUID id;
     private final UUID userId;
     private final UUID courseId;
     private EnrollmentStatus status;
     private Progress progress;
-    private LocalDateTime enrolledAt;
+    private final LocalDateTime enrolledAt;
     private LocalDateTime completedAt;
+    private LocalDateTime droppedAt;
+    private LocalDateTime expiredAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    private LocalDateTime deletedAt;
 
-    private Enrollment(UUID id, UUID userId, UUID courseId, EnrollmentStatus status) {
+    private Enrollment(UUID id, UUID userId, UUID courseId, EnrollmentStatus status, Progress progress, LocalDateTime enrolledAt,
+                       LocalDateTime completedAt, LocalDateTime droppedAt, LocalDateTime expiredAt, LocalDateTime createdAt, LocalDateTime updatedAt) {
+        if (id == null) {
+            throw new BusinessException(ErrorCode.ENROLLMENT_ID_CAN_NOT_NULL);
+        }
+
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.USER_ID_CAN_NOT_NULL);
+        }
+
+        if (courseId == null) {
+            throw new BusinessException(ErrorCode.COURSE_ID_CAN_NOT_NULL);
+        }
+
+        if (status == null) {
+            throw new BusinessException(ErrorCode.INVALID_ENROLLMENT_STATUS);
+        }
+
+        if (progress == null) {
+            throw new BusinessException(ErrorCode.INVALID_PROGRESS_DATA);
+        }
+
         this.id = id;
         this.userId = userId;
         this.courseId = courseId;
-        this.status = status != null ? status : EnrollmentStatus.ENROLLED;
-        this.progress = Progress.createInitial(0);
-        this.enrolledAt = LocalDateTime.now();
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
+        this.status = status;
+        this.progress = progress;
+        this.enrolledAt = enrolledAt;
+        this.completedAt = completedAt;
+        this.droppedAt = droppedAt;
+        this.expiredAt = expiredAt;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
     }
 
-    public static Enrollment create(UUID userId, UUID courseId) {
-        if (userId == null || courseId == null) {
-            throw new BusinessException(ErrorCode.INVALID_ENROLLMENT_DATA);
-        }
-        return new Enrollment(UUID.randomUUID(), userId, courseId, null);
+    public static Enrollment create(UUID userId, UUID courseId, int totalLessons) {
+        LocalDateTime now = LocalDateTime.now();
+
+        return new Enrollment(UUID.randomUUID(), userId, courseId, EnrollmentStatus.ENROLLED, Progress.createInitial(totalLessons),
+                now, null, null, null, now, now);
     }
 
-    public void startLearning() {
-        ensureCanMutateBy(userId, false);
-        startLearningInternal();
-    }
-
-    public void startLearning(UUID actorId, boolean isAdmin) {
-        ensureCanMutateBy(actorId, isAdmin);
-        startLearningInternal();
-    }
-
-    private void startLearningInternal() {
-        ensureNotDeleted();
-
-        if (status != EnrollmentStatus.ENROLLED) {
-            throw new BusinessException(ErrorCode.INVALID_ENROLLMENT_STATE);
-        }
-
-        this.status = EnrollmentStatus.IN_PROGRESS;
-        this.touch();
-    }
-
-    public void updateProgress(Progress newProgress) {
-        ensureCanMutateBy(userId, false);
-        updateProgressInternal(newProgress);
-    }
-
-    public void updateProgress(Progress newProgress, UUID actorId, boolean isAdmin) {
-        ensureCanMutateBy(actorId, isAdmin);
-        updateProgressInternal(newProgress);
-    }
-
-
-    private void updateProgressInternal(Progress newProgress) {
-        ensureModifiable();
-        if (newProgress == null) {
-            throw new BusinessException(ErrorCode.INVALID_PROGRESS_DATA);
-        }
-        if (newProgress.getCompletionPercentage() < this.progress.getCompletionPercentage()) {
-            throw new BusinessException(ErrorCode.ENROLLMENT_PROGRESS_CANNOT_DECREASE);
-        }
-
-        this.progress = newProgress;
-
-        if (newProgress.isCompleted()) {
-            this.status = EnrollmentStatus.COMPLETED;
-            this.completedAt = this.completedAt == null ? LocalDateTime.now() : this.completedAt;
-
-            if (!newProgress.isCompleted()) {
-                throw new BusinessException(ErrorCode.INVALID_ENROLLMENT_PROGRESS_STATE);
-            }
-        }
-
-        this.touch();
-    }
-
-    private void ensureModifiable() {
-        ensureNotDeleted();
-        ensureActive();
-    }
-
-    private void ensureActive() {
-        if (status == EnrollmentStatus.COMPLETED || status == EnrollmentStatus.DROPPED) {
-            throw new BusinessException(ErrorCode.ENROLLMENT_NOT_ACTIVE);
-        }
-    }
-
-    private void ensureNotDeleted() {
-        if (isDeleted()) {
-            throw new BusinessException(ErrorCode.ENROLLMENT_ALREADY_DELETED);
-        }
-    }
-
-    private void ensureCanMutateBy(UUID actorId, boolean isAdmin) {
-        ensureNotDeleted();
-        if (isAdmin) {
-            return;
-        }
-
-        if(!userId.equals(actorId)) {
-            throw new BusinessException(ErrorCode.ENROLLMENT_FORBIDDEN_ACTION);
-        }
-    }
-
-    public void drop() {
-        ensureCanMutateBy(userId, false);
-        dropInternal();
-    }
-
-    public void drop(UUID actorId, boolean isAdmin) {
-        ensureCanMutateBy(actorId, isAdmin);
-        dropInternal();
-    }
-
-    private void dropInternal() {
-        ensureNotDeleted();
-        if (status == EnrollmentStatus.COMPLETED) {
-            throw new BusinessException(ErrorCode.CANNOT_DROP_COMPLETED_ENROLLMENT);
-        }
-        this.status = EnrollmentStatus.DROPPED;
-        this.touch();
+    public static Enrollment restore(UUID id, UUID userId, UUID courseId, EnrollmentStatus status, Progress progress,
+                                     LocalDateTime enrolledAt, LocalDateTime completedAt, LocalDateTime droppedAt,
+                                     LocalDateTime expiredAt, LocalDateTime createdAt, LocalDateTime updatedAt) {
+        return new Enrollment(id, userId, courseId, status, progress, enrolledAt, completedAt, droppedAt, expiredAt,
+                createdAt, updatedAt);
     }
 
     public boolean isActive() {
         return status.isActive();
     }
 
-    public boolean isCompleted() {
-        return status.isCompleted();
+    public void startLearning() {
+        changeStatus(EnrollmentStatus.IN_PROGRESS);
+    }
+
+    public void complete() {
+        changeStatus(EnrollmentStatus.COMPLETED);
+        this.completedAt = LocalDateTime.now();
+    }
+
+    public void drop() {
+        changeStatus(EnrollmentStatus.DROPPED);
+        this.droppedAt = LocalDateTime.now();
+    }
+
+    public void expire() {
+        changeStatus(EnrollmentStatus.EXPIRED);
+        this.expiredAt = LocalDateTime.now();
+    }
+
+    public void updateProgress(int completedLessons, int totalStudyMinutes) {
+        this.progress = progress.updateProgress(completedLessons, totalStudyMinutes);
+
+        if (status == EnrollmentStatus.ENROLLED && progress.hasStarted()) {
+            this.status = EnrollmentStatus.IN_PROGRESS;
+        }
+
+        if (progress.isCompleted()) {
+            this.status = EnrollmentStatus.COMPLETED;
+            this.completedAt = LocalDateTime.now();
+        }
+
+        touch();
+    }
+
+    private void changeStatus(EnrollmentStatus newStatus) {
+        if (!status.canTransitionTo(newStatus)) {
+            throw new BusinessException(ErrorCode.INVALID_ENROLLMENT_STATUS);
+        }
+
+        this.status = newStatus;
+        touch();
     }
 
     @Override
     public void touch() {
         this.updatedAt = LocalDateTime.now();
-    }
-
-    @Override
-    public boolean isDeleted() {
-        return this.deletedAt != null;
-    }
-
-    @Override
-    public void softDelete() {
-        ensureCanMutateBy(userId, false);
-        softDeleteInternal();
-    }
-
-    public void softDelete(UUID actorId, boolean isAdmin) {
-        ensureCanMutateBy(actorId, isAdmin);
-        softDeleteInternal();
-    }
-
-    private void softDeleteInternal() {
-        this.deletedAt = LocalDateTime.now();
-        this.touch();
     }
 
     public UUID getId() {
@@ -205,7 +152,14 @@ public class Enrollment implements Auditable, SoftDeletable {
         return completedAt;
     }
 
-    @Override
+    public LocalDateTime getDroppedAt() {
+        return droppedAt;
+    }
+
+    public LocalDateTime getExpiredAt() {
+        return expiredAt;
+    }
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
@@ -213,10 +167,5 @@ public class Enrollment implements Auditable, SoftDeletable {
     @Override
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
-    }
-
-    @Override
-    public LocalDateTime getDeletedAt() {
-        return deletedAt;
     }
 }

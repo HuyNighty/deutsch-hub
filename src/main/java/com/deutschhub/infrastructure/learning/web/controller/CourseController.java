@@ -3,7 +3,9 @@ package com.deutschhub.infrastructure.learning.web.controller;
 import com.deutschhub.application.learning.dto.request.GetCoursesQuery;
 import com.deutschhub.application.learning.dto.response.CourseDetailResponse;
 import com.deutschhub.application.learning.dto.response.CourseResponse;
+import com.deutschhub.application.learning.dto.response.EnrollmentResponse;
 import com.deutschhub.application.learning.dto.response.PublishedCourseDetailResponse;
+import com.deutschhub.application.learning.port.in.EnrollCourseUseCase;
 import com.deutschhub.application.learning.port.in.GetPublishedCourseDetailUseCase;
 import com.deutschhub.application.learning.port.in.GetPublishedCoursesUseCase;
 import com.deutschhub.common.util.ApiResponse;
@@ -12,6 +14,8 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -24,6 +28,7 @@ public class CourseController {
 
     GetPublishedCoursesUseCase getPublishedCoursesUseCase;
     GetPublishedCourseDetailUseCase getPublishedCourseDetailUseCase;
+    EnrollCourseUseCase enrollCourseUseCase;
 
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<CourseResponse>>> getCourses(
@@ -50,6 +55,23 @@ public class CourseController {
         return ResponseEntity.ok(
                 ApiResponse.<PublishedCourseDetailResponse>builder()
                         .message("Get course detail successfully")
+                        .result(response)
+                        .build()
+        );
+    }
+
+    @PostMapping("/{courseId}/enroll")
+    public ResponseEntity<ApiResponse<EnrollmentResponse>> enrollCourse(
+            @PathVariable UUID courseId,
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        UUID userId = UUID.fromString(jwt.getSubject());
+
+        EnrollmentResponse response = enrollCourseUseCase.enroll(userId, courseId);
+
+        return ResponseEntity.ok(
+                ApiResponse.<EnrollmentResponse>builder()
+                        .message("Enroll course successfully")
                         .result(response)
                         .build()
         );

@@ -51,8 +51,12 @@ public enum ErrorCode {
     COURSE_NOT_COMPLETED("error.course.not.completed", 5011),
     COURSE_NOT_FOUND("error.course.not.found", 5012),
     COURSE_NOT_PUBLISHED("error.learning.course.not.published",5013),
+
     COURSE_MUST_HAVE_SECTION_BEFORE_PUBLISH("error.learning.course.must.have.section.before.publish", 50001),
     COURSE_MUST_HAVE_LESSON_BEFORE_PUBLISH("error.learning.course.must.have.lesson.before.publish", 50002),
+    COURSE_ID_CAN_NOT_NULL("error.learning.course.id.can.not.null", 50003),
+    COURSE_ALREADY_ENROLLED("error.learning.course.already.enrolled", 50004),
+
 
     INVALID_LESSON_ORDER("error.lesson.invalid.order", 6001),
     LESSON_INVALID_TITLE("error.lesson.invalid.title", 6002),
@@ -74,8 +78,13 @@ public enum ErrorCode {
     ENROLLMENT_NOT_ACTIVE("error.enrollment.not.active", 8005),
     ENROLLMENT_ALREADY_DELETED("error.enrollment.already.deleted", 8006),
     ENROLLMENT_FORBIDDEN_ACTION("error.enrollment.forbidden.action", 8007),
+    INVALID_ENROLLMENT_STATUS( "error.enrollment.invalid.status",  8008),
+
     ENROLLMENT_PROGRESS_CANNOT_DECREASE("error.enrollment.progress.cannot.decrease", 8101),
     INVALID_ENROLLMENT_PROGRESS_STATE("error.enrollment.progress.state", 8102),
+
+    ENROLLMENT_ID_CAN_NOT_NULL("error.learning.enrollment.id.can.not.null", 80001),
+
 
     INVALID_PROGRESS_DATA("error.enrollment.progress.invalid.data", 8103),
 

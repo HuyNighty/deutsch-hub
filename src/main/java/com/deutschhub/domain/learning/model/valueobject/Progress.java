@@ -13,24 +13,28 @@ public final class Progress {
     private final int totalStudyMinutes;
     private final LocalDateTime lastUpdatedAt;
 
-    private Progress(int completedLessons, int totalLessons, int totalStudyMinutes) {
+    private Progress(int completedLessons, int totalLessons, int totalStudyMinutes, LocalDateTime lastUpdatedAt) {
         this.completedLessons = validateCompletedLessons(completedLessons, totalLessons);
         this.totalLessons = validateTotalLessons(totalLessons);
         this.completionPercentage = calculateCompletionPercentage(completedLessons, totalLessons);
         this.totalStudyMinutes = Math.max(0, totalStudyMinutes);
-        this.lastUpdatedAt = LocalDateTime.now();
+        this.lastUpdatedAt = lastUpdatedAt == null ? LocalDateTime.now() : lastUpdatedAt;
     }
 
     public static Progress create(int completedLessons, int totalLessons, int totalStudyMinutes) {
-        return new Progress(completedLessons, totalLessons, totalStudyMinutes);
+        return new Progress(completedLessons, totalLessons, totalStudyMinutes, LocalDateTime.now());
     }
 
     public static Progress createInitial(int totalLessons) {
-        return new Progress(0, totalLessons, 0);
+        return new Progress(0, totalLessons, 0, LocalDateTime.now());
     }
 
     public Progress updateProgress(int newCompletedLessons, int newTotalStudyMinutes) {
-        return new Progress(newCompletedLessons, this.totalLessons, newTotalStudyMinutes);
+        return new Progress(newCompletedLessons, this.totalLessons, newTotalStudyMinutes, LocalDateTime.now());
+    }
+
+    public static Progress restore(int completedLessons, int totalLessons, int totalStudyMinutes, LocalDateTime lastUpdatedAt) {
+        return new Progress(completedLessons, totalLessons, totalStudyMinutes, lastUpdatedAt);
     }
 
     public boolean isCompleted() {
