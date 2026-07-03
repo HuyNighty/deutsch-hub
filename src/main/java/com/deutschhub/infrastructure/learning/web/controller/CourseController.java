@@ -3,6 +3,7 @@ package com.deutschhub.infrastructure.learning.web.controller;
 import com.deutschhub.application.learning.dto.request.GetCoursesQuery;
 import com.deutschhub.application.learning.dto.response.CourseDetailResponse;
 import com.deutschhub.application.learning.dto.response.CourseResponse;
+import com.deutschhub.application.learning.dto.response.PublishedCourseDetailResponse;
 import com.deutschhub.application.learning.port.in.GetPublishedCourseDetailUseCase;
 import com.deutschhub.application.learning.port.in.GetPublishedCoursesUseCase;
 import com.deutschhub.common.util.ApiResponse;
@@ -43,11 +44,11 @@ public class CourseController {
     }
 
     @GetMapping("/{courseId}")
-    public ResponseEntity<ApiResponse<CourseDetailResponse>> getCourseDetail(@PathVariable UUID courseId) {
-        CourseDetailResponse response = getPublishedCourseDetailUseCase.getPublishedCourseDetail(courseId);
+    public ResponseEntity<ApiResponse<PublishedCourseDetailResponse>> getCourseDetail(@PathVariable UUID courseId) {
+        PublishedCourseDetailResponse response = getPublishedCourseDetailUseCase.getPublishedCourseDetail(courseId);
 
         return ResponseEntity.ok(
-                ApiResponse.<CourseDetailResponse>builder()
+                ApiResponse.<PublishedCourseDetailResponse>builder()
                         .message("Get course detail successfully")
                         .result(response)
                         .build()

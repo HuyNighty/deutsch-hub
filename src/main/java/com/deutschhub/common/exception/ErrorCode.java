@@ -52,12 +52,16 @@ public enum ErrorCode {
     COURSE_NOT_FOUND("error.course.not.found", 5012),
     COURSE_NOT_PUBLISHED("error.learning.course.not.published",5013),
     COURSE_MUST_HAVE_SECTION_BEFORE_PUBLISH("error.learning.course.must.have.section.before.publish", 50001),
+    COURSE_MUST_HAVE_LESSON_BEFORE_PUBLISH("error.learning.course.must.have.lesson.before.publish", 50002),
 
     INVALID_LESSON_ORDER("error.lesson.invalid.order", 6001),
     LESSON_INVALID_TITLE("error.lesson.invalid.title", 6002),
     LESSON_INVALID_DURATION("error.lesson.invalid.duration", 6003),
     LESSON_INVALID_CONTENT("error.lesson.invalid.content", 6004),
     LESSON_NOT_FOUND( "error.learning.lesson.not.found", 6005),
+    INVALID_LESSON_TITLE("error.learning.lesson.invalid.title", 6006),
+    INVALID_LESSON_CONTENT("error.learning.lesson.invalid.content", 6007),
+    INVALID_LESSON_ESTIMATED_MINUTES( "error.learning.lesson.invalid.estimated.minutes", 6008),
 
     SECTION_INVALID_TITLE("error.section.invalid.title", 7001),
     INVALID_SECTION_ORDER("error.section.invalid.order", 7002),

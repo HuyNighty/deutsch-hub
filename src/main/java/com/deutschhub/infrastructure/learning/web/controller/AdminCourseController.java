@@ -42,6 +42,9 @@ public class AdminCourseController {
     UnpublishCourseUseCase unpublishCourseUseCase;
     UpdateCourseUseCase updateCourseUseCase;
     AddLessonToSectionUseCase addLessonToSectionUseCase;
+    GetSectionLessonsUseCase getSectionLessonsUseCase;
+    UpdateLessonUseCase updateLessonUseCase;
+    DeleteLessonUseCase deleteLessonUseCase;
 
     @PostMapping
     public ResponseEntity<ApiResponse<CourseResponse>> createCourse(
@@ -295,4 +298,52 @@ public class AdminCourseController {
                         .build()
         );
     }
+
+    @GetMapping("/{courseId}/sections/{sectionId}/lessons")
+    public ResponseEntity<ApiResponse<List<LessonResponse>>> getLessons(@PathVariable UUID courseId,
+                                                                        @PathVariable UUID sectionId) {
+        List<LessonResponse> responses = getSectionLessonsUseCase.getLessons(courseId, sectionId);
+
+        return ResponseEntity.ok(
+                ApiResponse.<List<LessonResponse>>builder()
+                        .message("Get lessons successfully")
+                        .result(responses)
+                        .build()
+        );
+    }
+
+    @PatchMapping("/{courseId}/sections/{sectionId}/lessons/{lessonId}")
+    public ResponseEntity<ApiResponse<LessonResponse>> updateLesson(@PathVariable UUID courseId, @PathVariable UUID sectionId,
+                                                                    @PathVariable UUID lessonId, @AuthenticationPrincipal Jwt jwt,
+                                                                    @Valid @RequestBody UpdateLessonRequest request) {
+        UUID actorId = UUID.fromString(jwt.getSubject());
+
+        UpdateLessonCommand command = new UpdateLessonCommand(courseId, sectionId, lessonId, actorId, request.title(),
+                request.description(), request.content(), request.estimatedMinutes(), request.level(), request.orderIndex(),
+                request.freePreview(), true);
+
+        LessonResponse response = updateLessonUseCase.updateLesson(command);
+
+        return ResponseEntity.ok(
+                ApiResponse.<LessonResponse>builder()
+                        .message("Update lesson successfully")
+                        .result(response)
+                        .build()
+        );
+    }
+
+    @DeleteMapping("/{courseId}/sections/{sectionId}/lessons/{lessonId}")
+    public ResponseEntity<ApiResponse<Void>> deleteLesson(@PathVariable UUID courseId, @PathVariable UUID sectionId,
+                                                          @PathVariable UUID lessonId, @AuthenticationPrincipal Jwt jwt) {
+        UUID actorId = UUID.fromString(jwt.getSubject());
+
+        deleteLessonUseCase.deleteLesson(courseId, sectionId, lessonId, actorId, true);
+
+        return ResponseEntity.ok(
+                ApiResponse.<Void>builder()
+                        .message("Delete lesson successfully")
+                        .build()
+        );
+    }
+
 }

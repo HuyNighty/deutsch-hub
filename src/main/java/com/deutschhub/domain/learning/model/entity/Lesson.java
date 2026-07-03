@@ -50,6 +50,69 @@ public class Lesson implements Auditable, SoftDeletable {
         return lesson;
     }
 
+    public void update(String title, String description, String content, Integer estimatedMinutes,
+                       CEFRLevel level, Integer orderIndex, Boolean freePreview) {
+        if (title != null) {
+            changeTitle(title);
+        }
+
+        if (description != null) {
+            this.description = description.trim();
+        }
+
+        if (content != null) {
+            changeContent(content);
+        }
+
+        if (estimatedMinutes != null) {
+            changeEstimatedMinutes(estimatedMinutes);
+        }
+
+        if (level != null) {
+            this.level = level;
+        }
+
+        if (orderIndex != null) {
+            changeOrderIndex(orderIndex);
+        }
+
+        if (freePreview != null) {
+            this.isFreePreview = freePreview;
+        }
+
+        touch();
+    }
+
+    private void changeTitle(String title) {
+        if (title == null || title.trim().isBlank()) {
+            throw new BusinessException(ErrorCode.INVALID_LESSON_TITLE);
+        }
+
+        this.title = title.trim();
+    }
+
+    private void changeContent(String content) {
+        if (content == null || content.trim().isBlank()) {
+            throw new BusinessException(ErrorCode.INVALID_LESSON_CONTENT);
+        }
+
+        this.content = content.trim();
+    }
+
+    private void changeEstimatedMinutes(int estimatedMinutes) {
+        if (estimatedMinutes <= 0) {
+            throw new BusinessException(ErrorCode.INVALID_LESSON_ESTIMATED_MINUTES);
+        }
+
+        this.estimatedMinutes = estimatedMinutes;
+    }
+
+    private void changeOrderIndex(int orderIndex) {
+        if (orderIndex < 0) {
+            throw new BusinessException(ErrorCode.INVALID_LESSON_ORDER);
+        }
+    }
+
     @Override
     public void touch() {
         this.updatedAt = LocalDateTime.now();

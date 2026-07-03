@@ -1,5 +1,6 @@
 package com.deutschhub.domain.learning.model.aggregate;
 
+import com.deutschhub.application.learning.dto.request.UpdateLessonCommand;
 import com.deutschhub.common.domain.Auditable;
 import com.deutschhub.common.domain.SoftDeletable;
 import com.deutschhub.common.exception.BusinessException;
@@ -96,6 +97,15 @@ public class Course implements Auditable, SoftDeletable {
             throw new BusinessException(ErrorCode.COURSE_MUST_HAVE_SECTION_BEFORE_PUBLISH);
         }
 
+        boolean hasActiveLesson = sections.stream()
+                .filter(section -> !section.isDeleted())
+                .flatMap(section -> section.getLessons().stream())
+                .anyMatch(lesson -> !lesson.isDeleted());
+
+        if (!hasActiveLesson) {
+            throw new BusinessException(ErrorCode.COURSE_MUST_HAVE_LESSON_BEFORE_PUBLISH);
+        }
+
         this.published = true;
         touch();
     }
@@ -143,8 +153,8 @@ public class Course implements Auditable, SoftDeletable {
         return lesson;
     }
 
-    public Section updateSection( UUID sectionId, String title, String description,
-                                  Integer orderIndex, UUID actorId, boolean isAdmin) {
+    public Section updateSection(UUID sectionId, String title, String description,
+                                 Integer orderIndex, UUID actorId, boolean isAdmin) {
         ensureCanMutateBy(actorId, isAdmin);
 
         if (published) {
@@ -168,6 +178,37 @@ public class Course implements Auditable, SoftDeletable {
         return section;
     }
 
+    public Lesson updateLesson(UUID sectionId, UUID lessonId, String title, String description, String content,
+                               Integer estimatedMinutes, CEFRLevel level, Integer orderIndex, Boolean freePreview,
+                               UUID actorId, boolean isAdmin) {
+        ensureCanMutateBy(actorId, isAdmin);
+
+        if (published) {
+            throw new BusinessException(ErrorCode.CANNOT_MODIFY_PUBLISHED_COURSE);
+        }
+
+        ensureNotDeleted();
+
+        Section section = sections.stream()
+                .filter(item -> item.getId().equals(sectionId))
+                .filter(item -> !item.isDeleted())
+                .findFirst()
+                .orElseThrow(() -> new BusinessException(ErrorCode.SECTION_NOT_FOUND));
+
+        Lesson lesson = section.getLessons()
+                .stream()
+                .filter(item -> item.getId().equals(lessonId))
+                .filter(item -> !item.isDeleted())
+                .findFirst()
+                .orElseThrow(() -> new BusinessException(ErrorCode.LESSON_NOT_FOUND));
+
+        lesson.update(title, description, content, estimatedMinutes, level, orderIndex, freePreview);
+
+        touch();
+        recalculateEstimatedHours();
+        return lesson;
+    }
+
     public void deleteSection(UUID sectionId, UUID actorId, boolean isAdmin) {
         ensureCanMutateBy(actorId, isAdmin);
         if (published) {
@@ -185,6 +226,35 @@ public class Course implements Auditable, SoftDeletable {
         section.softDelete();
         touch();
         recalculateEstimatedHours();
+    }
+
+    public Lesson deleteLesson(UUID sectionId, UUID lessonId, UUID actorId, boolean isAdmin) {
+        ensureCanMutateBy(actorId, isAdmin);
+
+        if (published) {
+            throw new BusinessException(ErrorCode.CANNOT_MODIFY_PUBLISHED_COURSE);
+        }
+
+        ensureNotDeleted();
+
+        Section section = sections.stream()
+                .filter(item -> item.getId().equals(sectionId))
+                .filter(item -> !item.isDeleted())
+                .findFirst()
+                .orElseThrow(() -> new BusinessException(ErrorCode.SECTION_NOT_FOUND));
+
+        Lesson lesson = section.getLessons()
+                .stream()
+                .filter(item -> item.getId().equals(lessonId))
+                .filter(item -> !item.isDeleted())
+                .findFirst()
+                .orElseThrow(() -> new BusinessException(ErrorCode.LESSON_NOT_FOUND));
+
+        lesson.softDelete();
+
+        touch();
+        recalculateEstimatedHours();
+        return lesson;
     }
 
     private void addSectionInternal(Section section) {

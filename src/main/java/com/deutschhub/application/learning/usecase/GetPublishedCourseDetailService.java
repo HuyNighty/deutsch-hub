@@ -1,9 +1,6 @@
 package com.deutschhub.application.learning.usecase;
 
-import com.deutschhub.application.learning.dto.response.CourseDetailResponse;
-import com.deutschhub.application.learning.dto.response.LessonResponse;
-import com.deutschhub.application.learning.dto.response.SectionDetailResponse;
-import com.deutschhub.application.learning.dto.response.SectionResponse;
+import com.deutschhub.application.learning.dto.response.*;
 import com.deutschhub.application.learning.port.in.GetPublishedCourseDetailUseCase;
 import com.deutschhub.application.learning.port.out.CourseRepositoryPort;
 import com.deutschhub.common.exception.BusinessException;
@@ -30,29 +27,28 @@ public class GetPublishedCourseDetailService implements GetPublishedCourseDetail
     CourseRepositoryPort courseRepositoryPort;
 
     @Override
-    public CourseDetailResponse getPublishedCourseDetail(UUID courseId) {
+    public PublishedCourseDetailResponse getPublishedCourseDetail(UUID courseId) {
         Course course = courseRepositoryPort.findPublishedById(courseId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.COURSE_NOT_FOUND));
 
         return toResponse(course);
     }
 
-    private CourseDetailResponse toResponse(Course course) {
-        List<SectionDetailResponse> sections = course.getSections()
+    private PublishedCourseDetailResponse toResponse(Course course) {
+        List<PublishedSectionResponse> sections = course.getSections()
                 .stream()
                 .filter(section -> !section.isDeleted())
                 .sorted(Comparator.comparingInt(Section::getOrderIndex))
-                .map(this::toSectionDetailResponse)
+                .map(this::toSectionResponse)
                 .toList();
 
-        return new CourseDetailResponse(
+        return new PublishedCourseDetailResponse(
                 course.getId(),
                 course.getTitle(),
                 course.getDescription(),
                 course.getLevel().toString(),
                 course.getPrice().getAmount(),
                 course.getPrice().getCurrency(),
-                course.isPublished(),
                 course.getInstructorId(),
                 course.getEstimatedHours(),
                 sections,
@@ -61,17 +57,17 @@ public class GetPublishedCourseDetailService implements GetPublishedCourseDetail
         );
     }
 
-    private SectionDetailResponse toSectionDetailResponse(Section section) {
+    private PublishedSectionResponse toSectionResponse(Section section) {
 
-        List<LessonResponse> lessons = section.getLessons()
+        List<LessonPreviewResponse> lessons = section.getLessons()
                 .stream()
                 .filter(lesson -> !lesson.isDeleted())
                 .sorted(Comparator.comparingInt(Lesson::getOrderIndex))
-                .map(this::toLessonResponse)
+                .map(this::toLessonPreviewResponse)
                 .toList();
 
 
-        return new SectionDetailResponse(
+        return new PublishedSectionResponse(
                 section.getId(),
                 section.getTitle(),
                 section.getDescription(),
@@ -82,12 +78,11 @@ public class GetPublishedCourseDetailService implements GetPublishedCourseDetail
         );
     }
 
-    private LessonResponse toLessonResponse(Lesson lesson) {
-        return new LessonResponse(
+    private LessonPreviewResponse toLessonPreviewResponse(Lesson lesson) {
+        return new LessonPreviewResponse(
                 lesson.getId(),
                 lesson.getTitle(),
                 lesson.getDescription(),
-                lesson.getContent(),
                 lesson.getEstimatedMinutes(),
                 lesson.getLevel().toString(),
                 lesson.getOrderIndex(),
