@@ -66,6 +66,8 @@ public enum ErrorCode {
     INVALID_LESSON_TITLE("error.learning.lesson.invalid.title", 6006),
     INVALID_LESSON_CONTENT("error.learning.lesson.invalid.content", 6007),
     INVALID_LESSON_ESTIMATED_MINUTES( "error.learning.lesson.invalid.estimated.minutes", 6008),
+    LESSON_ID_CAN_NOT_NULL("error.learning.lesson.id.can.not.null", 6009),
+    LESSON_ALREADY_COMPLETED("error.learning.lesson.already.completed", 6010),
 
     SECTION_INVALID_TITLE("error.section.invalid.title", 7001),
     INVALID_SECTION_ORDER("error.section.invalid.order", 7002),
@@ -79,12 +81,12 @@ public enum ErrorCode {
     ENROLLMENT_ALREADY_DELETED("error.enrollment.already.deleted", 8006),
     ENROLLMENT_FORBIDDEN_ACTION("error.enrollment.forbidden.action", 8007),
     INVALID_ENROLLMENT_STATUS( "error.enrollment.invalid.status",  8008),
+    ENROLLMENT_NOT_FOUND( "error.enrollment.not.found", 8009),
 
     ENROLLMENT_PROGRESS_CANNOT_DECREASE("error.enrollment.progress.cannot.decrease", 8101),
     INVALID_ENROLLMENT_PROGRESS_STATE("error.enrollment.progress.state", 8102),
 
     ENROLLMENT_ID_CAN_NOT_NULL("error.learning.enrollment.id.can.not.null", 80001),
-
 
     INVALID_PROGRESS_DATA("error.enrollment.progress.invalid.data", 8103),
 
@@ -133,6 +135,8 @@ public enum ErrorCode {
     INVALID_USER_ANSWER_DATA("error.user.answer.invalid.data", 12102),
 
     CERTIFICATE_FORBIDDEN_ACTION("error.certificate.forbidden.action", 13001),
+
+    LESSON_COMPLETION_ID_CAN_NOT_NULL("error.learning.lesson.completion.id.can.not.null", 14001)
     ;
 
     private final String messageKey;
