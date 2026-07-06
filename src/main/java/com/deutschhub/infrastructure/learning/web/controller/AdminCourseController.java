@@ -1,10 +1,7 @@
 package com.deutschhub.infrastructure.learning.web.controller;
 
 import com.deutschhub.application.learning.dto.request.*;
-import com.deutschhub.application.learning.dto.response.CourseDetailResponse;
-import com.deutschhub.application.learning.dto.response.CourseResponse;
-import com.deutschhub.application.learning.dto.response.LessonResponse;
-import com.deutschhub.application.learning.dto.response.SectionResponse;
+import com.deutschhub.application.learning.dto.response.*;
 import com.deutschhub.application.learning.port.in.*;
 import com.deutschhub.common.util.ApiResponse;
 import com.deutschhub.common.util.PageResponse;
@@ -45,6 +42,8 @@ public class AdminCourseController {
     GetSectionLessonsUseCase getSectionLessonsUseCase;
     UpdateLessonUseCase updateLessonUseCase;
     DeleteLessonUseCase deleteLessonUseCase;
+    GetCourseEnrollmentsUseCase getCourseEnrollmentsUseCase;
+    GetEnrollmentDetailUseCase getEnrollmentDetailUseCase;
 
     @PostMapping
     public ResponseEntity<ApiResponse<CourseResponse>> createCourse(
@@ -346,4 +345,18 @@ public class AdminCourseController {
         );
     }
 
+    @GetMapping("/{courseId}/enrollments")
+    public ResponseEntity<ApiResponse<List<AdminCourseEnrollmentResponse>>> getCourseEnrollments(
+            @PathVariable UUID courseId
+    ) {
+        List<AdminCourseEnrollmentResponse> response =
+                getCourseEnrollmentsUseCase.getCourseEnrollments(courseId);
+
+        return ResponseEntity.ok(
+                ApiResponse.<List<AdminCourseEnrollmentResponse>>builder()
+                        .message("Get course enrollments successfully")
+                        .result(response)
+                        .build()
+        );
+    }
 }

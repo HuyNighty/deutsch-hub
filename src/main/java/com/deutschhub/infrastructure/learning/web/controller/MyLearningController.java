@@ -1,13 +1,11 @@
 package com.deutschhub.infrastructure.learning.web.controller;
 
 import com.deutschhub.application.learning.dto.request.CompleteLessonCommand;
+import com.deutschhub.application.learning.dto.response.CompletedLessonsResponse;
 import com.deutschhub.application.learning.dto.response.EnrollmentProgressResponse;
 import com.deutschhub.application.learning.dto.response.MyCourseDetailResponse;
 import com.deutschhub.application.learning.dto.response.MyCourseResponse;
-import com.deutschhub.application.learning.port.in.CompleteLessonUseCase;
-import com.deutschhub.application.learning.port.in.GetMyCourseDetailUseCase;
-import com.deutschhub.application.learning.port.in.GetMyCourseProgressUseCase;
-import com.deutschhub.application.learning.port.in.GetMyCoursesUseCase;
+import com.deutschhub.application.learning.port.in.*;
 import com.deutschhub.common.util.ApiResponse;
 import com.deutschhub.infrastructure.learning.web.request.CompleteLessonRequest;
 import jakarta.validation.Valid;
@@ -32,6 +30,7 @@ public class MyLearningController {
     GetMyCourseDetailUseCase getMyCourseDetailUseCase;
     CompleteLessonUseCase completeLessonUseCase;
     GetMyCourseProgressUseCase getMyCourseProgressUseCase;
+    GetCompletedLessonsUseCase getCompletedLessonsUseCase;
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<MyCourseResponse>>> getMyCourses(@AuthenticationPrincipal Jwt jwt) {
@@ -101,6 +100,26 @@ public class MyLearningController {
         return ResponseEntity.ok(
                 ApiResponse.<EnrollmentProgressResponse>builder()
                         .message("Get my course progress successfully")
+                        .result(response)
+                        .build()
+        );
+    }
+
+    @GetMapping("/{courseId}/completed-lessons")
+    public ResponseEntity<ApiResponse<CompletedLessonsResponse>> getCompletedLessons(
+            @PathVariable UUID courseId,
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        UUID userId = UUID.fromString(jwt.getSubject());
+
+        CompletedLessonsResponse response = getCompletedLessonsUseCase.getCompletedLessons(
+                userId,
+                courseId
+        );
+
+        return ResponseEntity.ok(
+                ApiResponse.<CompletedLessonsResponse>builder()
+                        .message("Get completed lessons successfully")
                         .result(response)
                         .build()
         );

@@ -9,6 +9,7 @@ import lombok.AllArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.UUID;
 
 @Component
@@ -40,8 +41,16 @@ public class JpaLessonCompletionRepositoryAdapter implements LessonCompletionRep
                 .id(lessonCompletion.getId())
                 .enrollmentId(lessonCompletion.getEnrollmentId())
                 .lessonId(lessonCompletion.getLessonId())
-                .completedAt(lessonCompletion.getCompletionAt())
+                .completedAt(lessonCompletion.getCompletedAt())
                 .build();
+    }
+
+    @Override
+    public List<LessonCompletion> findByEnrollmentId(UUID enrollmentId) {
+        return repository.findByEnrollmentId(enrollmentId)
+                .stream()
+                .map(this::toDomain)
+                .toList();
     }
 
     private LessonCompletion toDomain(LessonCompletionJpaEntity entity) {

@@ -40,6 +40,19 @@ public class JpaEnrollmentRepositoryAdapter implements EnrollmentRepositoryPort 
     }
 
     @Override
+    public Optional<Enrollment> findById(UUID enrollmentId) {
+        return repository.findById(enrollmentId).map(this::toDomain);
+    }
+
+    @Override
+    public List<Enrollment> findByCourseId(UUID courseId) {
+        return repository.findByCourseId(courseId)
+                .stream()
+                .map(this::toDomain)
+                .toList();
+    }
+
+    @Override
     public List<Enrollment> findByUserId(UUID userId) {
         return repository.findByUserId(userId)
                 .stream()

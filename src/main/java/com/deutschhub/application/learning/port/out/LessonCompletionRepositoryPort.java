@@ -2,6 +2,7 @@ package com.deutschhub.application.learning.port.out;
 
 import com.deutschhub.domain.learning.model.entity.LessonCompletion;
 
+import java.util.List;
 import java.util.UUID;
 
 public interface LessonCompletionRepositoryPort {
@@ -11,4 +12,6 @@ public interface LessonCompletionRepositoryPort {
     boolean existsByEnrollmentIdAndLessonId(UUID enrollmentId, UUID lessonId);
 
     long countByEnrollmentId(UUID enrollmentId);
+
+    List<LessonCompletion> findByEnrollmentId(UUID enrollmentId);
 }

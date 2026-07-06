@@ -11,7 +11,7 @@ public class LessonCompletion {
     private final UUID id;
     private final UUID enrollmentId;
     private final UUID lessonId;
-    private final LocalDateTime completionAt;
+    private final LocalDateTime completedAt;
 
     private LessonCompletion(UUID id, UUID enrollmentId, UUID lessonId, LocalDateTime completionAt) {
         if (id == null) {
@@ -29,7 +29,7 @@ public class LessonCompletion {
         this.id = id;
         this.enrollmentId = enrollmentId;
         this.lessonId = lessonId;
-        this.completionAt = completionAt;
+        this.completedAt = completionAt;
     }
 
     public static LessonCompletion create(UUID enrollmentId, UUID lessonId) {
@@ -52,7 +52,7 @@ public class LessonCompletion {
         return lessonId;
     }
 
-    public LocalDateTime getCompletionAt() {
-        return completionAt;
+    public LocalDateTime getCompletedAt() {
+        return completedAt;
     }
 }

@@ -15,4 +15,8 @@ public interface EnrollmentRepositoryPort {
     Optional<Enrollment> findByUserIdAndCourseId(UUID userId, UUID courseId);
 
     List<Enrollment> findByUserId(UUID userId);
+
+    List<Enrollment> findByCourseId(UUID courseId);
+
+    Optional<Enrollment> findById(UUID enrollmentId);
 }
