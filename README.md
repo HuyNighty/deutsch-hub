@@ -1,36 +1,66 @@
-# DeutschHub 🇩🇪
+# DeutschHub
 
-DeutschHub is a full-stack German learning and cultural exploration platform built with **Java Spring Boot**, following **Hexagonal Architecture** and **Domain-Driven Design (DDD)** principles.
+DeutschHub is a backend project for a German learning platform built with **Java Spring Boot**, following **Hexagonal Architecture** and **Domain-Driven Design (DDD)** principles.
 
-The project focuses on building a clean, scalable, and maintainable backend architecture while delivering an interactive learning experience for German learners from A1 → B2.
+The primary goal of this project is to practice enterprise-level backend architecture while building a scalable and maintainable application. The current implementation focuses on the **Identity** domain, with additional learning features being developed incrementally.
 
 ---
 
-# Vision
+# Current Status
 
-DeutschHub is not just a CRUD learning platform.
+## Completed
 
-The goal is to build a real-world enterprise-style system that combines:
+* Hexagonal Architecture (Ports & Adapters)
+* Domain-Driven Design (DDD) structure
+* Identity domain
+* JWT Authentication
+* User registration
+* User login
+* Domain models with Value Objects
+* Separation between Domain, Application, and Infrastructure layers
 
-- German language learning
-- Cultural exploration
-- User progress tracking
-- Quiz and assessment systems
-- Personalized learning experiences
-- Modular and maintainable architecture
+## In Progress
+
+* Learning module
+* Course management
+* Lesson management
+* Vocabulary management
+
+## Planned
+
+* Quiz & Assessment
+* User Progress Tracking
+* German Culture content
+* Search
+* File storage
+* Notification system
+* Frontend application
+
+---
+
+# Project Goals
+
+This project aims to:
+
+* Learn and apply Domain-Driven Design (DDD)
+* Build a backend using Hexagonal Architecture
+* Develop scalable and maintainable software
+* Practice clean code and business-oriented design
+* Serve as a long-term portfolio project
 
 ---
 
 # Core Concepts
 
-This project is heavily focused on:
+The project is built around the following architectural principles:
 
-- Domain-Driven Design (DDD)
-- Hexagonal Architecture (Ports & Adapters)
-- Rich Domain Models
-- Clean Architecture Boundaries
-- Business-first design
-- Modular Monolith architecture
+* Domain-Driven Design (DDD)
+* Hexagonal Architecture (Ports & Adapters)
+* Rich Domain Models
+* Value Objects
+* Clean Architecture boundaries
+* Business-first design
+* Modular Monolith architecture
 
 ---
 
@@ -38,60 +68,58 @@ This project is heavily focused on:
 
 ## Backend
 
-| Technology | Description |
-|---|---|
-| Java 21 | Main programming language |
-| Spring Boot 3.4 | Backend framework |
-| Spring Security | Authentication & Authorization |
-| JWT | Stateless authentication |
-| Spring Data JPA | ORM abstraction |
-| Hibernate | JPA implementation |
-| MySQL | Primary relational database |
-| MapStruct | DTO mapping |
-| Lombok | Boilerplate reduction |
-| Jakarta Validation | Request validation |
-| Jackson | JSON serialization |
-| Maven | Build tool |
+| Technology         | Description                    |
+| ------------------ | ------------------------------ |
+| Java 21            | Main programming language      |
+| Spring Boot 3.4    | Backend framework              |
+| Spring Security    | Authentication & Authorization |
+| JWT                | Stateless authentication       |
+| Spring Data JPA    | ORM abstraction                |
+| Hibernate          | JPA implementation             |
+| MySQL              | Primary relational database    |
+| MapStruct          | DTO mapping                    |
+| Lombok             | Boilerplate reduction          |
+| Jakarta Validation | Request validation             |
+| Jackson            | JSON serialization             |
+| Maven              | Build tool                     |
 
 ---
 
 ## Frontend (Planned)
 
-| Technology | Description |
-|---|---|
-| React + Vite | Frontend framework |
-| TypeScript | Type-safe frontend |
-| TailwindCSS | UI styling |
-| Shadcn/UI | UI components |
+| Technology     | Description          |
+| -------------- | -------------------- |
+| React + Vite   | Frontend framework   |
+| TypeScript     | Type-safe frontend   |
+| Tailwind CSS   | UI styling           |
+| Shadcn/UI      | UI components        |
 | TanStack Query | API state management |
 
 ---
 
-## DevOps & Tools
+## DevOps & Tools (Planned)
 
-| Tool | Purpose |
-|---|---|
-| Docker | Containerization |
-| Docker Compose | Local environment |
-| JUnit 5 | Unit testing |
-| JaCoCo | Code coverage |
-| Spotless | Code formatting |
+| Tool           | Purpose                       |
+| -------------- | ----------------------------- |
+| Docker         | Containerization              |
+| Docker Compose | Local development environment |
+| JUnit 5        | Unit testing                  |
+| JaCoCo         | Code coverage                 |
+| Spotless       | Code formatting               |
 
 ---
 
 # Architecture
 
-DeutschHub follows:
+DeutschHub follows **Hexagonal Architecture** combined with **Domain-Driven Design (DDD)**.
 
-# Hexagonal Architecture + Domain-Driven Design (DDD)
-
-The project is organized around business domains instead of technical layers.
+The application is organized around business domains instead of technical layers, allowing the core business logic to remain independent from frameworks and infrastructure.
 
 ---
 
 # Project Structure
 
-```bash
+```text
 src/main/java/com/deutschhub
 │
 ├── common/                        # Shared utilities and cross-cutting concerns
@@ -99,18 +127,18 @@ src/main/java/com/deutschhub
 │   ├── util/
 │   └── annotation/
 │
-├── domain/                        # Pure business logic (NO Spring)
+├── domain/                        # Pure business logic (independent of Spring)
 │   ├── identity/
 │   ├── learning/
 │   ├── content/
 │   └── shared/
 │
-├── application/                   # Use cases and orchestration layer
+├── application/                   # Use cases and application services
 │   ├── identity/
 │   ├── learning/
 │   └── content/
 │
-├── infrastructure/                # Technical implementation layer
+├── infrastructure/                # Frameworks and technical implementations
 │   ├── identity/
 │   ├── learning/
 │   ├── web/
@@ -120,3 +148,23 @@ src/main/java/com/deutschhub
 └── resources/
     ├── i18n/
     └── application.yml
+```
+
+---
+
+# Roadmap
+
+* [x] Project architecture
+* [x] Identity domain
+* [x] JWT authentication
+* [x] User registration & login
+* [ ] Learning module
+* [ ] Course & lesson management
+* [ ] Vocabulary module
+* [ ] Quiz & assessment
+* [ ] Progress tracking
+* [ ] German culture content
+* [ ] Docker support
+* [ ] Unit & integration testing
+* [ ] CI/CD pipeline
+* [ ] Frontend application

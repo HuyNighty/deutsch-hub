@@ -76,46 +76,36 @@ public class Enrollment implements Auditable {
         return status.isActive();
     }
 
-    public void startLearning() {
-        changeStatus(EnrollmentStatus.IN_PROGRESS);
-    }
-
-    public void complete() {
-        changeStatus(EnrollmentStatus.COMPLETED);
-        this.completedAt = LocalDateTime.now();
-    }
-
-    public void drop() {
-        changeStatus(EnrollmentStatus.DROPPED);
-        this.droppedAt = LocalDateTime.now();
-    }
-
-    public void expire() {
-        changeStatus(EnrollmentStatus.EXPIRED);
-        this.expiredAt = LocalDateTime.now();
-    }
-
     public void updateProgress(int completedLessons, int totalStudyMinutes) {
-        this.progress = progress.updateProgress(completedLessons, totalStudyMinutes);
-
-        if (status == EnrollmentStatus.ENROLLED && progress.hasStarted()) {
-            this.status = EnrollmentStatus.IN_PROGRESS;
+        if (!status.isActive()) {
+            throw new BusinessException(ErrorCode.ENROLLMENT_NOT_ACTIVE);
         }
 
-        if (progress.isCompleted()) {
-            this.status = EnrollmentStatus.COMPLETED;
-            this.completedAt = LocalDateTime.now();
+        progress = progress.updateProgress(completedLessons, totalStudyMinutes);
+
+        if (status.canTransitionTo(EnrollmentStatus.IN_PROGRESS)
+                && progress.hasStarted()) {
+
+            status = EnrollmentStatus.IN_PROGRESS;
+        }
+
+        if (status.canTransitionTo(EnrollmentStatus.COMPLETED)
+                && progress.isCompleted()) {
+
+            status = EnrollmentStatus.COMPLETED;
+            completedAt = LocalDateTime.now();
         }
 
         touch();
     }
 
-    private void changeStatus(EnrollmentStatus newStatus) {
-        if (!status.canTransitionTo(newStatus)) {
-            throw new BusinessException(ErrorCode.INVALID_ENROLLMENT_STATUS);
+    public void drop() {
+        if (!status.canTransitionTo(EnrollmentStatus.DROPPED)) {
+            throw new BusinessException(ErrorCode.ENROLLMENT_CAN_NOT_BE_DROPPED);
         }
 
-        this.status = newStatus;
+        status = EnrollmentStatus.DROPPED;
+        droppedAt = LocalDateTime.now();
         touch();
     }
 

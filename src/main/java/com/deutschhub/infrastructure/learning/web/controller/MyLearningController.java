@@ -31,6 +31,7 @@ public class MyLearningController {
     CompleteLessonUseCase completeLessonUseCase;
     GetMyCourseProgressUseCase getMyCourseProgressUseCase;
     GetCompletedLessonsUseCase getCompletedLessonsUseCase;
+    DropCourseUseCase dropCourseUseCase;
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<MyCourseResponse>>> getMyCourses(@AuthenticationPrincipal Jwt jwt) {
@@ -121,6 +122,19 @@ public class MyLearningController {
                 ApiResponse.<CompletedLessonsResponse>builder()
                         .message("Get completed lessons successfully")
                         .result(response)
+                        .build()
+        );
+    }
+
+    @PostMapping("/{courseId}/drop")
+    public ResponseEntity<ApiResponse<Void>> dropCourse(@PathVariable UUID courseId, @AuthenticationPrincipal Jwt jwt) {
+        UUID userId = UUID.fromString(jwt.getSubject());
+
+        dropCourseUseCase.dropCourse(userId, courseId);
+
+        return ResponseEntity.ok(
+                ApiResponse.<Void>builder()
+                        .message("Drop course successfully")
                         .build()
         );
     }
