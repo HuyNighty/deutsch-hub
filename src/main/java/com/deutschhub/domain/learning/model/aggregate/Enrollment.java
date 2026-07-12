@@ -100,12 +100,26 @@ public class Enrollment implements Auditable {
     }
 
     public void drop() {
-        if (!status.canTransitionTo(EnrollmentStatus.DROPPED)) {
-            throw new BusinessException(ErrorCode.ENROLLMENT_CAN_NOT_BE_DROPPED);
+        changeStatus(EnrollmentStatus.DROPPED, ErrorCode.ENROLLMENT_CAN_NOT_BE_DROPPED);
+        this.droppedAt = LocalDateTime.now();
+    }
+
+    public void expire() {
+        if (!status.canTransitionTo(EnrollmentStatus.EXPIRED)) {
+            throw new BusinessException(ErrorCode.ENROLLMENT_CAN_NOT_BE_EXPIRED);
         }
 
-        status = EnrollmentStatus.DROPPED;
-        droppedAt = LocalDateTime.now();
+        this.status = EnrollmentStatus.EXPIRED;
+        this.expiredAt = LocalDateTime.now();
+        touch();
+    }
+
+    private void changeStatus(EnrollmentStatus newStatus, ErrorCode errorCode) {
+        if (!status.canTransitionTo(newStatus)) {
+            throw new BusinessException(errorCode);
+        }
+
+        this.status = newStatus;
         touch();
     }
 

@@ -86,6 +86,7 @@ public enum ErrorCode {
     ENROLLMENT_ALREADY_DROPPED("error.enrollment.already.dropped", 8012),
     ENROLLMENT_EXPIRED("error.enrollment.expired", 8013),
     ENROLLMENT_CAN_NOT_BE_DROPPED("error.enrollment.can.not.be.dropped", 8014),
+    ENROLLMENT_CAN_NOT_BE_EXPIRED("error.enrollment.can.not.expired", 8015),
 
     ENROLLMENT_PROGRESS_CANNOT_DECREASE("error.enrollment.progress.cannot.decrease", 8101),
     INVALID_ENROLLMENT_PROGRESS_STATE("error.enrollment.progress.state", 8102),

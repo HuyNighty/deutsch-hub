@@ -1,13 +1,10 @@
 package com.deutschhub.application.learning.usecase;
 
 import com.deutschhub.application.learning.port.in.DropCourseUseCase;
-import com.deutschhub.application.learning.port.out.CourseRepositoryPort;
 import com.deutschhub.application.learning.port.out.EnrollmentRepositoryPort;
 import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
-import com.deutschhub.domain.learning.model.aggregate.Course;
 import com.deutschhub.domain.learning.model.aggregate.Enrollment;
-import com.deutschhub.domain.learning.model.valueobject.EnrollmentStatus;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
