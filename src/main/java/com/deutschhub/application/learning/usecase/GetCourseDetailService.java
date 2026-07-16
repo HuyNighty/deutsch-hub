@@ -63,11 +63,11 @@ public class GetCourseDetailService implements GetCourseDetailUseCase {
     }
 
     private SectionDetailResponse toSectionDetailResponse(Section section) {
-        List<LessonResponse> lessons = section.getLessons()
+        List<LessonPreviewResponse> lessons = section.getLessons()
                 .stream()
                 .filter(lesson -> !lesson.isDeleted())
                 .sorted(Comparator.comparingInt(Lesson::getOrderIndex))
-                .map(this::toLessonResponse)
+                .map(this::toLessonPreviewResponse)
                 .toList();
 
         return new SectionDetailResponse(
@@ -81,16 +81,17 @@ public class GetCourseDetailService implements GetCourseDetailUseCase {
         );
     }
 
-    private LessonResponse toLessonResponse(Lesson lesson) {
-        return new LessonResponse(   lesson.getId(),
+    private LessonPreviewResponse toLessonPreviewResponse(Lesson lesson) {
+        return new LessonPreviewResponse(
+                lesson.getId(),
                 lesson.getTitle(),
                 lesson.getDescription(),
-                lesson.getContent(),
                 lesson.getEstimatedMinutes(),
                 lesson.getLevel().toString(),
                 lesson.getOrderIndex(),
                 lesson.isFreePreview(),
                 lesson.getCreatedAt(),
-                lesson.getUpdatedAt());
+                lesson.getUpdatedAt()
+        );
     }
 }

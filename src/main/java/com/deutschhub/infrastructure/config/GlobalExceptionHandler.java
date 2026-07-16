@@ -5,6 +5,7 @@ import com.deutschhub.common.exception.ErrorCode;
 import com.deutschhub.common.exception.ErrorCodeDetail;
 import com.deutschhub.common.util.ApiResponse;
 import com.deutschhub.common.util.MessageUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.util.List;
 
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
     private final MessageUtils messageUtils;
@@ -60,6 +62,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGeneralException(Exception ex) {
+        log.error("Unhandled exception", ex);
+
         String message = messageUtils.getMessage(ErrorCode.UNCATEGORIZED_EXCEPTION);
 
         ApiResponse<Void> response = ApiResponse.<Void>builder()

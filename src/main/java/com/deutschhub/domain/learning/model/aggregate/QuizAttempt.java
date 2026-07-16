@@ -133,7 +133,7 @@ public class QuizAttempt implements Auditable, SoftDeletable {
 
                 boolean isCorrect = selectedIds.equals(correctIds);
                 if (isCorrect) {
-                    totalScore += question.getScore();
+                    score += question.getScore();
                 }
             } else {
                 UUID selectedId = userAnswer.getSingleSelectedAnswerId();
@@ -147,7 +147,7 @@ public class QuizAttempt implements Auditable, SoftDeletable {
                 boolean isCorrect = question.getAnswers().stream()
                         .anyMatch(a -> a.getId().equals(selectedId) && a.isCorrect());
                 if (isCorrect) {
-                    totalScore += question.getScore();
+                    score += question.getScore();
                 }
             }
         }

@@ -15,7 +15,7 @@ import java.util.*;
 public class Quiz implements Auditable, SoftDeletable {
 
     private final UUID id;
-    private final UUID courseId;
+    private final UUID lessonId;
     private final UUID createdBy;
 
     private String title;
@@ -35,11 +35,11 @@ public class Quiz implements Auditable, SoftDeletable {
 
     private final List<Question> questions = new ArrayList<>();
 
-    private Quiz(UUID id, UUID courseId, UUID createdBy, String title, String description,
+    private Quiz(UUID id, UUID lessonId, UUID createdBy, String title, String description,
                  int timeLimitMinutes, int maxScore, int passingScore, DifficultyLevel difficulty,
                  QuizVisibility visibility, QuizStatus status) {
         this.id = Objects.requireNonNull(id);
-        this.courseId = Objects.requireNonNull(courseId);
+        this.lessonId = Objects.requireNonNull(lessonId);
         this.createdBy = Objects.requireNonNull(createdBy);
 
         this.title = validateTitle(title);
@@ -304,8 +304,8 @@ public class Quiz implements Auditable, SoftDeletable {
         return id;
     }
 
-    public UUID getCourseId() {
-        return courseId;
+    public UUID getLessonId() {
+        return lessonId;
     }
 
     public UUID getCreatedBy() {

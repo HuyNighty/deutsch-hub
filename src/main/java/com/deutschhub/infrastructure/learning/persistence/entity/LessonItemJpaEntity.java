@@ -1,4 +1,5 @@
 package com.deutschhub.infrastructure.learning.persistence.entity;
+
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -6,19 +7,22 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "course_lessons")
+@Table(
+        name = "lesson_items",
+        indexes = {
+                @Index(name = "idx_lesson_item_lesson_id", columnList = "lesson_id")
+        }
+)
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class LessonJpaEntity {
+public class LessonItemJpaEntity {
 
 
     @Id
@@ -26,40 +30,33 @@ public class LessonJpaEntity {
     UUID id;
 
     @Column(nullable = false)
+    String type;
+
+    @Column(nullable = false)
     String title;
 
     @Column(length = 1000)
     String description;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT")
     String content;
+
+    String resourceUrl;
+
+    @JdbcTypeCode(SqlTypes.VARCHAR)
+    UUID quizId;
 
     @Column(nullable = false)
     int estimatedMinutes;
 
     @Column(nullable = false)
-    String level;
-
-    @Column(nullable = false)
     int orderIndex;
-
-    @Column(nullable = false)
-    boolean freePreview;
 
     LocalDateTime createdAt;
     LocalDateTime updatedAt;
     LocalDateTime deletedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "section_id", nullable = false)
-    SectionJpaEntity section;
-
-    @OneToMany(
-            mappedBy = "lesson",
-            cascade = CascadeType.ALL,
-            orphanRemoval = true
-    )
-    @OrderBy("orderIndex ASC")
-    @Builder.Default
-    List<LessonItemJpaEntity> items = new ArrayList<>();
+    @JoinColumn(name = "lesson_id", nullable = false)
+    LessonJpaEntity lesson;
 }

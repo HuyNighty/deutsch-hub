@@ -7,6 +7,9 @@ import com.deutschhub.common.exception.ErrorCode;
 import com.deutschhub.domain.learning.model.valueobject.CEFRLevel;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 public class Lesson implements Auditable, SoftDeletable {
@@ -22,6 +25,7 @@ public class Lesson implements Auditable, SoftDeletable {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime deletedAt;
+    private final List<LessonItem> items = new ArrayList<>();
 
     private Lesson(UUID id, String title, String description, String content, int estimatedMinutes, CEFRLevel level, int orderIndex, boolean isFreePreview) {
         this.id = id;
@@ -113,6 +117,42 @@ public class Lesson implements Auditable, SoftDeletable {
         }
     }
 
+    public void addItem(LessonItem item) {
+        ensureNotDeleted();
+
+        if (item == null) {
+            throw new BusinessException(ErrorCode.INVALID_LESSON);
+        }
+
+        this.items.add(item);
+        touch();
+    }
+
+    public void restoreItem(LessonItem item) {
+        if (item == null) {
+            return;
+        }
+        this.items.add(item);
+    }
+
+    public void removeItem(UUID itemId) {
+        ensureNotDeleted();
+
+        LessonItem item = items.stream()
+                .filter(lessonItem -> lessonItem.getId().equals(itemId))
+                .findFirst()
+                .orElseThrow(() -> new BusinessException(ErrorCode.LESSON_NOT_FOUND));
+
+        item.softDelete();
+        touch();
+    }
+
+    private void ensureNotDeleted() {
+        if (isDeleted()) {
+            throw new BusinessException(ErrorCode.LESSON_NOT_FOUND);
+        }
+    }
+
     @Override
     public void touch() {
         this.updatedAt = LocalDateTime.now();
@@ -195,5 +235,9 @@ public class Lesson implements Auditable, SoftDeletable {
 
     public boolean isFreePreview() {
         return isFreePreview;
+    }
+
+    public List<LessonItem> getItems() {
+        return Collections.unmodifiableList(items);
     }
 }

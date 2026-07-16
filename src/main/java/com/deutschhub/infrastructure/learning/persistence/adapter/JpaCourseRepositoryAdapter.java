@@ -3,10 +3,13 @@ package com.deutschhub.infrastructure.learning.persistence.adapter;
 import com.deutschhub.common.util.PageResponse;
 import com.deutschhub.domain.learning.model.aggregate.Course;
 import com.deutschhub.domain.learning.model.entity.Lesson;
+import com.deutschhub.domain.learning.model.entity.LessonItem;
 import com.deutschhub.domain.learning.model.entity.Section;
 import com.deutschhub.domain.learning.model.valueobject.CEFRLevel;
+import com.deutschhub.domain.learning.model.valueobject.LessonItemType;
 import com.deutschhub.domain.learning.model.valueobject.Money;
 import com.deutschhub.infrastructure.learning.persistence.entity.CourseJpaEntity;
+import com.deutschhub.infrastructure.learning.persistence.entity.LessonItemJpaEntity;
 import com.deutschhub.infrastructure.learning.persistence.entity.LessonJpaEntity;
 import com.deutschhub.infrastructure.learning.persistence.entity.SectionJpaEntity;
 import com.deutschhub.infrastructure.learning.persistence.repository.SpringDataCourseRepository;
@@ -18,6 +21,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -26,11 +30,13 @@ import java.util.UUID;
 @Component
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+@Transactional(readOnly = true)
 public class JpaCourseRepositoryAdapter implements CourseRepositoryPort {
 
     SpringDataCourseRepository repository;
 
     @Override
+    @Transactional
     public Course save(Course course) {
         CourseJpaEntity saved = repository.save(toEntity(course));
 
@@ -100,11 +106,6 @@ public class JpaCourseRepositoryAdapter implements CourseRepositoryPort {
                 .deletedAt(course.getDeletedAt())
                 .build();
 
-        List<SectionJpaEntity> sections = course.getSections()
-                .stream()
-                .map(section -> toSectionEntity(section, entity))
-                .toList();
-
         entity.getSections().clear();
         course.getSections()
                 .stream()
@@ -158,7 +159,7 @@ public class JpaCourseRepositoryAdapter implements CourseRepositoryPort {
         return sectionEntity;
     }
     private LessonJpaEntity toLessonEntity(Lesson lesson, SectionJpaEntity sectionEntity) {
-        return LessonJpaEntity.builder()
+        LessonJpaEntity lessonEntity = LessonJpaEntity.builder()
                 .id(lesson.getId())
                 .title(lesson.getTitle())
                 .description(lesson.getDescription())
@@ -172,6 +173,13 @@ public class JpaCourseRepositoryAdapter implements CourseRepositoryPort {
                 .deletedAt(lesson.getDeletedAt())
                 .section(sectionEntity)
                 .build();
+
+        lesson.getItems()
+                .stream()
+                .map(item -> toLessonItemEntity(item, lessonEntity))
+                .forEach(lessonEntity.getItems()::add);
+
+        return lessonEntity;
     }
 
     private Section toSectionDomain(SectionJpaEntity entity) {
@@ -196,7 +204,7 @@ public class JpaCourseRepositoryAdapter implements CourseRepositoryPort {
     }
 
     private Lesson toLessonDomain(LessonJpaEntity entity) {
-        return Lesson.restore(
+        Lesson lesson = Lesson.restore(
                 entity.getId(),
                 entity.getTitle(),
                 entity.getDescription(),
@@ -205,6 +213,50 @@ public class JpaCourseRepositoryAdapter implements CourseRepositoryPort {
                 new CEFRLevel(entity.getLevel()),
                 entity.getOrderIndex(),
                 entity.isFreePreview(),
+                entity.getCreatedAt(),
+                entity.getUpdatedAt(),
+                entity.getDeletedAt()
+        );
+
+        if (entity.getItems() != null) {
+            entity.getItems()
+                    .stream()
+                    .map(this::toLessonItemDomain)
+                    .forEach(lesson::restoreItem);
+        }
+
+        return lesson;
+    }
+
+    private LessonItemJpaEntity toLessonItemEntity(LessonItem item, LessonJpaEntity lessonEntity) {
+        return LessonItemJpaEntity.builder()
+                .id(item.getId())
+                .type(item.getType().name())
+                .title(item.getTitle())
+                .description(item.getDescription())
+                .content(item.getContent())
+                .resourceUrl(item.getResourceUrl())
+                .quizId(item.getQuizId())
+                .estimatedMinutes(item.getEstimatedMinutes())
+                .orderIndex(item.getOrderIndex())
+                .createdAt(item.getCreatedAt())
+                .updatedAt(item.getUpdatedAt())
+                .deletedAt(item.getDeletedAt())
+                .lesson(lessonEntity)
+                .build();
+    }
+
+    private LessonItem toLessonItemDomain(LessonItemJpaEntity entity) {
+        return LessonItem.restore(
+                entity.getId(),
+                LessonItemType.valueOf(entity.getType()),
+                entity.getTitle(),
+                entity.getDescription(),
+                entity.getContent(),
+                entity.getResourceUrl(),
+                entity.getQuizId(),
+                entity.getEstimatedMinutes(),
+                entity.getOrderIndex(),
                 entity.getCreatedAt(),
                 entity.getUpdatedAt(),
                 entity.getDeletedAt()

@@ -1,5 +1,6 @@
 package com.deutschhub.application.learning.usecase;
 
+import com.deutschhub.application.learning.dto.response.LessonPreviewResponse;
 import com.deutschhub.application.learning.dto.response.LessonResponse;
 import com.deutschhub.application.learning.dto.response.MyCourseDetailResponse;
 import com.deutschhub.application.learning.dto.response.SectionDetailResponse;
@@ -84,11 +85,11 @@ public class GetMyCourseDetailService implements GetMyCourseDetailUseCase{
 
     private SectionDetailResponse toDetailResponse(Section section) {
 
-        List<LessonResponse> lessons = section.getLessons()
+        List<LessonPreviewResponse> lessons = section.getLessons()
                 .stream()
                 .filter(lesson -> !lesson.isDeleted())
                 .sorted(Comparator.comparingInt(Lesson::getOrderIndex))
-                .map(this::toLessonResponse)
+                .map(this::toLessonPreviewResponse)
                 .toList();
 
         return new SectionDetailResponse(
@@ -102,12 +103,11 @@ public class GetMyCourseDetailService implements GetMyCourseDetailUseCase{
         );
     }
 
-    private LessonResponse toLessonResponse(Lesson lesson) {
-        return new LessonResponse(
+    private LessonPreviewResponse toLessonPreviewResponse(Lesson lesson) {
+        return new LessonPreviewResponse(
                 lesson.getId(),
                 lesson.getTitle(),
                 lesson.getDescription(),
-                lesson.getContent(),
                 lesson.getEstimatedMinutes(),
                 lesson.getLevel().toString(),
                 lesson.getOrderIndex(),

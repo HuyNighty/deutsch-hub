@@ -1,15 +1,18 @@
 package com.deutschhub.application.learning.dto.response;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.UUID;
 
-public record SectionDetailResponse(
+public record LessonItemResponse(
         UUID id,
+        String type,
         String title,
         String description,
+        String content,
+        String resourceUrl,
+        UUID quizId,
+        int estimatedMinutes,
         int orderIndex,
-        List<LessonPreviewResponse> lessons,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {

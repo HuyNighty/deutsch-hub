@@ -1,10 +1,7 @@
 package com.deutschhub.infrastructure.learning.web.controller;
 
 import com.deutschhub.application.learning.dto.request.CompleteLessonCommand;
-import com.deutschhub.application.learning.dto.response.CompletedLessonsResponse;
-import com.deutschhub.application.learning.dto.response.EnrollmentProgressResponse;
-import com.deutschhub.application.learning.dto.response.MyCourseDetailResponse;
-import com.deutschhub.application.learning.dto.response.MyCourseResponse;
+import com.deutschhub.application.learning.dto.response.*;
 import com.deutschhub.application.learning.port.in.*;
 import com.deutschhub.common.util.ApiResponse;
 import com.deutschhub.infrastructure.learning.web.request.CompleteLessonRequest;
@@ -32,6 +29,7 @@ public class MyLearningController {
     GetMyCourseProgressUseCase getMyCourseProgressUseCase;
     GetCompletedLessonsUseCase getCompletedLessonsUseCase;
     DropCourseUseCase dropCourseUseCase;
+    GetMyLessonDetailUseCase getMyLessonDetailUseCase;
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<MyCourseResponse>>> getMyCourses(@AuthenticationPrincipal Jwt jwt) {
@@ -135,6 +133,22 @@ public class MyLearningController {
         return ResponseEntity.ok(
                 ApiResponse.<Void>builder()
                         .message("Drop course successfully")
+                        .build()
+        );
+    }
+
+    @GetMapping("/{courseId}/lessons/{lessonId}")
+    public ResponseEntity<ApiResponse<LessonDetailResponse>> getMyLessonDetail(@PathVariable UUID courseId,
+                                                                               @PathVariable UUID lessonId, @AuthenticationPrincipal Jwt jwt
+    ) {
+        UUID userId = UUID.fromString(jwt.getSubject());
+
+        LessonDetailResponse response = getMyLessonDetailUseCase.getMyLessonDetail(userId, courseId, lessonId);
+
+        return ResponseEntity.ok(
+                ApiResponse.<LessonDetailResponse>builder()
+                        .message("Get lesson detail successfully")
+                        .result(response)
                         .build()
         );
     }
