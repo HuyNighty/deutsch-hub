@@ -41,6 +41,12 @@ public class LessonItem implements Auditable, SoftDeletable {
         this.updatedAt = this.createdAt;
     }
 
+    public static LessonItem createText(String title, String description, String content,
+                                        int estimatedMinutes, int orderIndex) {
+        return new LessonItem(UUID.randomUUID(), LessonItemType.TEXT, title, description,
+                content, null, null, estimatedMinutes, orderIndex);
+    }
+
     public static LessonItem createResource(LessonItemType type, String title, String description,
                                             String resourceUrl,  int estimatedMinutes, int orderIndex) {
         return new LessonItem(UUID.randomUUID(), type, title, description, null, resourceUrl,

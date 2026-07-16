@@ -6,6 +6,7 @@ import com.deutschhub.common.domain.SoftDeletable;
 import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
 import com.deutschhub.domain.learning.model.entity.Lesson;
+import com.deutschhub.domain.learning.model.entity.LessonItem;
 import com.deutschhub.domain.learning.model.entity.Section;
 import com.deutschhub.domain.learning.model.valueobject.CEFRLevel;
 import com.deutschhub.domain.learning.model.valueobject.Money;
@@ -254,6 +255,39 @@ public class Course implements Auditable, SoftDeletable {
 
         touch();
         recalculateEstimatedHours();
+        return lesson;
+    }
+
+    public Lesson addLessonItemToLesson(UUID sectionId, UUID lessonId, LessonItem item, UUID actorId, boolean isAdmin) {
+        ensureCanMutateBy(actorId, isAdmin);
+
+        if (published) {
+            throw new BusinessException(ErrorCode.CANNOT_MODIFY_PUBLISHED_COURSE);
+        }
+
+        ensureNotDeleted();
+
+        if (item == null) {
+            throw new BusinessException(ErrorCode.INVALID_LESSON);
+        }
+
+        Section section = sections.stream()
+                .filter(currentSection -> currentSection.getId().equals(sectionId))
+                .filter(currentSection -> !currentSection.isDeleted())
+                .findFirst()
+                .orElseThrow(() -> new BusinessException(ErrorCode.SECTION_NOT_FOUND));
+
+        Lesson lesson = section.getLessons()
+                .stream()
+                .filter(currentLesson -> currentLesson.getId().equals(lessonId))
+                .filter(currentLesson -> !currentLesson.isDeleted())
+                .findFirst()
+                .orElseThrow(() -> new BusinessException(ErrorCode.LESSON_NOT_FOUND));
+
+        lesson.addItem(item);
+        touch();
+        recalculateEstimatedHours();
+
         return lesson;
     }
 

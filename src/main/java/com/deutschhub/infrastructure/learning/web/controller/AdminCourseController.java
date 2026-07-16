@@ -44,6 +44,8 @@ public class AdminCourseController {
     DeleteLessonUseCase deleteLessonUseCase;
     GetCourseEnrollmentsUseCase getCourseEnrollmentsUseCase;
     GetEnrollmentDetailUseCase getEnrollmentDetailUseCase;
+    AddLessonItemUseCase addLessonItemUseCase;
+
 
     @PostMapping
     public ResponseEntity<ApiResponse<CourseResponse>> createCourse(
@@ -341,6 +343,29 @@ public class AdminCourseController {
         return ResponseEntity.ok(
                 ApiResponse.<Void>builder()
                         .message("Delete lesson successfully")
+                        .build()
+        );
+    }
+
+    @PostMapping("/{courseId}/sections/{sectionId}/lessons/{lessonId}/items")
+    public ResponseEntity<ApiResponse<LessonDetailResponse>> addLessonItem(@PathVariable UUID courseId,
+                                                                           @PathVariable UUID sectionId,
+                                                                           @PathVariable UUID lessonId,
+                                                                           @AuthenticationPrincipal Jwt jwt,
+                                                                           @Valid @RequestBody AddLessonItemRequest request) {
+        UUID actorId = UUID.fromString(jwt.getSubject());
+
+        AddLessonItemCommand command = new AddLessonItemCommand(courseId, sectionId, lessonId, actorId, request.type(),
+                request.title(), request.description(), request.content(), request.resourceUrl(), request.quizId(),
+                request.estimatedMinutes(), request.orderIndex(), true
+        );
+
+        LessonDetailResponse response = addLessonItemUseCase.addLessonItem(command);
+
+        return ResponseEntity.ok(
+                ApiResponse.<LessonDetailResponse>builder()
+                        .message("Add lesson item successfully")
+                        .result(response)
                         .build()
         );
     }
