@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.UUID;
 
 public record CourseDetailResponse(
-        UUID id,
+        UUID courseId,
         String title,
         String description,
         String level,
