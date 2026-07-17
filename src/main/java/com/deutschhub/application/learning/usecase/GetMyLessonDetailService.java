@@ -12,6 +12,7 @@ import com.deutschhub.domain.learning.model.aggregate.Course;
 import com.deutschhub.domain.learning.model.aggregate.Enrollment;
 import com.deutschhub.domain.learning.model.entity.Lesson;
 import com.deutschhub.domain.learning.model.entity.LessonItem;
+import com.deutschhub.domain.learning.model.entity.Section;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -53,7 +54,7 @@ public class GetMyLessonDetailService implements GetMyLessonDetailUseCase {
                 lesson.getId()
         );
 
-        return toResponse(lesson, completed);
+        return toResponse(course, lesson, completed);
     }
 
     private Lesson findActiveLesson(Course course, UUID lessonId) {
@@ -67,13 +68,15 @@ public class GetMyLessonDetailService implements GetMyLessonDetailUseCase {
                 .orElseThrow(() -> new BusinessException(ErrorCode.LESSON_NOT_FOUND));
     }
 
-    private LessonDetailResponse toResponse(Lesson lesson, boolean completed) {
+    private LessonDetailResponse toResponse(Course course, Lesson lesson, boolean completed) {
         List<LessonItemResponse> items = lesson.getItems()
                 .stream()
                 .filter(item -> !item.isDeleted())
                 .sorted(Comparator.comparingInt(LessonItem::getOrderIndex))
                 .map(this::toItemResponse)
                 .toList();
+
+        LessonNavigation navigation = resolveNavigation(course, lesson.getId());
 
         return new LessonDetailResponse(
                 lesson.getId(),
@@ -85,6 +88,8 @@ public class GetMyLessonDetailService implements GetMyLessonDetailUseCase {
                 lesson.getOrderIndex(),
                 lesson.isFreePreview(),
                 completed,
+                navigation.previousLessonId(),
+                navigation.nextLessonId(),
                 items,
                 lesson.getCreatedAt(),
                 lesson.getUpdatedAt()
@@ -106,4 +111,30 @@ public class GetMyLessonDetailService implements GetMyLessonDetailUseCase {
                 item.getUpdatedAt()
         );
     }
+
+    private LessonNavigation resolveNavigation(Course course, UUID lessonId) {
+        List<Lesson> orderedLessons = course.getSections()
+                .stream()
+                .filter(section -> !section.isDeleted())
+                .sorted(Comparator.comparingInt(Section::getOrderIndex))
+                .flatMap(section -> section.getLessons()
+                        .stream()
+                        .filter(lesson -> !lesson.isDeleted())
+                        .sorted(Comparator.comparingInt(Lesson::getOrderIndex)))
+                .toList();
+
+        for (int i = 0; i < orderedLessons.size(); i++) {
+            Lesson currentLesson = orderedLessons.get(i);
+
+            if (currentLesson.getId().equals(lessonId)) {
+                UUID previousLessonId = i > 0 ? orderedLessons.get(i - 1).getId() : null;
+                UUID nextLessonId = i <  orderedLessons.size() - 1 ? orderedLessons.get(i + 1).getId() : null;
+
+                return new LessonNavigation(previousLessonId, nextLessonId);
+            }
+        }
+        return new LessonNavigation(null, null);
+    }
+
+    private record LessonNavigation(UUID previousLessonId, UUID nextLessonId) {}
 }

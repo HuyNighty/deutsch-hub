@@ -10,6 +10,7 @@ import com.deutschhub.common.exception.ErrorCode;
 import com.deutschhub.domain.learning.model.aggregate.Course;
 import com.deutschhub.domain.learning.model.entity.Lesson;
 import com.deutschhub.domain.learning.model.entity.LessonItem;
+import com.deutschhub.domain.learning.model.entity.Section;
 import com.deutschhub.domain.learning.model.valueobject.LessonItemType;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -40,7 +42,7 @@ public class AddLessonItemService implements AddLessonItemUseCase {
 
         courseRepositoryPort.save(course);
 
-        return toResponse(lesson);
+        return toResponse(course, lesson);
     }
 
     private LessonItem createLessonItem(AddLessonItemCommand command) {
@@ -84,13 +86,15 @@ public class AddLessonItemService implements AddLessonItemUseCase {
         }
     }
 
-    private LessonDetailResponse toResponse(Lesson lesson) {
+    private LessonDetailResponse toResponse(Course course, Lesson lesson) {
         List<LessonItemResponse> items = lesson.getItems()
                 .stream()
                 .filter(item -> !item.isDeleted())
                 .sorted(Comparator.comparingInt(LessonItem::getOrderIndex))
                 .map(this::toItemResponse)
                 .toList();
+
+        LessonNavigation navigation = resolveNavigation(course, lesson.getId());
 
         return new LessonDetailResponse(
                 lesson.getId(),
@@ -102,6 +106,8 @@ public class AddLessonItemService implements AddLessonItemUseCase {
                 lesson.getOrderIndex(),
                 lesson.isFreePreview(),
                 false,
+                navigation.previousLessonId,
+                navigation.nextLessonId,
                 items,
                 lesson.getCreatedAt(),
                 lesson.getUpdatedAt()
@@ -122,5 +128,33 @@ public class AddLessonItemService implements AddLessonItemUseCase {
                 item.getCreatedAt(),
                 item.getUpdatedAt()
         );
+    }
+
+    private LessonNavigation resolveNavigation(Course course, UUID lessonId) {
+        List<Lesson> orderedLessons = course.getSections()
+                .stream()
+                .filter(section -> !section.isDeleted())
+                .sorted(Comparator.comparingInt(Section::getOrderIndex))
+                .flatMap(section -> section.getLessons()
+                        .stream()
+                        .filter(lesson -> !lesson.isDeleted())
+                        .sorted(Comparator.comparingInt(Lesson::getOrderIndex)))
+                .toList();
+
+        for (int index = 0; index < orderedLessons.size(); index++) {
+            Lesson currentLesson = orderedLessons.get(index);
+
+            if (currentLesson.getId().equals(lessonId)) {
+                UUID previousLessonId = index > 0 ? orderedLessons.get(index - 1).getId() : null;
+                UUID nextLessonId = index < orderedLessons.size() - 1 ? orderedLessons.get(index + 1).getId() : null;
+
+                return new LessonNavigation(previousLessonId, nextLessonId);
+            }
+        }
+
+        return new LessonNavigation(null, null);
+    }
+
+    private record LessonNavigation(UUID previousLessonId, UUID nextLessonId) {
     }
 }

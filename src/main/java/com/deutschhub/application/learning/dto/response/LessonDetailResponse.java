@@ -14,6 +14,8 @@ public record LessonDetailResponse(
         int orderIndex,
         boolean freePreview,
         boolean completed,
+        UUID previousLessonId,
+        UUID nextLessonId,
         List<LessonItemResponse> items,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
