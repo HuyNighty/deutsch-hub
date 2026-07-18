@@ -44,4 +44,14 @@ public enum EnrollmentStatus {
     public boolean isActive() {
         return this == ENROLLED || this == IN_PROGRESS;
     }
+
+    public boolean canAccessCourse() {
+        return this != DROPPED
+                && this != EXPIRED;
+    }
+
+//    public boolean canContinueLearning() {
+//        return this == ENROLLED
+//                || this == IN_PROGRESS;
+//    }
 }

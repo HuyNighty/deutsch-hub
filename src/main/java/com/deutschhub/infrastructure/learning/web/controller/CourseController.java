@@ -1,13 +1,11 @@
 package com.deutschhub.infrastructure.learning.web.controller;
 
 import com.deutschhub.application.learning.dto.request.GetCoursesQuery;
-import com.deutschhub.application.learning.dto.response.CourseDetailResponse;
-import com.deutschhub.application.learning.dto.response.CourseResponse;
-import com.deutschhub.application.learning.dto.response.EnrollmentResponse;
-import com.deutschhub.application.learning.dto.response.PublishedCourseDetailResponse;
+import com.deutschhub.application.learning.dto.response.*;
 import com.deutschhub.application.learning.port.in.EnrollCourseUseCase;
 import com.deutschhub.application.learning.port.in.GetPublishedCourseDetailUseCase;
 import com.deutschhub.application.learning.port.in.GetPublishedCoursesUseCase;
+import com.deutschhub.application.learning.port.in.GetViewerCourseDetailUseCase;
 import com.deutschhub.common.util.ApiResponse;
 import com.deutschhub.common.util.PageResponse;
 import lombok.AccessLevel;
@@ -29,6 +27,7 @@ public class CourseController {
     GetPublishedCoursesUseCase getPublishedCoursesUseCase;
     GetPublishedCourseDetailUseCase getPublishedCourseDetailUseCase;
     EnrollCourseUseCase enrollCourseUseCase;
+    GetViewerCourseDetailUseCase getViewerCourseDetailUseCase;
 
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<CourseResponse>>> getCourses(
@@ -72,6 +71,26 @@ public class CourseController {
         return ResponseEntity.ok(
                 ApiResponse.<EnrollmentResponse>builder()
                         .message("Enroll course successfully")
+                        .result(response)
+                        .build()
+        );
+    }
+
+    @GetMapping("/{courseId}/viewer")
+    public ResponseEntity<ApiResponse<ViewerCourseDetailResponse>> getViewerCourseDetail(
+            @PathVariable UUID courseId,
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        UUID viewerId = jwt != null ? UUID.fromString(jwt.getSubject()) : null;
+
+        ViewerCourseDetailResponse response = getViewerCourseDetailUseCase.getViewerCourseDetail(
+                courseId,
+                viewerId
+        );
+
+        return ResponseEntity.ok(
+                ApiResponse.<ViewerCourseDetailResponse>builder()
+                        .message("Get viewer course detail successfully")
                         .result(response)
                         .build()
         );

@@ -51,10 +51,7 @@ public class MyLearningController {
     ) {
         UUID userId = UUID.fromString(jwt.getSubject());
 
-        MyCourseDetailResponse response = getMyCourseDetailUseCase.getMyCourseDetail(
-                userId,
-                courseId
-        );
+        MyCourseDetailResponse response = getMyCourseDetailUseCase.getMyCourseDetail(userId, courseId);
 
         return ResponseEntity.ok(
                 ApiResponse.<MyCourseDetailResponse>builder()

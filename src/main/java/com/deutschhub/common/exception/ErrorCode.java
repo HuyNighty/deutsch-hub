@@ -51,6 +51,7 @@ public enum ErrorCode {
     COURSE_NOT_COMPLETED("error.course.not.completed", 5011),
     COURSE_NOT_FOUND("error.course.not.found", 5012),
     COURSE_NOT_PUBLISHED("error.learning.course.not.published",5013),
+    COURSE_ACCESS_DENIED("error.course.access.denied", 5014),
 
     COURSE_MUST_HAVE_SECTION_BEFORE_PUBLISH("error.learning.course.must.have.section.before.publish", 50001),
     COURSE_MUST_HAVE_LESSON_BEFORE_PUBLISH("error.learning.course.must.have.lesson.before.publish", 50002),

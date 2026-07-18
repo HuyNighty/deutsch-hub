@@ -1,10 +1,9 @@
 package com.deutschhub.application.learning.usecase;
 
 import com.deutschhub.application.learning.dto.response.LessonPreviewResponse;
-import com.deutschhub.application.learning.dto.response.LessonResponse;
-import com.deutschhub.application.learning.dto.response.MyCourseDetailResponse;
-import com.deutschhub.application.learning.dto.response.SectionDetailResponse;
-import com.deutschhub.application.learning.port.in.GetMyCourseDetailUseCase;
+import com.deutschhub.application.learning.dto.response.PublishedSectionResponse;
+import com.deutschhub.application.learning.dto.response.ViewerCourseDetailResponse;
+import com.deutschhub.application.learning.port.in.GetViewerCourseDetailUseCase;
 import com.deutschhub.application.learning.port.out.CourseRepositoryPort;
 import com.deutschhub.application.learning.port.out.EnrollmentRepositoryPort;
 import com.deutschhub.common.exception.BusinessException;
@@ -20,71 +19,70 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.Comparator;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-
-public class GetMyCourseDetailService implements GetMyCourseDetailUseCase{
+public class GetViewerCourseDetailService implements GetViewerCourseDetailUseCase {
 
     CourseRepositoryPort courseRepositoryPort;
     EnrollmentRepositoryPort enrollmentRepositoryPort;
 
     @Override
-    public MyCourseDetailResponse getMyCourseDetail(UUID userId, UUID courseId) {
-        Enrollment enrollment = enrollmentRepositoryPort.findByUserIdAndCourseId(userId,courseId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.ENROLLMENT_NOT_FOUND));
-
-        if (!enrollment.getStatus().canAccessCourse()) {
-            throw new BusinessException(ErrorCode.COURSE_ACCESS_DENIED);
-        }
-
+    public ViewerCourseDetailResponse getViewerCourseDetail(UUID courseId, UUID viewerId) {
         Course course = courseRepositoryPort.findById(courseId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.COURSE_NOT_FOUND));
 
-        if (course.isDeleted()) {
-            throw new BusinessException(ErrorCode.COURSE_NOT_FOUND);
-        }
+        Optional<Enrollment> enrollment = findEnrollment(viewerId, courseId);
 
         return toResponse(course, enrollment);
     }
 
-    private MyCourseDetailResponse toResponse(Course course, Enrollment enrollment) {
-        Progress progress = enrollment.getProgress();
+    private Optional<Enrollment> findEnrollment(UUID viewerId, UUID courseId) {
+        if (viewerId == null) {
+            return Optional.empty();
+        }
 
-        List<SectionDetailResponse> sections = course.getSections()
+        return enrollmentRepositoryPort.findByUserIdAndCourseId(viewerId, courseId);
+    }
+
+    private ViewerCourseDetailResponse toResponse(Course course, Optional<Enrollment> enrollmentOptional) {
+        List<PublishedSectionResponse> sections = course.getSections()
                 .stream()
                 .filter(section -> !section.isDeleted())
                 .sorted(Comparator.comparingInt(Section::getOrderIndex))
-                .map(this::toDetailResponse)
+                .map(this::toSectionResponse)
                 .toList();
 
-        return new MyCourseDetailResponse(
+        Enrollment enrollment = enrollmentOptional.orElse(null);
+        Progress progress = enrollment != null ? enrollment.getProgress() : null;
+
+        return new ViewerCourseDetailResponse(
                 course.getId(),
                 course.getTitle(),
                 course.getDescription(),
                 course.getLevel().toString(),
                 course.getPrice().getAmount(),
                 course.getPrice().getCurrency(),
+                course.getInstructorId(),
                 course.getEstimatedHours(),
-                enrollment.getStatus().name(),
-                progress.getCompletedLessons(),
-                progress.getTotalLessons(),
-                progress.getCompletionPercentage(),
-                progress.getTotalStudyMinutes(),
                 sections,
-                enrollment.getEnrolledAt(),
-                progress.getLastUpdatedAt()
+                enrollment != null,
+                enrollment != null ? enrollment.getStatus().name() : null,
+                progress != null ? progress.getCompletedLessons() : null,
+                progress != null ? progress.getTotalLessons() : null,
+                progress != null ? progress.getCompletionPercentage() : null,
+                progress != null ? progress.getTotalStudyMinutes() : null,
+                enrollment != null ? enrollment.getEnrolledAt() : null,
+                progress != null ? progress.getLastUpdatedAt() : null,
+                course.getCreatedAt(),
+                course.getUpdatedAt()
         );
     }
 
-    private SectionDetailResponse toDetailResponse(Section section) {
-
+    private PublishedSectionResponse toSectionResponse(Section section) {
         List<LessonPreviewResponse> lessons = section.getLessons()
                 .stream()
                 .filter(lesson -> !lesson.isDeleted())
@@ -92,7 +90,7 @@ public class GetMyCourseDetailService implements GetMyCourseDetailUseCase{
                 .map(this::toLessonPreviewResponse)
                 .toList();
 
-        return new SectionDetailResponse(
+        return new PublishedSectionResponse(
                 section.getId(),
                 section.getTitle(),
                 section.getDescription(),
