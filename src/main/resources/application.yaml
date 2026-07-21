@@ -10,9 +10,9 @@ spring:
     cache-duration: PT1H
 
   datasource:
-    url: ${DBMS_CONNECTION:jdbc:mysql://localhost:3306/deutsch-hub}
-    username: ${DBMS_USERNAME:root}
-    password: ${DBMS_PASSWORD:REMOVED_DB_PASSWORD}
+    url: ${DBMS_CONNECTION}
+    username: ${DBMS_USERNAME}
+    password: ${DBMS_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
@@ -31,17 +31,17 @@ spring:
     locale: en
 
 jwt:
-  secret-key: REMOVED_JWT_SECRET
-  access-token-expiration: 900000
-  refresh-token-expiration: 604800000
+  secret-key: ${JWT_SECRET}
+  access-token-expiration: ${JWT_ACCESS_EXPIRATION}
+  refresh-token-expiration: ${JWT_REFRESH_EXPIRATION}
 
 app:
   admin:
-    username: admin
-    email: admin@deutschhub.com
-    password: REMOVED_ADMIN_PASSWORD
-    first-name: System
-    last-name: Admin
+    username: ${ADMIN_USERNAME}
+    email: ${ADMIN_EMAIL}
+    password: ${ADMIN_PASSWORD}
+    first-name: ${ADMIN_FIRST_NAME}
+    last-name: ${ADMIN_LAST_NAME}
   cors:
     allowed-origins:
       - http://localhost:5173
