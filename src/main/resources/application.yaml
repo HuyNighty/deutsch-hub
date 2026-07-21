@@ -1,8 +1,47 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /deutsch-hub
+
 spring:
   messages:
     basename: i18n/messages
     encoding: UTF-8
     cache-duration: PT1H
 
+  datasource:
+    url: ${DBMS_CONNECTION:jdbc:mysql://localhost:3306/deutsch-hub}
+    username: ${DBMS_USERNAME:root}
+    password: ${DBMS_PASSWORD:REMOVED_DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+    show-sql: true
+
+    properties:
+      hibernate:
+        format_sql: true
+
+    open-in-view: false
+
   mvc:
     locale: en
+
+jwt:
+  secret-key: REMOVED_JWT_SECRET
+  access-token-expiration: 900000
+  refresh-token-expiration: 604800000
+
+app:
+  admin:
+    username: admin
+    email: admin@deutschhub.com
+    password: REMOVED_ADMIN_PASSWORD
+    first-name: System
+    last-name: Admin
+  cors:
+    allowed-origins:
+      - http://localhost:5173
