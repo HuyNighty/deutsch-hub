@@ -34,7 +34,10 @@ public class SectionJpaEntity {
     @Column(nullable = false)
     int orderIndex;
 
+    @Column(nullable = false)
     LocalDateTime createdAt;
+
+    @Column(nullable = false)
     LocalDateTime updatedAt;
     LocalDateTime deletedAt;
 

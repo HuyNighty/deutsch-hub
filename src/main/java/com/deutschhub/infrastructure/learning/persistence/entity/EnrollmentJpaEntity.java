@@ -64,6 +64,10 @@ public class EnrollmentJpaEntity {
     LocalDateTime completedAt;
     LocalDateTime droppedAt;
     LocalDateTime expiredAt;
+
+    @Column(nullable = false)
     LocalDateTime createdAt;
+
+    @Column(nullable = false)
     LocalDateTime updatedAt;
 }

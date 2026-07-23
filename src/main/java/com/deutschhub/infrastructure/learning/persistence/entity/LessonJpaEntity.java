@@ -20,7 +20,6 @@ import java.util.UUID;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class LessonJpaEntity {
 
-
     @Id
     @JdbcTypeCode(SqlTypes.VARCHAR)
     UUID id;
@@ -46,7 +45,10 @@ public class LessonJpaEntity {
     @Column(nullable = false)
     boolean freePreview;
 
+    @Column(nullable = false)
     LocalDateTime createdAt;
+
+    @Column(nullable = false)
     LocalDateTime updatedAt;
     LocalDateTime deletedAt;
 

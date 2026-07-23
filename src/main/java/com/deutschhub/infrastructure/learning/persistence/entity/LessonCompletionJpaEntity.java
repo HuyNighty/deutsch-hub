@@ -43,5 +43,6 @@ public class LessonCompletionJpaEntity {
     @JdbcTypeCode(SqlTypes.VARCHAR)
     UUID lessonId;
 
+    @Column(nullable = false)
     LocalDateTime completedAt;
 }
