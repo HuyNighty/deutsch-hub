@@ -1,6 +1,5 @@
 package com.deutschhub.domain.learning.model.aggregate;
 
-import com.deutschhub.application.learning.dto.request.UpdateLessonCommand;
 import com.deutschhub.common.domain.Auditable;
 import com.deutschhub.common.domain.SoftDeletable;
 import com.deutschhub.common.exception.BusinessException;

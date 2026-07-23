@@ -18,7 +18,6 @@ import java.util.UUID;
 public class User implements Auditable {
 
     private final UUID id;
-
     private Username username;
     private Email email;
     private Password password;
