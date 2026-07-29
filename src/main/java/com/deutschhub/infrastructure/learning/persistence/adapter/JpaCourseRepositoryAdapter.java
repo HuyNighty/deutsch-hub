@@ -23,7 +23,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -163,7 +162,6 @@ public class JpaCourseRepositoryAdapter implements CourseRepositoryPort {
                 .id(lesson.getId())
                 .title(lesson.getTitle())
                 .description(lesson.getDescription())
-                .content(lesson.getContent())
                 .estimatedMinutes(lesson.getEstimatedMinutes())
                 .level(lesson.getLevel().toString())
                 .orderIndex(lesson.getOrderIndex())
@@ -208,7 +206,6 @@ public class JpaCourseRepositoryAdapter implements CourseRepositoryPort {
                 entity.getId(),
                 entity.getTitle(),
                 entity.getDescription(),
-                entity.getContent(),
                 entity.getEstimatedMinutes(),
                 new CEFRLevel(entity.getLevel()),
                 entity.getOrderIndex(),

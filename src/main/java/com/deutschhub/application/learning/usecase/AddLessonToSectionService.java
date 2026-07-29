@@ -30,7 +30,6 @@ public class AddLessonToSectionService implements AddLessonToSectionUseCase {
         Lesson lesson = Lesson.create(
                 command.title(),
                 command.description(),
-                command.content(),
                 command.estimatedMinutes(),
                 new CEFRLevel(command.level()),
                 command.orderIndex()
@@ -48,7 +47,6 @@ public class AddLessonToSectionService implements AddLessonToSectionUseCase {
                 lesson.getId(),
                 lesson.getTitle(),
                 lesson.getDescription(),
-                lesson.getContent(),
                 lesson.getEstimatedMinutes(),
                 lesson.getLevel().toString(),
                 lesson.getOrderIndex(),

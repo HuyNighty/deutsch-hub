@@ -283,7 +283,6 @@ public class AdminCourseController {
                 actorId,
                 request.title(),
                 request.description(),
-                request.content(),
                 request.estimatedMinutes(),
                 request.level(),
                 request.orderIndex(),
@@ -320,7 +319,7 @@ public class AdminCourseController {
         UUID actorId = UUID.fromString(jwt.getSubject());
 
         UpdateLessonCommand command = new UpdateLessonCommand(courseId, sectionId, lessonId, actorId, request.title(),
-                request.description(), request.content(), request.estimatedMinutes(), request.level(), request.orderIndex(),
+                request.description(), request.estimatedMinutes(), request.level(), request.orderIndex(),
                 request.freePreview(), true);
 
         LessonResponse response = updateLessonUseCase.updateLesson(command);

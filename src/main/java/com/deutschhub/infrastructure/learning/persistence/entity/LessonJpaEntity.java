@@ -27,11 +27,8 @@ public class LessonJpaEntity {
     @Column(nullable = false)
     String title;
 
-    @Column(length = 1000)
+    @Column(length = 2000)
     String description;
-
-    @Column(nullable = false, columnDefinition = "TEXT")
-    String content;
 
     @Column(nullable = false)
     int estimatedMinutes;

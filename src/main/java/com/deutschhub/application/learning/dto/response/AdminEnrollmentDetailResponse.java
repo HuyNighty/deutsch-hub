@@ -1,5 +1,6 @@
 package com.deutschhub.application.learning.dto.response;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -11,7 +12,7 @@ public record AdminEnrollmentDetailResponse(
         String status,
         int completedLessons,
         int totalLessons,
-        double completionPercentage,
+        BigDecimal completionPercentage,
         int totalStudyMinutes,
         List<CompletedLessonDetailResponse> completedLessonDetails,
         LocalDateTime enrolledAt,

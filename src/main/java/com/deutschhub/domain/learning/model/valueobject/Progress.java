@@ -3,13 +3,14 @@ package com.deutschhub.domain.learning.model.valueobject;
 import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public final class Progress {
 
     private final int completedLessons;
     private final int totalLessons;
-    private final double completionPercentage;
+    private final BigDecimal completionPercentage;
     private final int totalStudyMinutes;
     private final LocalDateTime lastUpdatedAt;
 
@@ -38,11 +39,12 @@ public final class Progress {
     }
 
     public boolean isCompleted() {
-        return completionPercentage >= 100.0;
+        return completionPercentage.compareTo(BigDecimal.valueOf(100)) >= 0;
     }
 
     public boolean isInProgress() {
-        return completionPercentage > 0.0 && completionPercentage < 100.0;
+        return  completionPercentage.compareTo(BigDecimal.ZERO) > 0
+                && completionPercentage.compareTo(BigDecimal.valueOf(100)) < 0;
     }
 
     public boolean hasStarted() {
@@ -66,9 +68,9 @@ public final class Progress {
         return total;
     }
 
-    private double calculateCompletionPercentage(int completed, int total) {
-        if (total == 0) return 0.0;
-        return Math.round(((double) completed / total) * 10000.0) / 100.0;
+    private BigDecimal calculateCompletionPercentage(int completed, int total) {
+        if (total == 0) return BigDecimal.valueOf(0);
+        return BigDecimal.valueOf(Math.round(((double) completed / total) * 10000.0) / 100.0);
     }
 
     public int getCompletedLessons() {
@@ -79,7 +81,7 @@ public final class Progress {
         return totalLessons;
     }
 
-    public double getCompletionPercentage() {
+    public BigDecimal getCompletionPercentage() {
         return completionPercentage;
     }
 

@@ -44,7 +44,8 @@ public class GetMyCoursesService implements GetMyCoursesUseCase {
 
         Progress progress = enrollment.getProgress();
 
-        return new MyCourseResponse(  course.getId(),
+        return new MyCourseResponse(
+                course.getId(),
                 course.getTitle(),
                 course.getDescription(),
                 course.getLevel().toString(),

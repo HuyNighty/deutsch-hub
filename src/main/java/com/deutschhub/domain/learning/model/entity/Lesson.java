@@ -17,7 +17,6 @@ public class Lesson implements Auditable, SoftDeletable {
     private final UUID id;
     private String title;
     private String description;
-    private String content;
     private int estimatedMinutes;
     private CEFRLevel level;
     private int orderIndex;
@@ -27,11 +26,10 @@ public class Lesson implements Auditable, SoftDeletable {
     private LocalDateTime deletedAt;
     private final List<LessonItem> items = new ArrayList<>();
 
-    private Lesson(UUID id, String title, String description, String content, int estimatedMinutes, CEFRLevel level, int orderIndex, boolean isFreePreview) {
+    private Lesson(UUID id, String title, String description, int estimatedMinutes, CEFRLevel level, int orderIndex, boolean isFreePreview) {
         this.id = id;
         this.title = validateTitle(title);
         this.description = description != null ? description : "";
-        this.content = content != null ? content : "";
         this.estimatedMinutes = validateDuration(estimatedMinutes);
         this.level = validateLevel(level);
         this.orderIndex = orderIndex;
@@ -39,22 +37,22 @@ public class Lesson implements Auditable, SoftDeletable {
         this.updatedAt = LocalDateTime.now();
     }
 
-    public static Lesson create(String title, String description, String content, int estimatedMinutes,
+    public static Lesson create(String title, String description, int estimatedMinutes,
                                 CEFRLevel level, int orderIndex) {
-        return new Lesson(UUID.randomUUID(), title, description, content, estimatedMinutes, level, orderIndex, false);
+        return new Lesson(UUID.randomUUID(), title, description, estimatedMinutes, level, orderIndex, false);
     }
 
-    public static Lesson restore(UUID id, String title, String description, String content, int estimatedMinutes,
+    public static Lesson restore(UUID id, String title, String description, int estimatedMinutes,
                                  CEFRLevel level, int orderIndex, boolean freePreview, LocalDateTime createdAt,
                                  LocalDateTime updatedAt, LocalDateTime deletedAt) {
-        Lesson lesson = new Lesson(id, title, description, content, estimatedMinutes, level, orderIndex, freePreview);
+        Lesson lesson = new Lesson(id, title, description, estimatedMinutes, level, orderIndex, freePreview);
         lesson.createdAt = createdAt;
         lesson.updatedAt = updatedAt;
         lesson.deletedAt = deletedAt;
         return lesson;
     }
 
-    public void update(String title, String description, String content, Integer estimatedMinutes,
+    public void update(String title, String description, Integer estimatedMinutes,
                        CEFRLevel level, Integer orderIndex, Boolean freePreview) {
         if (title != null) {
             changeTitle(title);
@@ -62,10 +60,6 @@ public class Lesson implements Auditable, SoftDeletable {
 
         if (description != null) {
             this.description = description.trim();
-        }
-
-        if (content != null) {
-            changeContent(content);
         }
 
         if (estimatedMinutes != null) {
@@ -93,14 +87,6 @@ public class Lesson implements Auditable, SoftDeletable {
         }
 
         this.title = title.trim();
-    }
-
-    private void changeContent(String content) {
-        if (content == null || content.trim().isBlank()) {
-            throw new BusinessException(ErrorCode.INVALID_LESSON_CONTENT);
-        }
-
-        this.content = content.trim();
     }
 
     private void changeEstimatedMinutes(int estimatedMinutes) {
@@ -215,10 +201,6 @@ public class Lesson implements Auditable, SoftDeletable {
 
     public String getDescription() {
         return description;
-    }
-
-    public String getContent() {
-        return content;
     }
 
     public int getEstimatedMinutes() {

@@ -47,7 +47,7 @@ CREATE TABLE user_sessions (
 
     user_id VARCHAR(36) NOT NULL,
 
-    refresh_hash_token VARCHAR(255) NOT NULL,
+    refresh_token_hash VARCHAR(255) NOT NULL,
 
     created_at DATETIME(6) NOT NULL,
     updated_at DATETIME(6) NOT NULL,
@@ -57,8 +57,8 @@ CREATE TABLE user_sessions (
     CONSTRAINT pk_user_sessions
         PRIMARY KEY (id),
 
-    CONSTRAINT uk_user_sessions_refresh_hash_token
-        UNIQUE (refresh_hash_token),
+    CONSTRAINT uk_user_sessions_refresh_token_hash
+        UNIQUE (refresh_token_hash),
 
     CONSTRAINT fk_user_sessions_user
         FOREIGN KEY (user_id)
@@ -69,7 +69,7 @@ CREATE TABLE user_sessions (
 CREATE INDEX idx_user_sessions_user_id
 ON user_sessions(user_id);
 
---LEARNING CONTEXT V1
+-- LEARNING CONTEXT V1
 CREATE TABLE courses (
     id VARCHAR(36) NOT NULL,
 
@@ -85,7 +85,7 @@ CREATE TABLE courses (
 
     instructor_id VARCHAR(36) NOT NULL,
 
-    estimated_hours INT,
+    estimated_hours INT NOT NULL DEFAULT 0,
 
     created_at DATETIME(6) NOT NULL,
     updated_at DATETIME(6) NOT NULL,
@@ -227,6 +227,9 @@ CREATE TABLE enrollments (
 CREATE INDEX idx_enrollments_course_id
 ON enrollments(course_id);
 
+CREATE INDEX idx_enrollments_user_id
+ON enrollments(user_id);
+
 CREATE TABLE lesson_completions (
     id VARCHAR(36) NOT NULL,
 
@@ -254,3 +257,6 @@ CREATE TABLE lesson_completions (
 
 CREATE INDEX idx_lesson_completions_lesson_id
 ON lesson_completions(lesson_id);
+
+CREATE INDEX idx_lesson_completions_enrollment_id
+ON lesson_completions(enrollment_id);

@@ -35,7 +35,7 @@ public class LessonItemJpaEntity {
     @Column(nullable = false)
     String title;
 
-    @Column(length = 1000)
+    @Column(length = 2000)
     String description;
 
     @Column(columnDefinition = "TEXT")

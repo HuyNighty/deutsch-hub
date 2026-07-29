@@ -8,7 +8,6 @@ public record LessonDetailResponse(
         UUID id,
         String title,
         String description,
-        String content,
         int estimatedMinutes,
         String level,
         int orderIndex,

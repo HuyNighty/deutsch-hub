@@ -34,7 +34,6 @@ public class UpdateLessonService implements UpdateLessonUseCase {
                 command.lessonId(),
                 command.title(),
                 command.description(),
-                command.content(),
                 command.estimatedMinutes(),
                 level,
                 command.orderIndex(),
@@ -48,7 +47,7 @@ public class UpdateLessonService implements UpdateLessonUseCase {
     }
 
     private LessonResponse toResponse(Lesson lesson) {
-        return new LessonResponse(lesson.getId(), lesson.getTitle(), lesson.getDescription(), lesson.getContent(),
+        return new LessonResponse(lesson.getId(), lesson.getTitle(), lesson.getDescription(),
                 lesson.getEstimatedMinutes(), lesson.getLevel().toString(), lesson.getOrderIndex(), lesson.isFreePreview(),
                 lesson.getCreatedAt(),  lesson.getUpdatedAt()
         );

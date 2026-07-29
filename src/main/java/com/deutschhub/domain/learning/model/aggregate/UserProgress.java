@@ -7,6 +7,7 @@ import com.deutschhub.common.exception.ErrorCode;
 import com.deutschhub.domain.learning.model.valueobject.Progress;
 import com.deutschhub.domain.learning.model.valueobject.UserProgressStatus;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -28,7 +29,7 @@ public class UserProgress implements Auditable, SoftDeletable {
     private LocalDateTime updatedAt;
     private LocalDateTime deletedAt;
 
-    private static final double ALMOST_DONE_THRESHOLD = 80.0;
+    private static final BigDecimal ALMOST_DONE_THRESHOLD = BigDecimal.valueOf(80);
 
     private UserProgress(UUID id, UUID userId, UUID courseId, UUID enrollmentId, Progress currentProgress, UserProgressStatus status) {
         this.id = id;
@@ -74,7 +75,7 @@ public class UserProgress implements Auditable, SoftDeletable {
         if (this.currentProgress.isCompleted()) {
             this.status = UserProgressStatus.COMPLETED;
             this.completedAt = LocalDateTime.now();
-        } else if (this.currentProgress.getCompletionPercentage() >= ALMOST_DONE_THRESHOLD) {
+        } else if (this.currentProgress.getCompletionPercentage().compareTo(ALMOST_DONE_THRESHOLD) >= 0) {
             this.status = UserProgressStatus.ALMOST_DONE;
         } else {
             this.status = UserProgressStatus.IN_PROGRESS;
@@ -100,7 +101,7 @@ public class UserProgress implements Auditable, SoftDeletable {
             throw new BusinessException(ErrorCode.INVALID_PROGRESS_DATA);
         }
 
-        if (newProgress.getCompletionPercentage() < currentProgress.getCompletionPercentage()) {
+        if (newProgress.getCompletionPercentage().compareTo(currentProgress.getCompletionPercentage()) < 0) {
             throw new BusinessException(ErrorCode.PROGRESS_CANNOT_DECREASE);
         }
 

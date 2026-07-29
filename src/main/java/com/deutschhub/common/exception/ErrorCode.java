@@ -142,7 +142,17 @@ public enum ErrorCode {
 
     CERTIFICATE_FORBIDDEN_ACTION("error.certificate.forbidden.action", 13001),
 
-    LESSON_COMPLETION_ID_CAN_NOT_NULL("error.learning.lesson.completion.id.can.not.null", 14001)
+    LESSON_COMPLETION_ID_CAN_NOT_NULL("error.learning.lesson.completion.id.can.not.null", 14001),
+
+    INVALID_MEDIA_FILE_NAME("error.media.invalid.file.name", 15001),
+    INVALID_MEDIA_STORAGE_KEY("error.media.invalid.storage.key", 15002),
+    INVALID_MEDIA_TYPE("error.media.invalid.type", 15003),
+    INVALID_MEDIA_MIME_TYPE("error.media.invalid.mime.type", 15004),
+    INVALID_MEDIA_SIZE("error.media.invalid.size", 15005),
+    INVALID_MEDIA_CREATED_AT("error.media.invalid.created.at", 15006),
+
+    MEDIA_ID_CAN_NOT_NULL("error.media.id.can.not.null", 15101),
+    MEDIA_UPLOADER_CAN_NOT_NULL("error.media.uploader.can.not.null", 15102),
     ;
 
     private final String messageKey;

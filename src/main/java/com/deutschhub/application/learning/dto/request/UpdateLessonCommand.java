@@ -9,7 +9,6 @@ public record UpdateLessonCommand (
         UUID actorId,
         String title,
         String description,
-        String content,
         Integer estimatedMinutes,
         String level,
         Integer orderIndex,

@@ -32,13 +32,13 @@ public class CourseJpaEntity {
     @Column(length = 2000)
     String description;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 3)
     String level;
 
     @Column(nullable = false)
     BigDecimal priceAmount;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 3)
     String priceCurrency;
 
     boolean published;

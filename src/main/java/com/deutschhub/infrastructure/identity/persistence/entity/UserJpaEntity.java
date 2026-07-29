@@ -26,7 +26,7 @@ public class UserJpaEntity {
     @JdbcTypeCode(SqlTypes.VARCHAR)
     UUID id;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false, unique = true, length = 30)
     String username;
 
     @Column(nullable = false, unique = true)
@@ -35,12 +35,13 @@ public class UserJpaEntity {
     @Column(nullable = false)
     String password;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 50)
     String firstName;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 50)
     String lastName;
 
+    @Column(length = 50)
     String phoneNumber;
     boolean isActive;
     LocalDateTime createdAt;

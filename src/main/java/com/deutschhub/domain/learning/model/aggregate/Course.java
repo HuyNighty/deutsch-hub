@@ -178,7 +178,7 @@ public class Course implements Auditable, SoftDeletable {
         return section;
     }
 
-    public Lesson updateLesson(UUID sectionId, UUID lessonId, String title, String description, String content,
+    public Lesson updateLesson(UUID sectionId, UUID lessonId, String title, String description,
                                Integer estimatedMinutes, CEFRLevel level, Integer orderIndex, Boolean freePreview,
                                UUID actorId, boolean isAdmin) {
         ensureCanMutateBy(actorId, isAdmin);
@@ -202,7 +202,7 @@ public class Course implements Auditable, SoftDeletable {
                 .findFirst()
                 .orElseThrow(() -> new BusinessException(ErrorCode.LESSON_NOT_FOUND));
 
-        lesson.update(title, description, content, estimatedMinutes, level, orderIndex, freePreview);
+        lesson.update(title, description, estimatedMinutes, level, orderIndex, freePreview);
 
         touch();
         recalculateEstimatedHours();

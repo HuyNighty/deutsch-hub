@@ -7,7 +7,6 @@ public record LessonResponse(
         UUID id,
         String title,
         String description,
-        String content,
         int estimatedMinutes,
         String level,
         int orderIndex,

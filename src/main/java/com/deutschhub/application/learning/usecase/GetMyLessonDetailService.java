@@ -82,7 +82,6 @@ public class GetMyLessonDetailService implements GetMyLessonDetailUseCase {
                 lesson.getId(),
                 lesson.getTitle(),
                 lesson.getDescription(),
-                lesson.getContent(),
                 lesson.getEstimatedMinutes(),
                 lesson.getLevel().toString(),
                 lesson.getOrderIndex(),

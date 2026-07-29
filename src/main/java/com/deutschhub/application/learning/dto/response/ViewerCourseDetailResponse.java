@@ -19,7 +19,7 @@ public record ViewerCourseDetailResponse(
         String enrollmentStatus,
         Integer completedLessons,
         Integer totalLessons,
-        Double completionPercentage,
+        BigDecimal completionPercentage,
         Integer totalStudyMinutes,
         LocalDateTime enrolledAt,
         LocalDateTime lastProgressUpdatedAt,

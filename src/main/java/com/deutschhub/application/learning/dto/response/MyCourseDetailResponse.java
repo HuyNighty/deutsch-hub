@@ -16,7 +16,7 @@ public record MyCourseDetailResponse(
         String enrollmentStatus,
         int completedLessons,
         int totalLessons,
-        double completionPercentage,
+        BigDecimal completionPercentage,
         int totalStudyMinutes,
         List<SectionDetailResponse> sections,
         LocalDateTime enrolledAt,

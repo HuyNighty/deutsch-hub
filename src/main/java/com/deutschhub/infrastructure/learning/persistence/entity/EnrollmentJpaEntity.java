@@ -6,6 +6,7 @@ import lombok.experimental.FieldDefaults;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -53,7 +54,7 @@ public class EnrollmentJpaEntity {
     int totalLessons;
 
     @Column(nullable = false)
-    double completionPercentage;
+    BigDecimal completionPercentage;
 
     @Column(nullable = false)
     int totalStudyMinutes;

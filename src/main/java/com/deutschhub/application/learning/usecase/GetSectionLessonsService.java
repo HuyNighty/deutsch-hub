@@ -55,7 +55,6 @@ public class GetSectionLessonsService implements GetSectionLessonsUseCase {
                 lesson.getId(),
                 lesson.getTitle(),
                 lesson.getDescription(),
-                lesson.getContent(),
                 lesson.getEstimatedMinutes(),
                 lesson.getLevel().toString(),
                 lesson.getOrderIndex(),
