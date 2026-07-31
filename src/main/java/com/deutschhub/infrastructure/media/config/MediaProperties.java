@@ -6,11 +6,12 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.util.unit.DataSize;
 import org.springframework.validation.annotation.Validated;
 
+import java.nio.file.Path;
+
 @Validated
 @ConfigurationProperties(prefix = "app.media")
 public record MediaProperties(
-        @NotBlank
-        String storageRoot,
+        Path storageRoot,
 
         @NotNull
         DataSize maxUploadSize

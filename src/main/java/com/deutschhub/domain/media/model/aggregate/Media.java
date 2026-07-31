@@ -43,6 +43,15 @@ public class Media {
         return new Media(id, originalFileName, storageKey, mediaType, mimeType, sizeBytes, uploadedBy, createdAt);
     }
 
+    public boolean belongsTo(UUID userId) {
+
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.MEDIA_OWNER_CAN_NOT_NULL);
+        }
+
+        return uploadedBy.equals(userId);
+    }
+
     private UUID validateId(UUID id) {
         if (id == null) {
             throw new BusinessException(ErrorCode.MEDIA_ID_CAN_NOT_NULL);

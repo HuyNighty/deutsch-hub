@@ -1,4 +1,4 @@
-package com.deutschhub.infrastructure.media.persistence.adapter;
+package com.deutschhub.infrastructure.media.storage.adapter;
 
 import com.deutschhub.application.media.port.out.MediaRepositoryPort;
 import com.deutschhub.domain.media.model.aggregate.Media;

@@ -7,6 +7,8 @@ import com.deutschhub.application.media.port.out.*;
 import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
 import com.deutschhub.domain.media.model.aggregate.Media;
+import com.deutschhub.domain.media.model.valueobject.MediaType;
+import com.deutschhub.domain.media.service.MediaTypeResolver;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -22,18 +24,28 @@ public class UploadMediaService implements UploadMediaUseCase {
     MediaRepositoryPort mediaRepositoryPort;
     MediaStoragePort mediaStoragePort;
     MediaUploadPolicy mediaUploadPolicy;
+    MediaTypeResolver mediaTypeResolver;
 
     @Override
     public MediaResponse upload(UploadMediaCommand command) {
         validateUploadSize(command);
 
-        StoredMediaObject storedMedia = mediaStoragePort.store(
-                new MediaUploadContent(command.originalFileName(), command.mimeType(),
-                        command.sizeBytes(), command.inputStream()));
+        MediaType mediaType =
+                mediaTypeResolver.resolve(command.mimeType());
+
+        MediaUploadContent content = new MediaUploadContent(
+                command.originalFileName(),
+                mediaType,
+                command.mimeType(),
+                command.sizeBytes(),
+                command.inputStream()
+        );
+
+        StoredMediaObject storedMedia = mediaStoragePort.store(content);
 
         try {
             Media media = Media.create(command.originalFileName(), storedMedia.storageKey(),
-                    command.mediaType(), command.mimeType(), command.sizeBytes(), command.uploadedBy());
+                    mediaType, command.mimeType(), command.sizeBytes(), command.uploadedBy());
 
             Media savedMedia = mediaRepositoryPort.save(media);
 

@@ -152,6 +152,9 @@ public enum ErrorCode {
     INVALID_MEDIA_CREATED_AT("error.media.invalid.created.at", 15006),
     INVALID_MEDIA_UPLOAD("error.media.invalid.upload", 15007),
     MEDIA_FILE_TOO_LARGE("error.media.file.too.large", 15008),
+    MEDIA_NOT_FOUND("error.media.not.found", 15009),
+    MEDIA_OWNER_CAN_NOT_NULL("error.media.owner.can.not.null", 15010),
+    MEDIA_ACCESS_DENIED("error.media.access.denied", 15011),
 
     MEDIA_ID_CAN_NOT_NULL("error.media.id.can.not.null", 15101),
     MEDIA_UPLOADER_CAN_NOT_NULL("error.media.uploader.can.not.null", 15102),
