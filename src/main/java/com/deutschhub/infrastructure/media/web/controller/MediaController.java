@@ -1,15 +1,20 @@
 package com.deutschhub.infrastructure.media.web.controller;
 
 import com.deutschhub.application.media.dto.request.UploadMediaCommand;
+import com.deutschhub.application.media.dto.response.MediaContentResponse;
 import com.deutschhub.application.media.dto.response.MediaResponse;
+import com.deutschhub.application.media.port.in.GetMediaContentUseCase;
 import com.deutschhub.application.media.port.in.GetMediaUseCase;
 import com.deutschhub.application.media.port.in.UploadMediaUseCase;
 import com.deutschhub.common.util.ApiResponse;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
@@ -26,6 +31,7 @@ public class MediaController {
 
     UploadMediaUseCase uploadMediaUseCase;
     GetMediaUseCase getMediaUseCase;
+    GetMediaContentUseCase getMediaContentUseCase;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<MediaResponse>> upload(@RequestParam("file")MultipartFile file,
@@ -52,10 +58,26 @@ public class MediaController {
                                               @AuthenticationPrincipal Jwt jwt) {
         UUID currentUserId = UUID.fromString(jwt.getSubject());
 
-        boolean isAdmin = jwt.getClaimAsStringList("roles").contains("ADMIN ");
+        boolean isAdmin = jwt.getClaimAsStringList("roles").contains("ADMIN");
 
         return ApiResponse.<MediaResponse>builder()
                 .result(getMediaUseCase.getById(mediaId, currentUserId, isAdmin))
                 .build();
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/{mediaId}/content")
+    public ResponseEntity<Resource> getContent(@PathVariable UUID mediaId, @AuthenticationPrincipal Jwt jwt) {
+
+        UUID actorId = UUID.fromString(jwt.getSubject());
+
+        MediaContentResponse media = getMediaContentUseCase.getContent(mediaId, actorId);
+
+        InputStreamResource resource = new InputStreamResource(media.inputStream());
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(media.mimeType()))
+                .contentLength(media.sizeBytes())
+                .body(resource);
     }
 }

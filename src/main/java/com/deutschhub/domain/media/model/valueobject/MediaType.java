@@ -11,7 +11,7 @@ public enum MediaType {
     DOCUMENT;
 
     private static final Set<String> DOCUMENT_MIME_TYPE = Set.of(
-            "/application.msword",
+            "/application/msword",
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             "application/vnd.oasis.opendocument.text"
     );

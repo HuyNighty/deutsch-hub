@@ -9,6 +9,9 @@ import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -30,6 +33,7 @@ public class MyLearningController {
     GetCompletedLessonsUseCase getCompletedLessonsUseCase;
     DropCourseUseCase dropCourseUseCase;
     GetMyLessonDetailUseCase getMyLessonDetailUseCase;
+    GetMyLessonItemMediaUseCase getMyLessonItemMediaUseCase;
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<MyCourseResponse>>> getMyCourses(@AuthenticationPrincipal Jwt jwt) {
@@ -148,5 +152,21 @@ public class MyLearningController {
                         .result(response)
                         .build()
         );
+    }
+
+    @GetMapping("/{courseId}/lessons/{lessonId}/items/{itemId}/media")
+    public ResponseEntity<Resource> getMyLessonItemMedia(@PathVariable UUID courseId,
+                                                         @PathVariable UUID lessonId,
+                                                         @PathVariable UUID itemId,
+                                                         @AuthenticationPrincipal Jwt jwt) {
+        UUID userId = UUID.fromString(jwt.getSubject());
+
+        LessonItemMediaContentResponse media = getMyLessonItemMediaUseCase.getMedia(userId, courseId,
+                lessonId, itemId);
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(media.mimeType()))
+                .contentLength(media.sizeBytes())
+                .body(new InputStreamResource(media.inputStream()));
     }
 }

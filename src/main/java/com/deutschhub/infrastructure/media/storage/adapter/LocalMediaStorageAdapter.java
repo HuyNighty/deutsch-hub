@@ -3,6 +3,8 @@ package com.deutschhub.infrastructure.media.storage.adapter;
 import com.deutschhub.application.media.port.out.MediaStoragePort;
 import com.deutschhub.application.media.port.out.MediaUploadContent;
 import com.deutschhub.application.media.port.out.StoredMediaObject;
+import com.deutschhub.common.exception.BusinessException;
+import com.deutschhub.common.exception.ErrorCode;
 import com.deutschhub.infrastructure.media.config.MediaProperties;
 import com.deutschhub.infrastructure.media.storage.generator.StorageKeyGenerator;
 import lombok.AccessLevel;
@@ -11,6 +13,7 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -43,6 +46,17 @@ public class LocalMediaStorageAdapter implements MediaStoragePort {
             Files.deleteIfExists(path);
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public InputStream load(String storageKey) {
+        Path path = resolveStoragePath(storageKey);
+
+        try {
+            return Files.newInputStream(path);
+        } catch (IOException e) {
+            throw new BusinessException(ErrorCode.MEDIA_NOT_FOUND);
         }
     }
 

@@ -158,6 +158,9 @@ public enum ErrorCode {
 
     MEDIA_ID_CAN_NOT_NULL("error.media.id.can.not.null", 15101),
     MEDIA_UPLOADER_CAN_NOT_NULL("error.media.uploader.can.not.null", 15102),
+
+    LESSON_ITEM_NOT_FOUND("error.lesson.item.not.found", 16000),
+    LESSON_ITEM_MEDIA_NOT_FOUND("error.lesson.item.media.not.found", 16001),
     ;
 
     private final String messageKey;
