@@ -232,7 +232,7 @@ public class JpaCourseRepositoryAdapter implements CourseRepositoryPort {
                 .title(item.getTitle())
                 .description(item.getDescription())
                 .content(item.getContent())
-                .resourceUrl(item.getResourceUrl())
+                .mediaId(item.getMediaId())
                 .quizId(item.getQuizId())
                 .estimatedMinutes(item.getEstimatedMinutes())
                 .orderIndex(item.getOrderIndex())
@@ -250,7 +250,7 @@ public class JpaCourseRepositoryAdapter implements CourseRepositoryPort {
                 entity.getTitle(),
                 entity.getDescription(),
                 entity.getContent(),
-                entity.getResourceUrl(),
+                entity.getMediaId(),
                 entity.getQuizId(),
                 entity.getEstimatedMinutes(),
                 entity.getOrderIndex(),

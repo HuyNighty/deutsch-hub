@@ -1,15 +1,17 @@
 package com.deutschhub.infrastructure.learning.web.request;
 
+import com.deutschhub.domain.learning.model.valueobject.LessonItemType;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 import java.util.UUID;
 
 public record AddLessonItemRequest(
 
-        @NotBlank(message = "Lesson item type is required")
-        String type,
+        @NotNull(message = "Lesson item type is required")
+        LessonItemType type,
 
         @NotBlank(message = "Lesson item title is required")
         @Size(max = 150, message = "Lesson item title must not exceed 150 characters")
@@ -20,7 +22,7 @@ public record AddLessonItemRequest(
 
         String content,
 
-        String resourceUrl,
+        UUID mediaId,
 
         UUID quizId,
 

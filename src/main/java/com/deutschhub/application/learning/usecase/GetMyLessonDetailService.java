@@ -102,7 +102,7 @@ public class GetMyLessonDetailService implements GetMyLessonDetailUseCase {
                 item.getTitle(),
                 item.getDescription(),
                 item.getContent(),
-                item.getResourceUrl(),
+                item.getMediaId(),
                 item.getQuizId(),
                 item.getEstimatedMinutes(),
                 item.getOrderIndex(),

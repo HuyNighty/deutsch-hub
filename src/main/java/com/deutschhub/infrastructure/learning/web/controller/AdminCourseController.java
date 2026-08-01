@@ -355,7 +355,7 @@ public class AdminCourseController {
         UUID actorId = UUID.fromString(jwt.getSubject());
 
         AddLessonItemCommand command = new AddLessonItemCommand(courseId, sectionId, lessonId, actorId, request.type(),
-                request.title(), request.description(), request.content(), request.resourceUrl(), request.quizId(),
+                request.title(), request.description(), request.content(), request.mediaId(), request.quizId(),
                 request.estimatedMinutes(), request.orderIndex(), true
         );
 

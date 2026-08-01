@@ -9,7 +9,7 @@ public record LessonItemResponse(
         String title,
         String description,
         String content,
-        String resourceUrl,
+        UUID mediaId,
         UUID quizId,
         int estimatedMinutes,
         int orderIndex,

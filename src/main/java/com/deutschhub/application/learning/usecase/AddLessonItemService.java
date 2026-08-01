@@ -5,6 +5,7 @@ import com.deutschhub.application.learning.dto.response.LessonDetailResponse;
 import com.deutschhub.application.learning.dto.response.LessonItemResponse;
 import com.deutschhub.application.learning.port.in.AddLessonItemUseCase;
 import com.deutschhub.application.learning.port.out.CourseRepositoryPort;
+import com.deutschhub.application.media.port.out.MediaRepositoryPort;
 import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
 import com.deutschhub.domain.learning.model.aggregate.Course;
@@ -12,6 +13,7 @@ import com.deutschhub.domain.learning.model.entity.Lesson;
 import com.deutschhub.domain.learning.model.entity.LessonItem;
 import com.deutschhub.domain.learning.model.entity.Section;
 import com.deutschhub.domain.learning.model.valueobject.LessonItemType;
+import com.deutschhub.domain.media.model.aggregate.Media;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -29,6 +31,7 @@ import java.util.UUID;
 public class AddLessonItemService implements AddLessonItemUseCase {
 
     CourseRepositoryPort courseRepositoryPort;
+    MediaRepositoryPort mediaRepositoryPort;
 
     @Override
     public LessonDetailResponse addLessonItem(AddLessonItemCommand command) {
@@ -46,44 +49,44 @@ public class AddLessonItemService implements AddLessonItemUseCase {
     }
 
     private LessonItem createLessonItem(AddLessonItemCommand command) {
-        LessonItemType type = toType(command.type());
+        LessonItemType type = command.type();
 
-        if (type.requiresContent()) {
-            return LessonItem.createText(
+        return switch (type) {
+
+            case TEXT -> LessonItem.createText(
                     command.title(),
                     command.description(),
                     command.content(),
                     command.estimatedMinutes(),
                     command.orderIndex()
             );
-        }
 
-        if (type.requiresResourceUrl()) {
-            return LessonItem.createResource(
-                    type,
+            case MEDIA -> {
+                validateMedia(command.mediaId());
+
+                yield LessonItem.createMedia(
+                        command.type(),
+                        command.title(),
+                        command.description(),
+                        command.mediaId(),
+                        command.estimatedMinutes(),
+                        command.orderIndex()
+                );
+            }
+
+            case QUIZ -> LessonItem.createQuiz(
                     command.title(),
                     command.description(),
-                    command.resourceUrl(),
+                    command.quizId(),
                     command.estimatedMinutes(),
                     command.orderIndex()
             );
-        }
-
-        return LessonItem.createQuiz(
-                command.title(),
-                command.description(),
-                command.quizId(),
-                command.estimatedMinutes(),
-                command.orderIndex()
-        );
+        };
     }
 
-    private LessonItemType toType(String type) {
-        try {
-            return LessonItemType.valueOf(type.trim().toUpperCase());
-        } catch (RuntimeException exception) {
-            throw new BusinessException(ErrorCode.INVALID_LESSON);
-        }
+    private Media validateMedia(UUID mediaId) {
+       return mediaRepositoryPort.findById(mediaId)
+               .orElseThrow(() -> new BusinessException(ErrorCode.MEDIA_NOT_FOUND));
     }
 
     private LessonDetailResponse toResponse(Course course, Lesson lesson) {
@@ -120,7 +123,7 @@ public class AddLessonItemService implements AddLessonItemUseCase {
                 item.getTitle(),
                 item.getDescription(),
                 item.getContent(),
-                item.getResourceUrl(),
+                item.getMediaId(),
                 item.getQuizId(),
                 item.getEstimatedMinutes(),
                 item.getOrderIndex(),

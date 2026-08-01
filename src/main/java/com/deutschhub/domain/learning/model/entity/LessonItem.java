@@ -17,7 +17,7 @@ public class LessonItem implements Auditable, SoftDeletable {
     private String title;
     private String description;
     private String content;
-    private String resourceUrl;
+    private UUID mediaId;
     private UUID quizId;
     private int estimatedMinutes;
     private int orderIndex;
@@ -26,13 +26,13 @@ public class LessonItem implements Auditable, SoftDeletable {
     private LocalDateTime deletedAt;
 
     private LessonItem(UUID id, LessonItemType type, String title, String description, String content,
-                       String resourceUrl, UUID quizId, int estimatedMinutes, int orderIndex) {
+                       UUID mediaId, UUID quizId, int estimatedMinutes, int orderIndex) {
         this.id = Objects.requireNonNull(id);
         this.type = validateType(type);
         this.title = validateTitle(title);
         this.description = description != null ? description.trim() :  "";
         this.content = content != null ? content.trim() : "";
-        this.resourceUrl = resourceUrl != null ? resourceUrl.trim() : "";
+        this.mediaId = mediaId;
         this.quizId = quizId;
         this.estimatedMinutes = validateEstimatedMinutes(estimatedMinutes);
         this.orderIndex = validateOrderIndex(orderIndex);
@@ -47,9 +47,9 @@ public class LessonItem implements Auditable, SoftDeletable {
                 content, null, null, estimatedMinutes, orderIndex);
     }
 
-    public static LessonItem createResource(LessonItemType type, String title, String description,
-                                            String resourceUrl,  int estimatedMinutes, int orderIndex) {
-        return new LessonItem(UUID.randomUUID(), type, title, description, null, resourceUrl,
+    public static LessonItem createMedia(LessonItemType type, String title, String description,
+                                            UUID mediaId,  int estimatedMinutes, int orderIndex) {
+        return new LessonItem(UUID.randomUUID(), type, title, description, null, mediaId,
                 null, estimatedMinutes, orderIndex);
     }
 
@@ -60,11 +60,10 @@ public class LessonItem implements Auditable, SoftDeletable {
     }
 
     public static LessonItem restore(UUID id, LessonItemType type, String title, String description,
-                                     String content, String resourceUrl, UUID quizId,
-                                     int estimatedMinutes, int orderIndex,
+                                     String content,UUID mediaId, UUID quizId, int estimatedMinutes, int orderIndex,
                                      LocalDateTime createdAt, LocalDateTime updatedAt,
                                      LocalDateTime deletedAt) {
-        LessonItem item = new LessonItem(id, type, title, description, content, resourceUrl, quizId,
+        LessonItem item = new LessonItem(id, type, title, description, content, mediaId, quizId,
                 estimatedMinutes, orderIndex);
 
         item.createdAt = createdAt;
@@ -73,7 +72,7 @@ public class LessonItem implements Auditable, SoftDeletable {
         return item;
     }
 
-    public void update(String title, String description, String content, String resourceUrl, UUID quizId,
+    public void update(String title, String description, String content, UUID mediaId, UUID quizId,
                        Integer estimatedMinutes, Integer orderIndex) {
         ensureNotDeleted();
 
@@ -89,8 +88,8 @@ public class LessonItem implements Auditable, SoftDeletable {
             this.content = content.trim();
         }
 
-        if (resourceUrl != null) {
-            this.resourceUrl = resourceUrl.trim();
+        if (mediaId != null) {
+            this.mediaId = mediaId;
         }
 
         if (quizId != null) {
@@ -111,19 +110,23 @@ public class LessonItem implements Auditable, SoftDeletable {
 
     private void validatePayload() {
         if (type.requiresContent() && content.isBlank()) {
-            throw new BusinessException(ErrorCode.INVALID_LESSON_CONTENT);
+            throw new BusinessException(ErrorCode.LESSON_INVALID_CONTENT);
         }
 
-        if (type.requiresResourceUrl() && resourceUrl.isBlank()) {
-            throw new BusinessException(ErrorCode.INVALID_LESSON_CONTENT);
+        if (type.requiresMedia() && mediaId == null) {
+            throw new BusinessException(ErrorCode.INVALID_LESSON_MEDIA);
         }
 
         if (type.requiresQuizId() && quizId == null) {
             throw new BusinessException(ErrorCode.INVALID_LESSON);
         }
 
-        if (!type.requiresResourceUrl()) {
-            this.resourceUrl = "";
+        if (!type.requiresContent()) {
+            this.content = "";
+        }
+
+        if (!type.requiresMedia()) {
+            this.mediaId = null;
         }
 
         if (!type.requiresQuizId()) {
@@ -217,8 +220,8 @@ public class LessonItem implements Auditable, SoftDeletable {
         return content;
     }
 
-    public String getResourceUrl() {
-        return resourceUrl;
+    public UUID getMediaId() {
+        return mediaId;
     }
 
     public UUID getQuizId() {

@@ -2,18 +2,15 @@ package com.deutschhub.domain.learning.model.valueobject;
 
 public enum LessonItemType {
     TEXT,
-    VIDEO,
-    PDF,
-    DOCUMENT,
-    AUDIO,
+    MEDIA,
     QUIZ;
 
     public boolean requiresContent() {
         return this == TEXT;
     }
 
-    public boolean requiresResourceUrl() {
-        return this == VIDEO || this == PDF || this == DOCUMENT || this == AUDIO;
+    public boolean requiresMedia() {
+        return this == MEDIA;
     }
 
     public boolean requiresQuizId() {

@@ -1,5 +1,7 @@
 package com.deutschhub.application.learning.dto.request;
 
+import com.deutschhub.domain.learning.model.valueobject.LessonItemType;
+
 import java.util.UUID;
 
 public record AddLessonItemCommand(
@@ -7,11 +9,11 @@ public record AddLessonItemCommand(
         UUID sectionId,
         UUID lessonId,
         UUID actorId,
-        String type,
+        LessonItemType type,
         String title,
         String description,
         String content,
-        String resourceUrl,
+        UUID mediaId,
         UUID quizId,
         int estimatedMinutes,
         int orderIndex,

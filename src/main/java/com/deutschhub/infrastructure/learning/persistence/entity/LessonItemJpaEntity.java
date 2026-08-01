@@ -41,7 +41,8 @@ public class LessonItemJpaEntity {
     @Column(columnDefinition = "TEXT")
     String content;
 
-    String resourceUrl;
+    @JdbcTypeCode(SqlTypes.VARCHAR)
+    UUID mediaId;
 
     @JdbcTypeCode(SqlTypes.VARCHAR)
     UUID quizId;
