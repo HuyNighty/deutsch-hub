@@ -5,6 +5,8 @@ import com.deutschhub.common.exception.ErrorCode;
 import com.deutschhub.domain.media.model.valueobject.MediaType;
 import org.springframework.stereotype.Component;
 
+import java.util.Locale;
+
 @Component
 public class MediaTypeResolver {
 
@@ -13,24 +15,14 @@ public class MediaTypeResolver {
             throw new BusinessException(ErrorCode.INVALID_MEDIA_MIME_TYPE);
         }
 
-        return switch (mimeType) {
-            case "application/pdf" -> MediaType.PDF;
+        String normalized = mimeType.trim().toLowerCase(Locale.ROOT);
 
-            case "image/png", "image/webp", "image/jpeg" -> MediaType.IMAGE;
+        for (MediaType mediaType : MediaType.values()) {
+            if (mediaType.supportsMimeType(normalized)) {
+                return mediaType;
+            }
+        }
 
-            case "video/mp4" -> MediaType.VIDEO;
-
-            case "audio/mpeg" -> MediaType.AUDIO;
-
-            case "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                 "application/msword",
-                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                 "application/vnd.ms-excel",
-                 "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-                 "application/vnd.ms-powerpoint",
-                 "text/plain" -> MediaType.DOCUMENT;
-
-            default -> throw new BusinessException(ErrorCode.INVALID_MEDIA_TYPE);
-        };
+        throw new BusinessException(ErrorCode.INVALID_MEDIA_TYPE);
     }
 }

@@ -23,8 +23,9 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.UUID;
 
+@PreAuthorize("hasRole('ADMIN')")
 @RestController
-@RequestMapping("/api/v2/media")
+@RequestMapping("/api/v2/admin/media")
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class MediaController {
@@ -65,7 +66,6 @@ public class MediaController {
                 .build();
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{mediaId}/content")
     public ResponseEntity<Resource> getContent(@PathVariable UUID mediaId, @AuthenticationPrincipal Jwt jwt) {
 

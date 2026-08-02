@@ -4,31 +4,32 @@ import java.util.Locale;
 import java.util.Set;
 
 public enum MediaType {
-    IMAGE,
-    VIDEO,
-    AUDIO,
-    PDF,
-    DOCUMENT;
-
-    private static final Set<String> DOCUMENT_MIME_TYPE = Set.of(
-            "/application/msword",
+    IMAGE(Set.of("image/png", "image/jpeg", "image/webp")),
+    VIDEO(Set.of("video/mp4")),
+    AUDIO(Set.of("audio/mpeg")),
+    PDF(Set.of("application/pdf")),
+    DOCUMENT(Set.of(
+            "application/msword",
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            "application/vnd.oasis.opendocument.text"
-    );
+            "application/vnd.ms-excel",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "application/vnd.ms-powerpoint",
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            "application/vnd.oasis.opendocument.text",
+            "text/plain"
+    ));
+
+    private final Set<String> supportedMimeTypes;
+
+    MediaType(Set<String> supportedMimeTypes) {
+        this.supportedMimeTypes = supportedMimeTypes;
+    }
 
     public boolean supportsMimeType(String mimeType) {
         if (mimeType == null || mimeType.isBlank()) {
             return false;
         }
 
-        String normalizedMimeType = mimeType.trim().toLowerCase(Locale.ROOT);
-
-        return switch (this) {
-            case IMAGE ->  normalizedMimeType.startsWith("image/");
-            case VIDEO ->  normalizedMimeType.startsWith("video/");
-            case AUDIO ->  normalizedMimeType.startsWith("audio/");
-            case PDF ->  normalizedMimeType.startsWith("application/pdf");
-            case DOCUMENT ->  DOCUMENT_MIME_TYPE.contains(normalizedMimeType);
-        };
+        return supportedMimeTypes.contains(mimeType.trim().toLowerCase(Locale.ROOT));
     }
 }
