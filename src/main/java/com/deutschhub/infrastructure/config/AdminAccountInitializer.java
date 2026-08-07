@@ -2,7 +2,7 @@ package com.deutschhub.infrastructure.config;
 
 import com.deutschhub.application.identity.port.out.UserRepositoryPort;
 import com.deutschhub.domain.identity.model.aggregate.User;
-import com.deutschhub.domain.identity.model.enumtype.RoleType;
+import com.deutschhub.domain.identity.model.enums.RoleType;
 import com.deutschhub.domain.identity.model.valueobject.Email;
 import com.deutschhub.domain.identity.model.valueobject.FullName;
 import com.deutschhub.domain.identity.model.valueobject.Password;

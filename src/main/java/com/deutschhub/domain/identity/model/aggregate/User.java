@@ -3,7 +3,7 @@ package com.deutschhub.domain.identity.model.aggregate;
 import com.deutschhub.common.domain.Auditable;
 import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
-import com.deutschhub.domain.identity.model.enumtype.RoleType;
+import com.deutschhub.domain.identity.model.enums.RoleType;
 import com.deutschhub.domain.identity.model.valueobject.Email;
 import com.deutschhub.domain.identity.model.valueobject.FullName;
 import com.deutschhub.domain.identity.model.valueobject.Password;

@@ -1,6 +1,6 @@
 package com.deutschhub.infrastructure.identity.persistence.entity;
 
-import com.deutschhub.domain.identity.model.enumtype.RoleType;
+import com.deutschhub.domain.identity.model.enums.RoleType;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;

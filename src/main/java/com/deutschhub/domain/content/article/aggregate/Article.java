@@ -1,9 +1,9 @@
-package com.deutschhub.domain.content.model.aggregate;
+package com.deutschhub.domain.content.article.aggregate;
 
 import com.deutschhub.common.domain.Auditable;
 import com.deutschhub.common.domain.SoftDeletable;
-import com.deutschhub.domain.content.model.valueObject.ArticleStatus;
-import com.deutschhub.domain.content.model.valueObject.Slug;
+import com.deutschhub.domain.content.article.enums.ArticleStatus;
+import com.deutschhub.domain.content.article.valueobject.Slug;
 
 import java.time.LocalDateTime;
 import java.util.*;

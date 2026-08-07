@@ -3,7 +3,7 @@ package com.deutschhub.domain.learning.model.aggregate;
 import com.deutschhub.common.domain.Auditable;
 import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
-import com.deutschhub.domain.learning.model.valueobject.EnrollmentStatus;
+import com.deutschhub.domain.learning.model.enums.EnrollmentStatus;
 import com.deutschhub.domain.learning.model.valueobject.Progress;
 
 import java.time.LocalDateTime;

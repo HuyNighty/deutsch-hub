@@ -2,7 +2,7 @@ package com.deutschhub.infrastructure.learning.persistence.adapter;
 
 import com.deutschhub.application.learning.port.out.EnrollmentRepositoryPort;
 import com.deutschhub.domain.learning.model.aggregate.Enrollment;
-import com.deutschhub.domain.learning.model.valueobject.EnrollmentStatus;
+import com.deutschhub.domain.learning.model.enums.EnrollmentStatus;
 import com.deutschhub.domain.learning.model.valueobject.Progress;
 import com.deutschhub.infrastructure.learning.persistence.entity.EnrollmentJpaEntity;
 import com.deutschhub.infrastructure.learning.persistence.repository.SpringDataEnrollmentRepository;

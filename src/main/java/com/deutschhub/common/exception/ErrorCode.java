@@ -6,6 +6,8 @@ import lombok.Getter;
 public enum ErrorCode {
     UNCATEGORIZED_EXCEPTION("error.uncategorized", 9999),
 
+    INVALID_USER_ID("error.shared.user.id.cannot.be.null", 1001),
+
     INVALID_EMAIL("error.identity.invalid.email", 3001),
     INVALID_ROLE_NAME("error.identity.invalid.role.name", 3002),
     INVALID_USERNAME("error.identity.invalid.username", 3003),
@@ -161,6 +163,12 @@ public enum ErrorCode {
 
     LESSON_ITEM_NOT_FOUND("error.lesson.item.not.found", 16000),
     LESSON_ITEM_MEDIA_NOT_FOUND("error.lesson.item.media.not.found", 16001),
+
+
+    INVALID_ARTICLE_VERSION_NUMBER("error.content.article.invalid.version.number", 17000),
+    INVALID_SOURCE_TITLE("error.content.article.invalid.source.title", 17006),
+    INVALID_SOURCE_URL("error.content.article.invalid.source.url", 17007),
+
     ;
 
     private final String messageKey;

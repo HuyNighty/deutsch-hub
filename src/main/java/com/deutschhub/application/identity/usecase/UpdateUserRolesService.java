@@ -7,7 +7,7 @@ import com.deutschhub.application.identity.port.out.UserRepositoryPort;
 import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
 import com.deutschhub.domain.identity.model.aggregate.User;
-import com.deutschhub.domain.identity.model.enumtype.RoleType;
+import com.deutschhub.domain.identity.model.enums.RoleType;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;

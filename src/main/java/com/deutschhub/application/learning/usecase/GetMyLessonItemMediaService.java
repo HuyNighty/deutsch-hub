@@ -12,7 +12,7 @@ import com.deutschhub.domain.learning.model.aggregate.Course;
 import com.deutschhub.domain.learning.model.aggregate.Enrollment;
 import com.deutschhub.domain.learning.model.entity.Lesson;
 import com.deutschhub.domain.learning.model.entity.LessonItem;
-import com.deutschhub.domain.learning.model.valueobject.LessonItemType;
+import com.deutschhub.domain.learning.model.enums.LessonItemType;
 import com.deutschhub.domain.media.model.aggregate.Media;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;

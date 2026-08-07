@@ -1,6 +1,6 @@
 package com.deutschhub.application.learning.dto.request;
 
-import com.deutschhub.domain.learning.model.valueobject.LessonItemType;
+import com.deutschhub.domain.learning.model.enums.LessonItemType;
 
 import java.util.UUID;
 

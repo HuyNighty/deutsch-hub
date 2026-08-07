@@ -6,7 +6,7 @@ import com.deutschhub.domain.learning.model.entity.Lesson;
 import com.deutschhub.domain.learning.model.entity.LessonItem;
 import com.deutschhub.domain.learning.model.entity.Section;
 import com.deutschhub.domain.learning.model.valueobject.CEFRLevel;
-import com.deutschhub.domain.learning.model.valueobject.LessonItemType;
+import com.deutschhub.domain.learning.model.enums.LessonItemType;
 import com.deutschhub.domain.learning.model.valueobject.Money;
 import com.deutschhub.infrastructure.learning.persistence.entity.CourseJpaEntity;
 import com.deutschhub.infrastructure.learning.persistence.entity.LessonItemJpaEntity;

@@ -5,9 +5,9 @@ import com.deutschhub.common.domain.SoftDeletable;
 import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
 import com.deutschhub.domain.learning.model.entity.Question;
-import com.deutschhub.domain.learning.model.valueobject.DifficultyLevel;
-import com.deutschhub.domain.learning.model.valueobject.QuizStatus;
-import com.deutschhub.domain.learning.model.valueobject.QuizVisibility;
+import com.deutschhub.domain.learning.model.enums.DifficultyLevel;
+import com.deutschhub.domain.learning.model.enums.QuizStatus;
+import com.deutschhub.domain.learning.model.enums.QuizVisibility;
 
 import java.time.LocalDateTime;
 import java.util.*;

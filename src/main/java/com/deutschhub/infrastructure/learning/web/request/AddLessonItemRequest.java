@@ -1,6 +1,6 @@
 package com.deutschhub.infrastructure.learning.web.request;
 
-import com.deutschhub.domain.learning.model.valueobject.LessonItemType;
+import com.deutschhub.domain.learning.model.enums.LessonItemType;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

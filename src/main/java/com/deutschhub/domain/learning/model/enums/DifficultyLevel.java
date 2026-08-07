@@ -1,4 +1,4 @@
-package com.deutschhub.domain.learning.model.valueobject;
+package com.deutschhub.domain.learning.model.enums;
 
 public enum DifficultyLevel {
 

@@ -5,7 +5,7 @@ import com.deutschhub.common.domain.SoftDeletable;
 import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
 import com.deutschhub.domain.learning.model.valueobject.Progress;
-import com.deutschhub.domain.learning.model.valueobject.UserProgressStatus;
+import com.deutschhub.domain.learning.model.enums.UserProgressStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
