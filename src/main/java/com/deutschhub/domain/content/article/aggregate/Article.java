@@ -1,118 +1,67 @@
 package com.deutschhub.domain.content.article.aggregate;
 
-import com.deutschhub.common.domain.Auditable;
-import com.deutschhub.common.domain.SoftDeletable;
-import com.deutschhub.domain.content.article.enums.ArticleStatus;
+import com.deutschhub.domain.content.article.entity.ArticleVersion;
+import com.deutschhub.domain.content.article.entity.ReviewCycle;
+import com.deutschhub.domain.content.article.enums.EditorialStatus;
+import com.deutschhub.domain.content.article.enums.PublicationStatus;
+import com.deutschhub.domain.content.article.service.SlugGenerator;
 import com.deutschhub.domain.content.article.valueobject.Slug;
+import com.deutschhub.domain.shared.valueobject.UserId;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.*;
 
-public class Article implements Auditable, SoftDeletable {
+public class Article {
 
-    private final UUID id;
-    private final UUID authorId;
-    private final UUID categoryId;
+    private UUID id;
+    private UserId ownerId;
+
     private Slug slug;
-    private String title;
-    private String metaDescription;
-    private ArticleStatus status;
-    private LocalDateTime publishedAt;
-    private LocalDateTime scheduledPublishedAt;
-    private UUID featuredImageId;
-    private final LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-    private LocalDateTime deletedAt;
 
-    private Article(UUID id, UUID authorId, UUID categoryId, String title, Slug slug) {
-        this.id = Objects.requireNonNull(id);
-        this.authorId = Objects.requireNonNull(authorId);
-        this.categoryId = Objects.requireNonNull(categoryId);
-        this.title = validateTitle(title);
-        this.slug = Objects.requireNonNull(slug);
-        this.status = ArticleStatus.DRAFT;
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = this.createdAt;
-        this.deletedAt = null;
-    }
+    private EditorialStatus editorialStatus;
+    private PublicationStatus publicationStatus;
 
-    public static Article createDraft(UUID authorId, UUID categoryId, String title, Slug slug) {
-        return new Article(UUID.randomUUID(), authorId, categoryId, title, slug);
-    }
+    private UUID draftVersionId;
+    private UUID publishedVersionId;
 
+    private List<ArticleVersion> versions;
+    private List<ReviewCycle> reviewHistory;
 
-    @Override
-    public void touch() {
-        this.updatedAt = LocalDateTime.now();
-    }
+    private Instant createdAt;
+    private UserId createdBy;
 
-    @Override
-    public boolean isDeleted() {
-        return deletedAt != null;
-    }
+    private Instant publishedAt;
+    private UserId publishedBy;
 
-    @Override
-    public void softDelete() {
-        this.deletedAt = LocalDateTime.now();
-        this.touch();
-    }
+    private Instant archivedAt;
+    private UserId archivedBy;
 
-    private String validateTitle(String title) {
-        return title == null || title.trim().isEmpty() ? null : title;
-    }
+    public static Article createDraft(UserId owner, Slug slug, Instant createdAt) {
+        Article article = new Article();
 
-    public UUID getId() {
-        return id;
-    }
+        article.id = UUID.randomUUID();
 
-    public UUID getAuthorId() {
-        return authorId;
-    }
+        article.slug = slug;
 
-    public UUID getCategoryId() {
-        return categoryId;
-    }
+        article.ownerId = owner;
 
-    public Slug getSlug() {
-        return slug;
-    }
+        article.editorialStatus = EditorialStatus.DRAFT;
 
-    public String getTitle() {
-        return title;
-    }
+        article.publicationStatus = PublicationStatus.UNPUBLISHED;
 
-    public String getMetaDescription() {
-        return metaDescription;
-    }
+        article.createdAt = createdAt;
+        article.createdBy = owner;
 
-    public ArticleStatus getStatus() {
-        return status;
-    }
+        article.versions = new ArrayList<>();
+        article.reviewHistory = new ArrayList<>();
 
-    public LocalDateTime getPublishedAt() {
-        return publishedAt;
-    }
+        ArticleVersion draft = ArticleVersion.createFirstDraft(UUID.randomUUID(), owner, createdAt);
 
-    public LocalDateTime getScheduledPublishedAt() {
-        return scheduledPublishedAt;
-    }
+        article.draftVersionId = draft.getId();
 
-    public UUID getFeaturedImageId() {
-        return featuredImageId;
-    }
+        article.versions.add(draft);
 
-    @Override
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    @Override
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    @Override
-    public LocalDateTime getDeletedAt() {
-        return deletedAt;
+        return article;
     }
 }
+

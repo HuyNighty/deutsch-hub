@@ -168,7 +168,12 @@ public enum ErrorCode {
     INVALID_ARTICLE_VERSION_NUMBER("error.content.article.invalid.version.number", 17000),
     INVALID_SOURCE_TITLE("error.content.article.invalid.source.title", 17006),
     INVALID_SOURCE_URL("error.content.article.invalid.source.url", 17007),
-
+    INVALID_ARTICLE_TITLE("error.content.article.invalid.title", 17008),
+    INVALID_ARTICLE_SUMMARY("error.content.article.invalid.summary", 17009),
+    INVALID_ARTICLE_BODY("error.content.article.invalid.body", 17010),
+    INVALID_ARTICLE_SLUG("error.content.article.invalid.slug", 17011),
+    INVALID_REVIEW_FEEDBACK("error.content.article.review.feedback.invalid", 17012),
+    INVALID_REVIEW_STATE("error.content.article.review.invalid.state", 17013),
     ;
 
     private final String messageKey;

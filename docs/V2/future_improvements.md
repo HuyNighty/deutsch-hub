@@ -96,3 +96,54 @@ For example:
 - Personal Blog
 
 This score may assist reviewers during the editorial process.
+
+---
+## Future Improvements
+
+Future versions may introduce:
+
+- Reserved slug validation
+    - admin
+    - login
+    - register
+    - api
+    - explore
+    - ...
+
+- International transliteration
+
+Example:
+
+München
+
+↓
+
+munchen
+
+Đức
+
+↓
+
+duc
+
+- Automatic slug generation from ArticleTitle.
+
+- Manual slug override for administrators.
+
+- Slug history.
+
+Example:
+
+study-in-germany
+
+↓
+
+study-in-germany-2026
+
+↓
+
+study-in-germany-guide
+
+Old URLs continue working through redirects.
+
+- SEO redirect management.

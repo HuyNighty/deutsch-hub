@@ -1,8 +1,9 @@
 package com.deutschhub.domain.content.article.enums;
 
-public enum EditorialStatus {
-    DRAFT,
-    IN_REVIEW,
+public enum ReviewResult {
+    PENDING,
+    APPROVED,
     CHANGES_REQUESTED,
-    IDLE
+    WITHDRAWN
+
 }
