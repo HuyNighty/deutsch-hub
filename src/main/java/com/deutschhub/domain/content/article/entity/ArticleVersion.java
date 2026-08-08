@@ -1,5 +1,7 @@
 package com.deutschhub.domain.content.article.entity;
 
+import com.deutschhub.common.exception.BusinessException;
+import com.deutschhub.common.exception.ErrorCode;
 import com.deutschhub.domain.content.article.valueobject.*;
 import com.deutschhub.domain.shared.valueobject.UserId;
 
@@ -34,6 +36,11 @@ public class ArticleVersion {
     public ArticleVersion(UUID id, VersionNumber versionNumber, ArticleTitle title, Summary summary, Body body,
                           UUID primaryCategoryId, List<UUID> topicIds, UUID coverMediaId, List<Source> sources,
                           Instant createdAt, UserId createdBy) {
+
+        if (topicIds == null || sources == null) {
+            throw new BusinessException(ErrorCode.INVALID_ARTICLE_COLLECTION);
+        }
+
         this.id = id;
         this.versionNumber = versionNumber;
 
@@ -57,6 +64,10 @@ public class ArticleVersion {
 
     public void updateContent(ArticleTitle title, Summary summary, Body body, UUID primaryCategoryId, List<UUID> topicIds,
                               UUID coverMediaId, List<Source> sources, UserId modifiedBy, Instant modifiedAt) {
+
+        if (topicIds == null || sources == null || modifiedBy == null || modifiedAt == null) {
+            throw new BusinessException(ErrorCode.INVALID_ARTICLE_COLLECTION);
+        }
 
         this.title = title;
         this.summary = summary;

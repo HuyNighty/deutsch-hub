@@ -174,6 +174,11 @@ public enum ErrorCode {
     INVALID_ARTICLE_SLUG("error.content.article.invalid.slug", 17011),
     INVALID_REVIEW_FEEDBACK("error.content.article.review.feedback.invalid", 17012),
     INVALID_REVIEW_STATE("error.content.article.review.invalid.state", 17013),
+    ARTICLE_DRAFT_NOT_EDITABLE("error.content.article.draft.not.editable", 17014),
+    ARTICLE_DRAFT_VERSION_NOT_FOUND("error.content.article.draft.version.not.found", 17015),
+    INVALID_ARTICLE_COLLECTION("error.content.article.collection.invalid", 17016),
+    ARTICLE_CAN_NOT_SUBMIT_REVIEW("error.content.article.cannot.submit.review", 17017),
+    ARTICLE_DRAFT_INCOMPLETE("error.content.article.draft.incomplete", 17018),
     ;
 
     private final String messageKey;

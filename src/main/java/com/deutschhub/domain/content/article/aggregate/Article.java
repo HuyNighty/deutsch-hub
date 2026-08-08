@@ -1,11 +1,12 @@
 package com.deutschhub.domain.content.article.aggregate;
 
+import com.deutschhub.common.exception.BusinessException;
+import com.deutschhub.common.exception.ErrorCode;
 import com.deutschhub.domain.content.article.entity.ArticleVersion;
 import com.deutschhub.domain.content.article.entity.ReviewCycle;
 import com.deutschhub.domain.content.article.enums.EditorialStatus;
 import com.deutschhub.domain.content.article.enums.PublicationStatus;
-import com.deutschhub.domain.content.article.service.SlugGenerator;
-import com.deutschhub.domain.content.article.valueobject.Slug;
+import com.deutschhub.domain.content.article.valueobject.*;
 import com.deutschhub.domain.shared.valueobject.UserId;
 
 import java.time.Instant;
@@ -62,6 +63,59 @@ public class Article {
         article.versions.add(draft);
 
         return article;
+    }
+
+    public void updateDraft(ArticleTitle title, Summary summary, Body body, UUID primaryCategoryId, List<UUID> topicIds,
+                            UUID coverMediaId, List<Source> sources, UserId modifiedBy, Instant modifiedAt) {
+        ensureDraftEditable();
+
+        ArticleVersion draft = getDraftVersion();
+
+        draft.updateContent(title, summary, body, primaryCategoryId, topicIds, coverMediaId, sources, modifiedBy, modifiedAt);
+
+        if (editorialStatus == EditorialStatus.CHANGES_REQUESTED) {
+            editorialStatus = EditorialStatus.DRAFT;
+        }
+    }
+
+    public void submitReview(UserId submittedId, Instant submittedAt) {
+        ensureCanSubmitReview();
+
+        ArticleVersion draft = getDraftVersion();
+
+        ensureEditorialCompleteness(draft);
+
+        ReviewCycle reviewCycle = new ReviewCycle(UUID.randomUUID(), submittedId, submittedAt);
+
+        reviewHistory.add(reviewCycle);
+
+        editorialStatus = EditorialStatus.IN_REVIEW;
+    }
+
+    private void ensureCanSubmitReview() {
+        if (editorialStatus != EditorialStatus.DRAFT) {
+            throw new BusinessException(ErrorCode.ARTICLE_CAN_NOT_SUBMIT_REVIEW);
+        }
+    }
+
+    private void ensureEditorialCompleteness(ArticleVersion draft) {
+        if (draft.getTitle() == null || draft.getSummary() == null
+                || draft.getBody() == null || draft.getPrimaryCategoryId() == null) {
+            throw new BusinessException(ErrorCode.ARTICLE_DRAFT_INCOMPLETE);
+        }
+    }
+
+    private void ensureDraftEditable() {
+        if (editorialStatus != EditorialStatus.DRAFT && editorialStatus != EditorialStatus.CHANGES_REQUESTED) {
+            throw new BusinessException(ErrorCode.ARTICLE_DRAFT_NOT_EDITABLE);
+        }
+    }
+
+    private ArticleVersion getDraftVersion() {
+        return versions.stream()
+                .filter(version -> version.getId().equals(draftVersionId))
+                .findFirst()
+                .orElseThrow(() -> new BusinessException(ErrorCode.ARTICLE_DRAFT_VERSION_NOT_FOUND));
     }
 }
 
