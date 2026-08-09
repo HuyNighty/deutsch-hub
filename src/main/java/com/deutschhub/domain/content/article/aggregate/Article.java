@@ -26,7 +26,6 @@ public class Article {
     private UUID publishedVersionId;
 
     private List<ArticleVersion> versions;
-    private List<ReviewCycle> reviewHistory;
 
     private Instant createdAt;
     private UserId createdBy;
@@ -38,6 +37,10 @@ public class Article {
     private UserId archivedBy;
 
     public static Article createDraft(UserId owner, Slug slug, Instant createdAt) {
+        if (owner == null || slug == null || createdAt == null) {
+            throw new BusinessException(ErrorCode.INVALID_ARTICLE_DATA);
+        }
+
         Article article = new Article();
 
         article.id = UUID.randomUUID();
@@ -54,7 +57,6 @@ public class Article {
         article.createdBy = owner;
 
         article.versions = new ArrayList<>();
-        article.reviewHistory = new ArrayList<>();
 
         ArticleVersion draft = ArticleVersion.createFirstDraft(UUID.randomUUID(), owner, createdAt);
 
@@ -72,35 +74,35 @@ public class Article {
         ArticleVersion draft = getDraftVersion();
 
         draft.updateContent(title, summary, body, primaryCategoryId, topicIds, coverMediaId, sources, modifiedBy, modifiedAt);
-
-        if (editorialStatus == EditorialStatus.CHANGES_REQUESTED) {
-            editorialStatus = EditorialStatus.DRAFT;
-        }
     }
 
-    public void submitReview(UserId submittedId, Instant submittedAt) {
+    public void submitReview(UserId submittedBy, Instant submittedAt) {
         ensureCanSubmitReview();
 
         ArticleVersion draft = getDraftVersion();
 
         ensureEditorialCompleteness(draft);
 
-        ReviewCycle reviewCycle = new ReviewCycle(UUID.randomUUID(), submittedId, submittedAt);
+        ReviewCycle reviewCycle = new ReviewCycle(UUID.randomUUID(), submittedBy, submittedAt);
 
-        reviewHistory.add(reviewCycle);
+        draft.addReviewCycle(reviewCycle);
 
         editorialStatus = EditorialStatus.IN_REVIEW;
     }
 
     private void ensureCanSubmitReview() {
-        if (editorialStatus != EditorialStatus.DRAFT) {
+        boolean canSubmit = editorialStatus == EditorialStatus.DRAFT || editorialStatus == EditorialStatus.CHANGES_REQUESTED;
+
+        if (!canSubmit) {
             throw new BusinessException(ErrorCode.ARTICLE_CAN_NOT_SUBMIT_REVIEW);
         }
     }
 
     private void ensureEditorialCompleteness(ArticleVersion draft) {
         if (draft.getTitle() == null || draft.getSummary() == null
-                || draft.getBody() == null || draft.getPrimaryCategoryId() == null) {
+                || draft.getBody() == null || draft.getPrimaryCategoryId() == null
+                || draft.getCoverMediaId() == null || draft.getTopicIds().isEmpty()
+                || draft.getSources().isEmpty()) {
             throw new BusinessException(ErrorCode.ARTICLE_DRAFT_INCOMPLETE);
         }
     }
@@ -108,6 +110,12 @@ public class Article {
     private void ensureDraftEditable() {
         if (editorialStatus != EditorialStatus.DRAFT && editorialStatus != EditorialStatus.CHANGES_REQUESTED) {
             throw new BusinessException(ErrorCode.ARTICLE_DRAFT_NOT_EDITABLE);
+        }
+    }
+
+    public void ensureOwnedBy(UserId actorId) {
+        if (actorId == null ||  !ownerId.equals(actorId)) {
+            throw new BusinessException(ErrorCode.ARTICLE_NOT_OWNED_BY_ACTOR);
         }
     }
 

@@ -6,8 +6,7 @@ import com.deutschhub.domain.content.article.valueobject.*;
 import com.deutschhub.domain.shared.valueobject.UserId;
 
 import java.time.Instant;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public class ArticleVersion {
 
@@ -25,6 +24,8 @@ public class ArticleVersion {
 
     private List<Source> sources;
 
+    private List<ReviewCycle> reviewCycles;
+
     private UserId createdBy;
     private Instant createdAt;
 
@@ -36,10 +37,11 @@ public class ArticleVersion {
     public ArticleVersion(UUID id, VersionNumber versionNumber, ArticleTitle title, Summary summary, Body body,
                           UUID primaryCategoryId, List<UUID> topicIds, UUID coverMediaId, List<Source> sources,
                           Instant createdAt, UserId createdBy) {
-
-        if (topicIds == null || sources == null) {
-            throw new BusinessException(ErrorCode.INVALID_ARTICLE_COLLECTION);
+        if (id == null || versionNumber == null || createdAt == null || createdBy == null) {
+            throw new BusinessException(ErrorCode.INVALID_ARTICLE_VERSION_DATA);
         }
+
+        validateCollections(topicIds, sources);
 
         this.id = id;
         this.versionNumber = versionNumber;
@@ -55,6 +57,8 @@ public class ArticleVersion {
 
         this.sources = List.copyOf(sources);
 
+        this.reviewCycles = new ArrayList<>();
+
         this.createdAt = createdAt;
         this.createdBy = createdBy;
 
@@ -64,10 +68,11 @@ public class ArticleVersion {
 
     public void updateContent(ArticleTitle title, Summary summary, Body body, UUID primaryCategoryId, List<UUID> topicIds,
                               UUID coverMediaId, List<Source> sources, UserId modifiedBy, Instant modifiedAt) {
-
-        if (topicIds == null || sources == null || modifiedBy == null || modifiedAt == null) {
-            throw new BusinessException(ErrorCode.INVALID_ARTICLE_COLLECTION);
+        if (modifiedBy == null || modifiedAt == null) {
+            throw new BusinessException(ErrorCode.INVALID_ARTICLE_VERSION_DATA);
         }
+
+        validateCollections(topicIds, sources);
 
         this.title = title;
         this.summary = summary;
@@ -87,6 +92,33 @@ public class ArticleVersion {
     public static ArticleVersion createFirstDraft(UUID id, UserId createdBy, Instant createdAt) {
         return new ArticleVersion(id, VersionNumber.first(), null, null, null, null,
                 List.of(), null, List.of(), createdAt, createdBy);
+    }
+
+    public void addReviewCycle(ReviewCycle reviewCycle) {
+        if (reviewCycle == null) {
+            throw new BusinessException(ErrorCode.INVALID_REVIEW_CYCLE);
+        }
+
+        this.reviewCycles.add(reviewCycle);
+    }
+
+    private void validateCollections(List<UUID> topicIds, List<Source> sources) {
+        if (topicIds == null || sources == null) {
+            throw new BusinessException(ErrorCode.INVALID_ARTICLE_COLLECTION);
+        }
+
+        if (topicIds.stream().anyMatch(Objects::isNull)) {
+            throw new BusinessException(ErrorCode.INVALID_ARTICLE_COLLECTION);
+        }
+
+        if (sources.stream().anyMatch(Objects::isNull)) {
+            throw new BusinessException(ErrorCode.INVALID_ARTICLE_COLLECTION);
+        }
+
+        if (new HashSet<>(topicIds).size() != topicIds.size()) {
+            throw new BusinessException(ErrorCode.INVALID_ARTICLE_COLLECTION);
+        }
+
     }
 
     public UUID getId() {

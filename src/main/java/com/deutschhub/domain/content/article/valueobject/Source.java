@@ -10,17 +10,26 @@ public record Source(
         String url
 ) {
     public Source {
-        if (title() == null || title().isBlank()) {
+        title = title == null ? null : title.trim();
+        url = url == null ? null : url.trim();
+
+        if (title == null || title().isBlank()) {
             throw new BusinessException(ErrorCode.INVALID_SOURCE_TITLE);
         }
 
-        if (url() == null || url().isBlank()) {
+        if (url == null || url().isBlank()) {
             throw new BusinessException(ErrorCode.INVALID_SOURCE_URL);
         }
 
+        URI uri;
+
         try {
-            URI.create(url());
-        } catch (Exception e) {
+            uri =  URI.create(url);
+        } catch (IllegalArgumentException e) {
+            throw new BusinessException(ErrorCode.INVALID_SOURCE_URL);
+        }
+
+        if (!"https".equalsIgnoreCase(uri.getScheme()) || uri.getHost() == null ||  uri.getHost().isBlank()) {
             throw new BusinessException(ErrorCode.INVALID_SOURCE_URL);
         }
     }

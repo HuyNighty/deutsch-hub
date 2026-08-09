@@ -13,8 +13,6 @@ public class ReviewCycle {
 
     private UUID id;
 
-    private UUID articleVersionId;
-
     private UserId submittedBy;
     private Instant submittedAt;
 
@@ -29,6 +27,10 @@ public class ReviewCycle {
     }
 
     public ReviewCycle(UUID id, UserId submittedBy, Instant submittedAt) {
+        if (id == null || submittedBy == null || submittedAt == null) {
+            throw new BusinessException(ErrorCode.INVALID_REVIEW_CYCLE_DATA);
+        }
+
         this.id = id;
         this.submittedBy = submittedBy;
         this.submittedAt = submittedAt;
@@ -49,13 +51,21 @@ public class ReviewCycle {
     }
 
     public void markWithdrawn(Instant withdrawnAt) {
+        if (withdrawnAt == null) {
+            throw new BusinessException(ErrorCode.INVALID_REVIEW_CYCLE_DATA);
+        }
         ensurePending();
 
         this.reviewedAt = withdrawnAt;
-        this.result = ReviewResult.WITHDRAWN;    }
+        this.result = ReviewResult.WITHDRAWN;
+    }
 
     private void completeReview(UserId reviewer, Instant reviewedAt, ReviewResult result, ReviewFeedback feedback) {
         ensurePending();
+
+        if (id == null || submittedBy == null || submittedAt == null) {
+            throw new BusinessException(ErrorCode.INVALID_REVIEW_CYCLE_DATA);
+        }
 
         this.reviewedBy = reviewer;
         this.reviewedAt = reviewedAt;
@@ -68,7 +78,6 @@ public class ReviewCycle {
         if (this.result != ReviewResult.PENDING) {
             throw new BusinessException(ErrorCode.INVALID_REVIEW_STATE);
         }
-
     }
 
     public boolean isPending() {

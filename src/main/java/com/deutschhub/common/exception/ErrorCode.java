@@ -179,6 +179,11 @@ public enum ErrorCode {
     INVALID_ARTICLE_COLLECTION("error.content.article.collection.invalid", 17016),
     ARTICLE_CAN_NOT_SUBMIT_REVIEW("error.content.article.cannot.submit.review", 17017),
     ARTICLE_DRAFT_INCOMPLETE("error.content.article.draft.incomplete", 17018),
+    INVALID_REVIEW_CYCLE("error.content.article.review.cycle.invalid", 17019),
+    ARTICLE_NOT_OWNED_BY_ACTOR("error.content.article.not.owned.by.actor", 17020),
+    INVALID_ARTICLE_DATA("error.content.article.invalid.data", 17021),
+    INVALID_ARTICLE_VERSION_DATA("error.content.article.version.invalid.data", 17022),
+    INVALID_REVIEW_CYCLE_DATA("error.content.article.review.cycle.invalid.data", 17023),
     ;
 
     private final String messageKey;

@@ -46,8 +46,7 @@ null → DRAFT
 
 - `EditorialStatus` is `DRAFT` or `CHANGES_REQUESTED`.
 - A Draft Version exists.
-- The actor owns the article or has administrative permission.
-
+- The actor must own the Article, unless the Application Authorization Policy grants administrative permission.
 ## Business Rules
 
 - Only the current Draft Version can be modified.
@@ -58,7 +57,9 @@ null → DRAFT
 - Updating a draft does not create a new `ArticleVersion`.
 - The update operation is atomic (all changes succeed or all changes are rolled back).
 - Only editable content may be modified.
-- When the article has never been published, changing the title automatically regenerates the slug.
+- Changing the title does not automatically change the Article slug.
+- The slug is part of the Article public identity.
+- Slug changes require an explicit administrative action.
 
 ## Editable Content
 
@@ -96,7 +97,7 @@ No change.
 
 - EditorialStatus is `DRAFT` or `CHANGES_REQUESTED`.
 - A Draft Version exists.
-- The actor owns the article or has administrative permission.
+- The actor must own the Article, unless the Application Authorization Policy grants administrative permission.
 
 ## Business Rules
 
@@ -111,8 +112,7 @@ No change.
 - All referenced Sources must exist and be active.
 - The selected Category must be active.
 - All selected Topics must be active.
-- Lock the Draft Version for editing.
-- Record the submission time.
+- The Draft Version becomes non-editable while the Article is `IN_REVIEW`.- Record the submission time.
 - Record the submitting user.
 - The business needs to keep a history of reviews.
 - Create a Review History entry (It will be implemented in future versions.).
@@ -235,13 +235,15 @@ No change.
 - `EditorialStatus` is `IN_REVIEW`.
 - A Draft Version exists.
 - The current Review Cycle is still open.
+- The current Draft Version satisfies Publication Completeness.
+- All Application-level reference validation has succeeded.
 
 ## Business Rules
 
 - Approve the current Draft Version.
 - Replace the current Published Version with the Draft Version.
 - The Draft Version becomes the new Published Version.
-- The article must always have only one current Published Version.
+- The Article must always have only one current Published Version.
 - Clear the active Draft Version.
 - Set `draftVersionId = null`.
 - Set `publishedVersionId` to the current Draft Version.
@@ -250,7 +252,7 @@ No change.
 - Record the publication time.
 - Record the publishing user.
 - Complete the current Review Cycle with result = `APPROVED`.
-- The publish operation must be atomic (all changes succeed or all changes are rolled back).
+- The publish operation must be atomic.
 
 ## State Transition
 
@@ -293,11 +295,23 @@ PUBLISHED → PUBLISHED
 
 ## Preconditions
 
+One of the following conditions must be true:
+
+### Published Article
+
 - `PublicationStatus` is `PUBLISHED`.
 - `EditorialStatus` is `IDLE`.
 - A Published Version exists.
 - No active Draft Version exists.
-- The actor owns the article or has administrative permission.
+
+### Archived Article
+
+- `PublicationStatus` is `ARCHIVED`.
+- A Published Version exists.
+- No active Draft Version exists.
+
+The actor must own the Article or have administrative permission.
+
 
 ## Business Rules
 
@@ -306,10 +320,10 @@ PUBLISHED → PUBLISHED
 - Generate a new version number.
 - Assign the new version as the active Draft Version.
 - Preserve the current Published Version.
-- The article must have only one active Draft Version.
+- The Article must have only one active Draft Version.
 - Keep the same slug.
 - Set `EditorialStatus = DRAFT`.
-- `PublicationStatus` remains `PUBLISHED`.
+- Preserve the current `PublicationStatus`.
 - Record the draft creator.
 - Record the draft creation time.
 
@@ -352,16 +366,15 @@ PUBLISHED
 ## Preconditions
 
 - `PublicationStatus` is `PUBLISHED`.
-- `EditorialStatus` is `IDLE`.
-- No active Review Cycle exists.
 
 ## Business Rules
 
-- Remove the article from the public catalog.
+- Remove the Article from the public catalog immediately.
 - Preserve the Article and all Article Versions.
 - Preserve the complete Review History.
 - Set `PublicationStatus = ARCHIVED`.
-- Set `EditorialStatus = IDLE`.
+- Do not modify or delete the Published Version.
+- If a Review Cycle is currently `PENDING`, withdraw the active Review Cycle.
 - Record the archive time.
 - Record the archiving user.
 
@@ -390,54 +403,29 @@ ARCHIVED
 - All historical data is preserved.
 
 ---
-
 # Restore
 
-## Actor
+`Restore` is intentionally not supported in V2.
 
-- Admin
+An archived Article cannot return directly to the public catalog.
 
-## Preconditions
+If the Article needs to become public again, the editorial workflow must be completed again:
 
-- `PublicationStatus` is `ARCHIVED`.
-- A Published Version exists.
-
-## Business Rules
-
-- Restore the article to the public catalog.
-- Preserve the current Published Version.
-- Do not create a new Draft Version.
-- Do not create a new `ArticleVersion`.
-- Set `PublicationStatus = PUBLISHED`.
-- Set `EditorialStatus = IDLE`.
-- Record the restore time.
-- Record the restoring user.
-
-## State Transition
-
-Editorial
-
-IDLE
-
-↓
-
-IDLE
-
-Publication
-
+```text
 ARCHIVED
-
-↓
-
+    ↓
+Create New Draft
+    ↓
+Update Draft
+    ↓
+Submit Review
+    ↓
+Admin Review
+    ↓
+Publish
+    ↓
 PUBLISHED
-
-## Result
-
-- Readers can access the article again.
-- The previously published version becomes publicly available immediately.
-- No new editorial cycle is started.
-
----
+```
 
 # Transfer Ownership
 
@@ -478,3 +466,25 @@ No change.
 
 - The new editor becomes responsible for future editorial work.
 - The previous owner no longer has editorial ownership.
+
+| Publication   | Editorial          | Can Update | Submit Review | Archive | Publish |
+| ------------- | ------------------ |-----------:|--------------:|--------:|--------:|
+| `UNPUBLISHED` | `DRAFT`            |     `Yes`  |           `Yes` |      No |      No |
+| `UNPUBLISHED` | `IN_REVIEW`        |         No |            No |      No |     `Yes` |
+| `UNPUBLISHED` | `CHANGE_REQUESTED` |      `Yes` |           `Yes` |      No |      No |
+| `PUBLISHED`   | `IDLE`             |         No |            No |     `Yes` |      No |
+| `PUBLISHED`   | `DRAFT`            |      `Yes` |           `Yes` |     `Yes` |      No |
+| `PUBLISHED`   | `IN_REVIEW`        |         No |            No |     `Yes` |     `Yes` |
+| `PUBLISHED`   | `CHANGE_REQUESTED` |      `Yes` |           `Yes` |     `Yes` |      No |
+| `ARCHIVED`    | `IDLE`             |         No |            No |      No |      No |
+| `ARCHIVED`    | `DRAFT`            |      `Yes` |           `Yes` |      No |      No |
+| `ARCHIVED`    | `IN_REVIEW`        |         No |            No |      No |     `Yes` |
+
+# Ownership and Authorization
+
+Ownership is represented by `Article.ownerId`.
+
+The Article aggregate provides domain behavior to verify ownership:
+
+```java
+article.ensureOwnedBy(actorId);
