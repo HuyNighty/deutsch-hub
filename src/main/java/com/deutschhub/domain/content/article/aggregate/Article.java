@@ -90,6 +90,63 @@ public class Article {
         editorialStatus = EditorialStatus.IN_REVIEW;
     }
 
+    public void withdrawReview(Instant withdrawnAt) {
+        ReviewCycle reviewCycle = getCurrentReviewCycle();
+
+        reviewCycle.markWithdrawn(withdrawnAt);
+
+        editorialStatus = EditorialStatus.DRAFT;
+    }
+
+    public void requestChanges(UserId reviewer, ReviewFeedback feedback, Instant reviewedAt ) {
+        ReviewCycle reviewCycle = getCurrentReviewCycle();
+
+        reviewCycle.markChangesRequested(reviewer, feedback, reviewedAt);
+
+        editorialStatus = EditorialStatus.CHANGES_REQUESTED;
+    }
+
+    public void publish(UserId publishedBy, Instant publishedAt) {
+        ensurePublish(publishedBy, publishedAt);
+
+        ArticleVersion draft = getDraftVersion();
+
+        ensureEditorialCompleteness(draft);
+
+        ReviewCycle reviewCycle = getCurrentReviewCycle();
+
+        reviewCycle.markApproved(publishedBy, publishedAt);
+
+        this.publishedVersionId = draft.getId();
+        this.draftVersionId = null;
+
+        this.publicationStatus = PublicationStatus.PUBLISHED;
+        this.editorialStatus = EditorialStatus.IDLE;
+
+        this.publishedBy = publishedBy;
+        this.publishedAt = publishedAt;
+    }
+
+    private void ensurePublish(UserId publishedBy, Instant publishedAt) {
+        if (publishedBy == null || publishedAt == null) {
+            throw new BusinessException(ErrorCode.INVALID_ARTICLE_PUBLICATION_DATA);
+        }
+    }
+
+    private ReviewCycle getCurrentReviewCycle() {
+        ensureReviewInProgress();
+
+        ArticleVersion draft = getDraftVersion();
+
+        return draft.getCurrentReviewCycle();
+    }
+
+    private void ensureReviewInProgress() {
+        if (editorialStatus != EditorialStatus.IN_REVIEW) {
+            throw new BusinessException(ErrorCode.ARTICLE_REVIEW_NOT_IN_PROGRESS);
+        }
+    }
+
     private void ensureCanSubmitReview() {
         boolean canSubmit = editorialStatus == EditorialStatus.DRAFT || editorialStatus == EditorialStatus.CHANGES_REQUESTED;
 

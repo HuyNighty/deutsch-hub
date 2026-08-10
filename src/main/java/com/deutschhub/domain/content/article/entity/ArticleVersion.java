@@ -99,7 +99,19 @@ public class ArticleVersion {
             throw new BusinessException(ErrorCode.INVALID_REVIEW_CYCLE);
         }
 
+        if (reviewCycles.stream().anyMatch(ReviewCycle::isPending)) {
+            throw new BusinessException(ErrorCode.ARTICLE_REVIEW_ALREADY_PENDING);
+        }
+
         this.reviewCycles.add(reviewCycle);
+    }
+
+    public ReviewCycle getCurrentReviewCycle() {
+        return reviewCycles
+                .stream()
+                .filter(ReviewCycle::isPending)
+                .findFirst()
+                .orElseThrow(() -> new BusinessException(ErrorCode.ARTICLE_REVIEW_CYCLE_NOT_FOUND));
     }
 
     private void validateCollections(List<UUID> topicIds, List<Source> sources) {

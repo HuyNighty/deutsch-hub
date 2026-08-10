@@ -184,6 +184,11 @@ public enum ErrorCode {
     INVALID_ARTICLE_DATA("error.content.article.invalid.data", 17021),
     INVALID_ARTICLE_VERSION_DATA("error.content.article.version.invalid.data", 17022),
     INVALID_REVIEW_CYCLE_DATA("error.content.article.review.cycle.invalid.data", 17023),
+    ARTICLE_REVIEW_NOT_IN_PROGRESS("error.content.article.review.not.in.progress", 17024),
+    ARTICLE_REVIEW_CYCLE_NOT_FOUND("error.content.article.review.cycle.not.found", 17025),
+    ARTICLE_REVIEW_ALREADY_PENDING("error.content.article.review.already.pending", 17026),
+    INVALID_ARTICLE_PUBLICATION_DATA("error.content.article.publication.invalid.data", 17027),
+
     ;
 
     private final String messageKey;
