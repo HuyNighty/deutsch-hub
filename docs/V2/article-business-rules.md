@@ -304,28 +304,29 @@ One of the following conditions must be true:
 - A Published Version exists.
 - No active Draft Version exists.
 
-### Archived Article
+# Archive
 
-- `PublicationStatus` is `ARCHIVED`.
-- A Published Version exists.
-- No active Draft Version exists.
+## Actor
 
-The actor must own the Article or have administrative permission.
+- Admin
 
+## Preconditions
+
+- `PublicationStatus` is `PUBLISHED`.
 
 ## Business Rules
 
-- Create a new Draft Version from the current Published Version.
-- Clone the entire Published Version as a complete snapshot.
-- Generate a new version number.
-- Assign the new version as the active Draft Version.
-- Preserve the current Published Version.
-- The Article must have only one active Draft Version.
-- Keep the same slug.
-- Set `EditorialStatus = DRAFT`.
-- Preserve the current `PublicationStatus`.
-- Record the draft creator.
-- Record the draft creation time.
+- Remove the Article from the public catalog immediately.
+- Preserve the Article and all Article Versions.
+- Preserve the complete Review History.
+- Set `PublicationStatus = ARCHIVED`.
+- Set `EditorialStatus = IDLE`.
+- Do not modify or delete the Published Version.
+- If a Review Cycle is currently `PENDING`, withdraw the active Review Cycle.
+- Record the archive time.
+- Record the archiving user.
+- Archive is allowed even when the Article is currently `IN_REVIEW`.
+- The archive operation must be atomic.
 
 ## State Transition
 
@@ -340,16 +341,19 @@ DRAFT
 Publication
 
 PUBLISHED
+→ PUBLISHED
 
-↓
+or
 
-PUBLISHED
+ARCHIVED
+→ ARCHIVED
 
 ## Result
 
-- A new Draft Version is created.
-- Readers continue to see the current Published Version.
-- Editors start a new editorial cycle without affecting public content.
+- Readers can no longer access the Article.
+- Public endpoints return HTTP 410 (Gone).
+- All historical data is preserved.
+- Any active Review Cycle is completed with result = `WITHDRAWN`.
 > **Note**
 >
 > Creating a new draft starts a new editorial cycle.
@@ -478,7 +482,6 @@ No change.
 | `PUBLISHED`   | `CHANGE_REQUESTED` |      `Yes` |           `Yes` |     `Yes` |      No |
 | `ARCHIVED`    | `IDLE`             |         No |            No |      No |      No |
 | `ARCHIVED`    | `DRAFT`            |      `Yes` |           `Yes` |      No |      No |
-| `ARCHIVED`    | `IN_REVIEW`        |         No |            No |      No |     `Yes` |
 
 # Ownership and Authorization
 

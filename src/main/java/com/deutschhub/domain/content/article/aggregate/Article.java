@@ -36,6 +36,9 @@ public class Article {
     private Instant archivedAt;
     private UserId archivedBy;
 
+    private UserId ownershipTransferredBy;
+    private Instant ownershipTransferredAt;
+
     public static Article createDraft(UserId owner, Slug slug, Instant createdAt) {
         if (owner == null || slug == null || createdAt == null) {
             throw new BusinessException(ErrorCode.INVALID_ARTICLE_DATA);
@@ -127,6 +130,98 @@ public class Article {
         this.publishedAt = publishedAt;
     }
 
+    public void createNewDraft(UserId createdBy, Instant createdAt) {
+        ensureCanCreateNewDraft();
+
+        ArticleVersion published = getPublishedVersion();
+
+        ArticleVersion draft = ArticleVersion.createFrom(published, createdBy, createdAt);
+
+        versions.add(draft);
+
+        draftVersionId = draft.getId();
+
+        editorialStatus = EditorialStatus.DRAFT;
+    }
+
+    public void archive(UserId archivedBy, Instant archivedAt) {
+        ensureCanArchive(archivedBy, archivedAt);
+
+        withdrawActiveReviewIfNeeded(archivedAt);
+
+        this.publicationStatus = PublicationStatus.ARCHIVED;
+        this.editorialStatus = EditorialStatus.IDLE;
+
+        this.archivedBy = archivedBy;
+        this.archivedAt = archivedAt;
+    }
+
+    public void transferOwnership( UserId newOwner, UserId transferredBy, Instant transferredAt) {
+        ensureCanTransferOwnership(newOwner, transferredBy, transferredAt);
+
+        this.ownerId = newOwner;
+        this.ownershipTransferredBy = transferredBy;
+        this.ownershipTransferredAt = transferredAt;
+
+    }
+
+    private void ensureCanTransferOwnership(UserId newOwner, UserId transferredBy, Instant transferredAt) {
+        if (newOwner == null) {
+            throw new BusinessException(ErrorCode.INVALID_ARTICLE_OWNER);
+        }
+
+        if (transferredBy == null || transferredAt == null) {
+            throw new BusinessException(ErrorCode.INVALID_ARTICLE_OWNERSHIP_TRANSFER_DATA);
+        }
+
+        if (editorialStatus == EditorialStatus.IN_REVIEW) {
+            throw new BusinessException(ErrorCode.ARTICLE_OWNERSHIP_TRANSFER_NOT_ALLOWED);
+        }
+
+        if (ownerId.equals(newOwner)) {
+            throw new BusinessException(ErrorCode.ARTICLE_ALREADY_OWNED_BY_ACTOR);
+        }
+    }
+
+    private void ensureCanArchive(UserId archivedBy, Instant archivedAt) {
+        if (archivedBy == null || archivedAt == null) {
+            throw new BusinessException(ErrorCode.INVALID_ARTICLE_ARCHIVE_DATA);
+        }
+
+        if (publicationStatus != PublicationStatus.PUBLISHED) {
+            throw new BusinessException(ErrorCode.ARTICLE_CAN_NOT_ARCHIVE);
+        }
+    }
+
+    private void withdrawActiveReviewIfNeeded(Instant withdrawnAt) {
+        if (editorialStatus != EditorialStatus.IN_REVIEW) {
+            return;
+        }
+
+        ReviewCycle reviewCycle = getCurrentReviewCycle();
+
+        reviewCycle.markWithdrawn(withdrawnAt);
+    }
+
+    private void ensureCanCreateNewDraft() {
+        boolean validEditorialState = editorialStatus == EditorialStatus.IDLE;
+
+        boolean validPublicationState = publicationStatus == PublicationStatus.PUBLISHED
+                || publicationStatus == PublicationStatus.ARCHIVED;
+
+        if (!validEditorialState || !validPublicationState) {
+            throw new BusinessException(ErrorCode.ARTICLE_NEW_DRAFT_NOT_ALLOWED);
+        }
+
+        if (publishedVersionId == null) {
+            throw new BusinessException(ErrorCode.ARTICLE_PUBLISHED_VERSION_NOT_FOUND);
+        }
+
+        if (draftVersionId != null) {
+            throw new BusinessException(ErrorCode.ARTICLE_DRAFT_ALREADY_EXISTS);
+        }
+    }
+
     private void ensurePublish(UserId publishedBy, Instant publishedAt) {
         if (publishedBy == null || publishedAt == null) {
             throw new BusinessException(ErrorCode.INVALID_ARTICLE_PUBLICATION_DATA);
@@ -170,17 +265,19 @@ public class Article {
         }
     }
 
-    public void ensureOwnedBy(UserId actorId) {
-        if (actorId == null ||  !ownerId.equals(actorId)) {
-            throw new BusinessException(ErrorCode.ARTICLE_NOT_OWNED_BY_ACTOR);
-        }
-    }
-
     private ArticleVersion getDraftVersion() {
         return versions.stream()
                 .filter(version -> version.getId().equals(draftVersionId))
                 .findFirst()
                 .orElseThrow(() -> new BusinessException(ErrorCode.ARTICLE_DRAFT_VERSION_NOT_FOUND));
+    }
+
+    private ArticleVersion getPublishedVersion() {
+        return versions
+                .stream()
+                .filter(version -> version.getId().equals(publishedVersionId))
+                .findFirst()
+                .orElseThrow(() -> new BusinessException(ErrorCode.ARTICLE_PUBLISHED_VERSION_NOT_FOUND));
     }
 }
 

@@ -188,6 +188,15 @@ public enum ErrorCode {
     ARTICLE_REVIEW_CYCLE_NOT_FOUND("error.content.article.review.cycle.not.found", 17025),
     ARTICLE_REVIEW_ALREADY_PENDING("error.content.article.review.already.pending", 17026),
     INVALID_ARTICLE_PUBLICATION_DATA("error.content.article.publication.invalid.data", 17027),
+    ARTICLE_NEW_DRAFT_NOT_ALLOWED("error.content.article.new.draft.not.allowed", 17028),
+    ARTICLE_PUBLISHED_VERSION_NOT_FOUND("error.content.article.published.version.not.found", 17029),
+    ARTICLE_DRAFT_ALREADY_EXISTS("error.content.article.draft.already.exists", 17030),
+    INVALID_ARTICLE_ARCHIVE_DATA("error.content.article.archive.invalid.data", 17031),
+    ARTICLE_CAN_NOT_ARCHIVE("error.content.article.cannot.archive", 17032),
+    INVALID_ARTICLE_OWNER("error.content.article.owner.invalid", 17033),
+    INVALID_ARTICLE_OWNERSHIP_TRANSFER_DATA("error.content.article.ownership.transfer.invalid.data", 17034),
+    ARTICLE_OWNERSHIP_TRANSFER_NOT_ALLOWED("error.content.article.ownership.transfer.not.allowed", 17035),
+    ARTICLE_ALREADY_OWNED_BY_ACTOR("error.content.article.already.owned.by.actor", 17036),
 
     ;
 
