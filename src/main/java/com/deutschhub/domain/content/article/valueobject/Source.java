@@ -13,11 +13,11 @@ public record Source(
         title = title == null ? null : title.trim();
         url = url == null ? null : url.trim();
 
-        if (title == null || title().isBlank()) {
+        if (title == null || title.isBlank()) {
             throw new BusinessException(ErrorCode.INVALID_SOURCE_TITLE);
         }
 
-        if (url == null || url().isBlank()) {
+        if (url == null || url.isBlank()) {
             throw new BusinessException(ErrorCode.INVALID_SOURCE_URL);
         }
 

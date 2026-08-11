@@ -197,6 +197,9 @@ public enum ErrorCode {
     INVALID_ARTICLE_OWNERSHIP_TRANSFER_DATA("error.content.article.ownership.transfer.invalid.data", 17034),
     ARTICLE_OWNERSHIP_TRANSFER_NOT_ALLOWED("error.content.article.ownership.transfer.not.allowed", 17035),
     ARTICLE_ALREADY_OWNED_BY_ACTOR("error.content.article.already.owned.by.actor", 17036),
+    INVALID_REVIEW_COMPLETION_DATA("error.content.article.review.completion.invalid.data", 17037),
+    INVALID_REVIEW_RESULT("error.content.article.review.result.invalid", 17038),
+    INVALID_REVIEW_WITHDRAWAL_DATA("error.content.article.review.withdrawal.invalid.data", 17039),
 
     ;
 

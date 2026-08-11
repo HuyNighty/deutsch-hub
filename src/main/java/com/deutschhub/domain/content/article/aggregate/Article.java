@@ -93,10 +93,11 @@ public class Article {
         editorialStatus = EditorialStatus.IN_REVIEW;
     }
 
-    public void withdrawReview(Instant withdrawnAt) {
+    public void withdrawReview(UserId withdrawnBy, Instant withdrawnAt) {
+
         ReviewCycle reviewCycle = getCurrentReviewCycle();
 
-        reviewCycle.markWithdrawn(withdrawnAt);
+        reviewCycle.markWithdrawn(withdrawnBy, withdrawnAt);
 
         editorialStatus = EditorialStatus.DRAFT;
     }
@@ -135,7 +136,9 @@ public class Article {
 
         ArticleVersion published = getPublishedVersion();
 
-        ArticleVersion draft = ArticleVersion.createFrom(published, createdBy, createdAt);
+        VersionNumber versionNumber = getNextVersionNumber();
+
+        ArticleVersion draft = ArticleVersion.createFrom(published, versionNumber, createdBy, createdAt);
 
         versions.add(draft);
 
@@ -147,10 +150,16 @@ public class Article {
     public void archive(UserId archivedBy, Instant archivedAt) {
         ensureCanArchive(archivedBy, archivedAt);
 
-        withdrawActiveReviewIfNeeded(archivedAt);
+        if (editorialStatus == EditorialStatus.IN_REVIEW) {
+            ReviewCycle reviewCycle = getCurrentReviewCycle();
+
+            reviewCycle.markWithdrawn(archivedBy, archivedAt);
+
+            editorialStatus = EditorialStatus.DRAFT;
+        }
+
 
         this.publicationStatus = PublicationStatus.ARCHIVED;
-        this.editorialStatus = EditorialStatus.IDLE;
 
         this.archivedBy = archivedBy;
         this.archivedAt = archivedAt;
@@ -163,6 +172,16 @@ public class Article {
         this.ownershipTransferredBy = transferredBy;
         this.ownershipTransferredAt = transferredAt;
 
+    }
+
+    private VersionNumber getNextVersionNumber() {
+        int maxVersion = versions
+                .stream()
+                .mapToInt(version -> version.getVersionNumber().value())
+                .max()
+                .orElse(0);
+
+        return new VersionNumber(maxVersion + 1);
     }
 
     private void ensureCanTransferOwnership(UserId newOwner, UserId transferredBy, Instant transferredAt) {
@@ -191,16 +210,6 @@ public class Article {
         if (publicationStatus != PublicationStatus.PUBLISHED) {
             throw new BusinessException(ErrorCode.ARTICLE_CAN_NOT_ARCHIVE);
         }
-    }
-
-    private void withdrawActiveReviewIfNeeded(Instant withdrawnAt) {
-        if (editorialStatus != EditorialStatus.IN_REVIEW) {
-            return;
-        }
-
-        ReviewCycle reviewCycle = getCurrentReviewCycle();
-
-        reviewCycle.markWithdrawn(withdrawnAt);
     }
 
     private void ensureCanCreateNewDraft() {
@@ -262,6 +271,12 @@ public class Article {
     private void ensureDraftEditable() {
         if (editorialStatus != EditorialStatus.DRAFT && editorialStatus != EditorialStatus.CHANGES_REQUESTED) {
             throw new BusinessException(ErrorCode.ARTICLE_DRAFT_NOT_EDITABLE);
+        }
+    }
+
+    public void ensureOwnedBy(UserId actorId) {
+        if (actorId == null || !ownerId.equals(actorId)) {
+            throw new BusinessException(ErrorCode.ARTICLE_NOT_OWNED_BY_ACTOR);
         }
     }
 

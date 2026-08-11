@@ -19,6 +19,9 @@ public class ReviewCycle {
     private UserId reviewedBy;
     private Instant reviewedAt;
 
+    private UserId withdrawnBy;
+    private Instant withdrawnAt;
+
     private ReviewResult result;
 
     private ReviewFeedback feedback;
@@ -50,21 +53,27 @@ public class ReviewCycle {
         completeReview(reviewer, reviewedAt, ReviewResult.CHANGES_REQUESTED, feedback);
     }
 
-    public void markWithdrawn(Instant withdrawnAt) {
-        if (withdrawnAt == null) {
-            throw new BusinessException(ErrorCode.INVALID_REVIEW_CYCLE_DATA);
-        }
+    public void markWithdrawn(UserId withdrawnBy, Instant withdrawnAt) {
         ensurePending();
 
-        this.reviewedAt = withdrawnAt;
+        if (withdrawnAt == null || withdrawnBy == null) {
+            throw new BusinessException(ErrorCode.INVALID_REVIEW_WITHDRAWAL_DATA);
+        }
+
+        this.withdrawnBy = withdrawnBy;
+        this.withdrawnAt = withdrawnAt;
         this.result = ReviewResult.WITHDRAWN;
     }
 
     private void completeReview(UserId reviewer, Instant reviewedAt, ReviewResult result, ReviewFeedback feedback) {
         ensurePending();
 
-        if (id == null || submittedBy == null || submittedAt == null) {
-            throw new BusinessException(ErrorCode.INVALID_REVIEW_CYCLE_DATA);
+        if (reviewer == null || reviewedAt == null) {
+            throw new BusinessException(ErrorCode.INVALID_REVIEW_COMPLETION_DATA);
+        }
+
+        if (result == null) {
+            throw new BusinessException(ErrorCode.INVALID_REVIEW_RESULT);
         }
 
         this.reviewedBy = reviewer;

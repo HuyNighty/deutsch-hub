@@ -66,12 +66,13 @@ public class ArticleVersion {
         this.lastModifiedBy = createdBy;
     }
 
-    public static ArticleVersion createFrom(ArticleVersion source, UserId createdBy, Instant createdAt) {
+    public static ArticleVersion createFrom(ArticleVersion source, VersionNumber versionNumber,
+                                            UserId createdBy, Instant createdAt) {
         if (source == null || createdAt == null || createdBy == null) {
             throw new BusinessException(ErrorCode.INVALID_ARTICLE_VERSION_DATA);
         }
 
-        return new ArticleVersion(UUID.randomUUID(), source.versionNumber.next(), source.title, source.summary, source.body,
+        return new ArticleVersion(UUID.randomUUID(), versionNumber, source.title, source.summary, source.body,
                 source.primaryCategoryId, source.topicIds, source.coverMediaId, source.sources, createdAt, createdBy);
     }
 
