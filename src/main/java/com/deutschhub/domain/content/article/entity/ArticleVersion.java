@@ -76,6 +76,50 @@ public class ArticleVersion {
                 source.primaryCategoryId, source.topicIds, source.coverMediaId, source.sources, createdAt, createdBy);
     }
 
+    public ArticleVersion restore(UUID id, VersionNumber versionNumber, ArticleTitle title, Summary summary,
+                                         Body body, UUID primaryCategoryId, List<UUID> topicIds, UUID coverMediaId,
+                                         List<Source> sources, List<ReviewCycle> reviewCycles, UserId createdBy,
+                                         Instant createdAt, UserId lastModifiedBy, Instant lastModifiedAt) {
+        if (id == null || versionNumber == null || createdBy == null || createdAt == null) {
+            throw new BusinessException(ErrorCode.INVALID_ARTICLE_VERSION_DATA);
+        }
+
+        validateCollections(topicIds, sources);
+
+        if (reviewCycles == null) {
+            throw new BusinessException(ErrorCode.INVALID_ARTICLE_COLLECTION);
+        }
+
+        if (reviewCycles.stream().anyMatch(Objects::isNull)) {
+            throw new BusinessException(ErrorCode.INVALID_REVIEW_CYCLE);
+        }
+
+        ArticleVersion version = new ArticleVersion();
+
+        version.id = id;
+        version.versionNumber = versionNumber;
+
+        version.title = title;
+        version.summary = summary;
+        version.body = body;
+
+        version.primaryCategoryId = primaryCategoryId;
+        version.topicIds = List.copyOf(topicIds);
+
+        version.coverMediaId = coverMediaId;
+        version.sources = List.copyOf(sources);
+
+        version.reviewCycles = new ArrayList<>(reviewCycles);
+
+        version.createdBy = createdBy;
+        version.createdAt = createdAt;
+
+        version.lastModifiedBy = lastModifiedBy;
+        version.lastModifiedAt = lastModifiedAt;
+
+        return version;
+    }
+
     public void updateContent(ArticleTitle title, Summary summary, Body body, UUID primaryCategoryId, List<UUID> topicIds,
                               UUID coverMediaId, List<Source> sources, UserId modifiedBy, Instant modifiedAt) {
         if (modifiedBy == null || modifiedAt == null) {

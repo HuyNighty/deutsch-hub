@@ -70,6 +70,33 @@ public class Article {
         return article;
     }
 
+    public static Article restore(UUID id, UserId ownerId, Slug slug, EditorialStatus editorialStatus,
+                                  PublicationStatus publicationStatus, UUID draftVersionId, UUID publishedVersionId,
+                                  List<ArticleVersion> versions, Instant createdAt, UserId createdBy, Instant publishedAt,
+                                  UserId publishedBy, Instant archivedAt, UserId archivedBy, UserId ownershipTransferredBy,
+                                  Instant ownershipTransferredAt) {
+        Article article = new Article();
+
+        article.id = id;
+        article.ownerId = ownerId;
+        article.slug = slug;
+        article.editorialStatus = editorialStatus;
+        article.publicationStatus = publicationStatus;
+        article.draftVersionId = draftVersionId;
+        article.publishedVersionId = publishedVersionId;
+        article.versions = new ArrayList<>(versions);
+        article.createdAt = createdAt;
+        article.createdBy = createdBy;
+        article.publishedAt = publishedAt;
+        article.publishedBy = publishedBy;
+        article.archivedAt = archivedAt;
+        article.archivedBy = archivedBy;
+        article.ownershipTransferredBy = ownershipTransferredBy;
+        article.ownershipTransferredAt = ownershipTransferredAt;
+
+        return article;
+    }
+
     public void updateDraft(ArticleTitle title, Summary summary, Body body, UUID primaryCategoryId, List<UUID> topicIds,
                             UUID coverMediaId, List<Source> sources, UserId modifiedBy, Instant modifiedAt) {
         ensureDraftEditable();

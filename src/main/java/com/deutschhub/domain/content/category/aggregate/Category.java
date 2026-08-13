@@ -30,6 +30,28 @@ public class Category {
         return category;
     }
 
+    public static Category restore(UUID id, CategoryName categoryName, CategoryStatus categoryStatus) {
+        if (id == null) {
+            throw new BusinessException(ErrorCode.INVALID_CATEGORY_DATA);
+        }
+
+        if (categoryName == null) {
+            throw new BusinessException(ErrorCode.INVALID_CATEGORY_NAME);
+        }
+
+        if (categoryStatus == null) {
+            throw new BusinessException(ErrorCode.INVALID_CATEGORY_STATUS);
+        }
+
+        Category category = new Category();
+
+        category.id = id;
+        category.categoryName = categoryName;
+        category.categoryStatus = categoryStatus;
+
+        return category;
+    }
+
     public void rename(CategoryName newName) {
         if (newName == null) {
             throw new BusinessException(ErrorCode.INVALID_CATEGORY_NAME);
