@@ -202,6 +202,15 @@ public enum ErrorCode {
     INVALID_REVIEW_WITHDRAWAL_DATA("error.content.article.review.withdrawal.invalid.data", 17039),
     ARTICLE_SLUG_ALREADY_EXISTS("error.content.article.slug.already.exists", 17040),
 
+    INVALID_CATEGORY_NAME("error.content.category.name.invalid", 18000),
+    CATEGORY_ALREADY_INACTIVE("error.content.category.already.inactive", 18001),
+    CATEGORY_ALREADY_ACTIVE("error.content.category.already.active", 18002),
+
+    INVALID_TOPIC_NAME("error.content.topic.name.invalid", 19000),
+    INVALID_TOPIC_CATEGORY("error.content.topic.category.invalid", 19001),
+    TOPIC_ALREADY_INACTIVE("error.content.topic.already.inactive", 19002),
+    TOPIC_ALREADY_ACTIVE("error.content.topic.already.active", 19003),
+
     ;
 
     private final String messageKey;
