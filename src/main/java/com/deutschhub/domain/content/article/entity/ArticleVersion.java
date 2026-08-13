@@ -99,8 +99,8 @@ public class ArticleVersion {
         this.lastModifiedAt = modifiedAt;
     }
 
-    public static ArticleVersion createFirstDraft(UUID id, UserId createdBy, Instant createdAt) {
-        return new ArticleVersion(id, VersionNumber.first(), null, null, null, null,
+    public static ArticleVersion createFirstDraft(UUID id, ArticleTitle title, UserId createdBy, Instant createdAt) {
+        return new ArticleVersion(id, VersionNumber.first(), title, null, null, null,
                 List.of(), null, List.of(), createdAt, createdBy);
     }
 

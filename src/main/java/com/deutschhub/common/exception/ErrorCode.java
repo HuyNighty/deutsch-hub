@@ -200,6 +200,7 @@ public enum ErrorCode {
     INVALID_REVIEW_COMPLETION_DATA("error.content.article.review.completion.invalid.data", 17037),
     INVALID_REVIEW_RESULT("error.content.article.review.result.invalid", 17038),
     INVALID_REVIEW_WITHDRAWAL_DATA("error.content.article.review.withdrawal.invalid.data", 17039),
+    ARTICLE_SLUG_ALREADY_EXISTS("error.content.article.slug.already.exists", 17040),
 
     ;
 

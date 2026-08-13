@@ -8,7 +8,7 @@ import com.deutschhub.application.identity.port.in.DeactivateUserUseCase;
 import com.deutschhub.application.identity.port.in.GetUserDetailUseCase;
 import com.deutschhub.application.identity.port.in.GetUsersUseCase;
 import com.deutschhub.application.identity.port.in.UpdateUserRolesUseCase;
-import com.deutschhub.application.identity.usecase.ActivateUserService;
+import com.deutschhub.application.identity.service.ActivateUserService;
 import com.deutschhub.common.util.ApiResponse;
 import com.deutschhub.common.util.PageResponse;
 import com.deutschhub.infrastructure.identity.web.request.UpdateUserRolesRequest;

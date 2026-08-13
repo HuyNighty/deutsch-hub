@@ -39,8 +39,8 @@ public class Article {
     private UserId ownershipTransferredBy;
     private Instant ownershipTransferredAt;
 
-    public static Article createDraft(UserId owner, Slug slug, Instant createdAt) {
-        if (owner == null || slug == null || createdAt == null) {
+    public static Article createDraft(UserId ownerId, ArticleTitle title, Slug slug, Instant createdAt) {
+        if (ownerId == null || title == null || slug == null || createdAt == null) {
             throw new BusinessException(ErrorCode.INVALID_ARTICLE_DATA);
         }
 
@@ -50,18 +50,18 @@ public class Article {
 
         article.slug = slug;
 
-        article.ownerId = owner;
+        article.ownerId = ownerId;
 
         article.editorialStatus = EditorialStatus.DRAFT;
 
         article.publicationStatus = PublicationStatus.UNPUBLISHED;
 
         article.createdAt = createdAt;
-        article.createdBy = owner;
+        article.createdBy = ownerId;
 
         article.versions = new ArrayList<>();
 
-        ArticleVersion draft = ArticleVersion.createFirstDraft(UUID.randomUUID(), owner, createdAt);
+        ArticleVersion draft = ArticleVersion.createFirstDraft(UUID.randomUUID(), title, ownerId, createdAt);
 
         article.draftVersionId = draft.getId();
 
@@ -94,7 +94,6 @@ public class Article {
     }
 
     public void withdrawReview(UserId withdrawnBy, Instant withdrawnAt) {
-
         ReviewCycle reviewCycle = getCurrentReviewCycle();
 
         reviewCycle.markWithdrawn(withdrawnBy, withdrawnAt);
@@ -293,6 +292,30 @@ public class Article {
                 .filter(version -> version.getId().equals(publishedVersionId))
                 .findFirst()
                 .orElseThrow(() -> new BusinessException(ErrorCode.ARTICLE_PUBLISHED_VERSION_NOT_FOUND));
+    }
+
+    public UUID getId() {
+        return id;
+    }
+
+    public UUID getDraftVersionId() {
+        return draftVersionId;
+    }
+
+    public Slug getSlug() {
+        return slug;
+    }
+
+    public EditorialStatus getEditorialStatus() {
+        return editorialStatus;
+    }
+
+    public PublicationStatus getPublicationStatus() {
+        return publicationStatus;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
     }
 }
 
