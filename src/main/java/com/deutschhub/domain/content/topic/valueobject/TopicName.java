@@ -23,6 +23,6 @@ public record TopicName(
     }
 
     public String normalizedValue() {
-        return value.toLowerCase(Locale.ROOT);
+        return value.toLowerCase(Locale.ROOT).replaceAll("\\s+", " ");
     }
 }
