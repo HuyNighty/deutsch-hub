@@ -1,10 +1,7 @@
 package com.deutschhub.infrastructure.content.article.persistence.entity;
 
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
@@ -18,6 +15,8 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@Builder
+@AllArgsConstructor
 public class ReviewCycleJpaEntity {
 
     @Id

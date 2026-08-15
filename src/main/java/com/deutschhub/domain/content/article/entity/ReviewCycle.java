@@ -173,5 +173,39 @@ public class ReviewCycle {
         return result == ReviewResult.CHANGES_REQUESTED;
     }
 
+    public UUID getId() {
+        return id;
+    }
 
+    public UserId getSubmittedBy() {
+        return submittedBy;
+    }
+
+    public Instant getSubmittedAt() {
+        return submittedAt;
+    }
+
+    public UserId getReviewedBy() {
+        return reviewedBy;
+    }
+
+    public Instant getReviewedAt() {
+        return reviewedAt;
+    }
+
+    public UserId getWithdrawnBy() {
+        return withdrawnBy;
+    }
+
+    public Instant getWithdrawnAt() {
+        return withdrawnAt;
+    }
+
+    public ReviewResult getResult() {
+        return result;
+    }
+
+    public ReviewFeedback getFeedback() {
+        return feedback;
+    }
 }

@@ -1,18 +1,16 @@
 package com.deutschhub.infrastructure.content.article.persistence.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import com.deutschhub.common.exception.BusinessException;
+import com.deutschhub.common.exception.ErrorCode;
+import jakarta.persistence.*;
+import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Table(name = "articles")
@@ -21,6 +19,8 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@Builder
+@AllArgsConstructor
 public class ArticleJpaEntity {
 
     @Id
@@ -75,4 +75,20 @@ public class ArticleJpaEntity {
     @JdbcTypeCode(SqlTypes.VARCHAR)
     @Column(name = "ownership_transferred_by")
     UUID ownershipTransferredBy;
+
+    @OneToMany(
+            mappedBy = "article",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    List<ArticleVersionJpaEntity> versions = new ArrayList<>();
+
+    public void addVersion(ArticleVersionJpaEntity version) {
+        if (version == null) {
+            throw new BusinessException(ErrorCode.INVALID_ARTICLE_VERSION_DATA);
+        }
+
+        version.setArticle(this);
+        versions.add(version);
+    }
 }

@@ -11,9 +11,11 @@ import java.util.UUID;
 @Entity
 @Table(name = "categories")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
 @Getter
 @Setter
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@Builder
 public class CategoryJpaEntity {
 
     @Id

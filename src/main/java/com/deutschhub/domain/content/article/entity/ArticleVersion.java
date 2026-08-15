@@ -76,7 +76,7 @@ public class ArticleVersion {
                 source.primaryCategoryId, source.topicIds, source.coverMediaId, source.sources, createdAt, createdBy);
     }
 
-    public ArticleVersion restore(UUID id, VersionNumber versionNumber, ArticleTitle title, Summary summary,
+    public static ArticleVersion restore(UUID id, VersionNumber versionNumber, ArticleTitle title, Summary summary,
                                          Body body, UUID primaryCategoryId, Set<UUID> topicIds, UUID coverMediaId,
                                          List<Source> sources, List<ReviewCycle> reviewCycles, UserId createdBy,
                                          Instant createdAt, UserId lastModifiedBy, Instant lastModifiedAt) {
@@ -168,7 +168,7 @@ public class ArticleVersion {
                 .orElseThrow(() -> new BusinessException(ErrorCode.ARTICLE_REVIEW_CYCLE_NOT_FOUND));
     }
 
-    private void validateCollections(Set<UUID> topicIds, List<Source> sources) {
+    private static void validateCollections(Set<UUID> topicIds, List<Source> sources) {
         if (topicIds == null || sources == null) {
             throw new BusinessException(ErrorCode.INVALID_ARTICLE_COLLECTION);
         }
@@ -206,7 +206,7 @@ public class ArticleVersion {
         return primaryCategoryId;
     }
 
-    public List<UUID> getTopicIds() {
+    public Set<UUID> getTopicIds() {
         return topicIds;
     }
 
@@ -232,5 +232,9 @@ public class ArticleVersion {
 
     public Instant getLastModifiedAt() {
         return lastModifiedAt;
+    }
+
+    public List<ReviewCycle> getReviewCycles() {
+        return reviewCycles;
     }
 }

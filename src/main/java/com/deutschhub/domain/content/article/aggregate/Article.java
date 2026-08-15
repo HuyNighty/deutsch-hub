@@ -11,6 +11,7 @@ import com.deutschhub.domain.shared.valueobject.UserId;
 
 import java.time.Instant;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Article {
 
@@ -75,6 +76,9 @@ public class Article {
                                   List<ArticleVersion> versions, Instant createdAt, UserId createdBy, Instant publishedAt,
                                   UserId publishedBy, Instant archivedAt, UserId archivedBy, UserId ownershipTransferredBy,
                                   Instant ownershipTransferredAt) {
+        validateRestoredData(id, ownerId, slug, editorialStatus, publicationStatus, draftVersionId, publishedVersionId,
+                versions, createdAt, createdBy, publishedAt, publishedBy, archivedAt, archivedBy, ownershipTransferredBy, ownershipTransferredAt);
+
         Article article = new Article();
 
         article.id = id;
@@ -97,7 +101,7 @@ public class Article {
         return article;
     }
 
-    public void updateDraft(ArticleTitle title, Summary summary, Body body, UUID primaryCategoryId, List<UUID> topicIds,
+    public void updateDraft(ArticleTitle title, Summary summary, Body body, UUID primaryCategoryId, Set<UUID> topicIds,
                             UUID coverMediaId, List<Source> sources, UserId modifiedBy, Instant modifiedAt) {
         ensureDraftEditable();
 
@@ -321,12 +325,60 @@ public class Article {
                 .orElseThrow(() -> new BusinessException(ErrorCode.ARTICLE_PUBLISHED_VERSION_NOT_FOUND));
     }
 
+    private static void validateRestoredData(UUID id, UserId ownerId, Slug slug, EditorialStatus editorialStatus,
+                                             PublicationStatus publicationStatus, UUID draftVersionId, UUID publishedVersionId,
+                                             List<ArticleVersion> versions, Instant createdAt, UserId createdBy, Instant publishedAt,
+                                             UserId publishedBy, Instant archivedAt, UserId archivedBy, UserId ownershipTransferredBy,
+                                             Instant ownershipTransferredAt) {
+        if (id == null || ownerId == null || slug == null || editorialStatus == null || publicationStatus == null
+                || versions == null || createdAt == null || createdBy == null) {
+            throw new BusinessException(ErrorCode.INVALID_ARTICLE_DATA);
+        }
+
+        if (versions.stream().anyMatch(Objects::isNull)) {
+            throw new BusinessException(ErrorCode.INVALID_ARTICLE_VERSION_DATA);
+        }
+
+        validateVersionReferences(draftVersionId, publishedVersionId, versions);
+
+        validateAuditState(publishedAt, publishedBy, archivedAt, archivedBy, ownershipTransferredBy, ownershipTransferredAt);
+    }
+
+    private static void validateVersionReferences(UUID draftVersionId, UUID publishedVersionId, List<ArticleVersion> versions) {
+        Set<UUID> versionIds = versions.stream()
+                .map(ArticleVersion::getId)
+                .collect(Collectors.toSet());
+
+        if (draftVersionId != null && !versionIds.contains(draftVersionId)) {
+            throw new BusinessException(ErrorCode.ARTICLE_DRAFT_VERSION_NOT_FOUND);
+        }
+
+        if (publishedVersionId != null && !versionIds.contains(publishedVersionId)) {
+            throw new BusinessException(ErrorCode.ARTICLE_PUBLISHED_VERSION_NOT_FOUND);
+        }
+    }
+
+    private static void validateAuditState(Instant publishedAt, UserId publishedBy, Instant archivedAt, UserId archivedBy,
+                                           UserId ownershipTransferredBy, Instant ownershipTransferredAt) {
+        validatePair(publishedAt, publishedBy, ErrorCode.INVALID_ARTICLE_PUBLICATION_DATA);
+
+        validatePair(archivedAt, archivedBy, ErrorCode.INVALID_ARTICLE_ARCHIVE_DATA);
+
+        validatePair(ownershipTransferredAt, ownershipTransferredBy, ErrorCode.INVALID_ARTICLE_OWNERSHIP_TRANSFER_DATA);
+    }
+
+    private static void validatePair(Object first, Object second, ErrorCode errorCode) {
+        if ((first == null) != (second == null)) {
+            throw new BusinessException(errorCode);
+        }
+    }
+
     public UUID getId() {
         return id;
     }
 
-    public UUID getDraftVersionId() {
-        return draftVersionId;
+    public UserId getOwnerId() {
+        return ownerId;
     }
 
     public Slug getSlug() {
@@ -341,8 +393,48 @@ public class Article {
         return publicationStatus;
     }
 
+    public UUID getDraftVersionId() {
+        return draftVersionId;
+    }
+
+    public UUID getPublishedVersionId() {
+        return publishedVersionId;
+    }
+
+    public List<ArticleVersion> getVersions() {
+        return versions;
+    }
+
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public UserId getCreatedBy() {
+        return createdBy;
+    }
+
+    public Instant getPublishedAt() {
+        return publishedAt;
+    }
+
+    public UserId getPublishedBy() {
+        return publishedBy;
+    }
+
+    public Instant getArchivedAt() {
+        return archivedAt;
+    }
+
+    public UserId getArchivedBy() {
+        return archivedBy;
+    }
+
+    public UserId getOwnershipTransferredBy() {
+        return ownershipTransferredBy;
+    }
+
+    public Instant getOwnershipTransferredAt() {
+        return ownershipTransferredAt;
     }
 }
 

@@ -2,10 +2,7 @@ package com.deutschhub.infrastructure.content.article.persistence.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 @Embeddable
@@ -13,6 +10,8 @@ import lombok.experimental.FieldDefaults;
 @Setter
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@Builder
+@AllArgsConstructor
 public class SourceJpaEntity {
 
     @Column(name = "title", nullable = false, length = 255)

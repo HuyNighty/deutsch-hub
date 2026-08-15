@@ -3,10 +3,7 @@ package com.deutschhub.infrastructure.content.article.persistence.entity;
 import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
@@ -20,15 +17,13 @@ import java.util.*;
 @Setter
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@Builder
+@AllArgsConstructor
 public class ArticleVersionJpaEntity {
 
     @Id
     @JdbcTypeCode(SqlTypes.VARCHAR)
     UUID id;
-
-    @JdbcTypeCode(SqlTypes.VARCHAR)
-    @Column(name = "article_id", nullable = false)
-    UUID articleId;
 
     @Column(name = "version_number", nullable = false)
     Integer versionNumber;
@@ -63,6 +58,13 @@ public class ArticleVersionJpaEntity {
 
     @Column(name = "last_modified_at", nullable = false)
     Instant lastModifiedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(
+            name = "article_id",
+            nullable = false
+    )
+    ArticleJpaEntity article;
 
     @ElementCollection
     @CollectionTable(
