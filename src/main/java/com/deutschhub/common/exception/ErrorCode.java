@@ -207,6 +207,8 @@ public enum ErrorCode {
     CATEGORY_ALREADY_ACTIVE("error.content.category.already.active", 18002),
     INVALID_CATEGORY_DATA("error.content.category.invalid.data", 18003),
     INVALID_CATEGORY_STATUS("error.content.category.status.invalid", 18004),
+    CATEGORY_NAME_ALREADY_EXISTS("error.content.category.name.already.exists", 18005),
+    CATEGORY_NOT_FOUND("error.content.category.not.found", 18006),
 
     INVALID_TOPIC_NAME("error.content.topic.name.invalid", 19000),
     INVALID_TOPIC_CATEGORY("error.content.topic.category.invalid", 19001),
@@ -214,6 +216,8 @@ public enum ErrorCode {
     TOPIC_ALREADY_ACTIVE("error.content.topic.already.active", 19003),
     INVALID_TOPIC_DATA("error.content.topic.invalid.data", 19004),
     INVALID_TOPIC_STATUS("error.content.topic.status.invalid", 19005),
+    TOPIC_NAME_ALREADY_EXITS("error.content.topic.name.already.exists", 19006),
+    TOPIC_NOT_FOUND("error.content.topic.not.found", 19007),
 
     ;
 

@@ -3,7 +3,7 @@ package com.deutschhub.application.content.article.service;
 import com.deutschhub.application.content.article.dto.request.CreateDraftCommand;
 import com.deutschhub.application.content.article.dto.response.CreateDraftResponse;
 import com.deutschhub.application.content.article.port.in.CreateDraftUseCase;
-import com.deutschhub.application.content.article.port.in.CurrentUserPort;
+import com.deutschhub.application.content.article.port.out.CurrentUserPort;
 import com.deutschhub.application.content.article.port.out.ArticleRepositoryPort;
 import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;

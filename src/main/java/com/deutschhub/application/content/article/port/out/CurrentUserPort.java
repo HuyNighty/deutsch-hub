@@ -1,4 +1,4 @@
-package com.deutschhub.application.content.article.port.in;
+package com.deutschhub.application.content.article.port.out;
 
 import com.deutschhub.domain.shared.valueobject.UserId;
 
