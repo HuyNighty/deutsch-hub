@@ -18,7 +18,7 @@ public class ArticleVersion {
     private Body body;
 
     private UUID primaryCategoryId;
-    private List<UUID> topicIds;
+    private Set<UUID> topicIds;
 
     private UUID coverMediaId;
 
@@ -35,7 +35,7 @@ public class ArticleVersion {
     protected ArticleVersion() {}
 
     public ArticleVersion(UUID id, VersionNumber versionNumber, ArticleTitle title, Summary summary, Body body,
-                          UUID primaryCategoryId, List<UUID> topicIds, UUID coverMediaId, List<Source> sources,
+                          UUID primaryCategoryId, Set<UUID> topicIds, UUID coverMediaId, List<Source> sources,
                           Instant createdAt, UserId createdBy) {
         if (id == null || versionNumber == null || createdAt == null || createdBy == null) {
             throw new BusinessException(ErrorCode.INVALID_ARTICLE_VERSION_DATA);
@@ -51,7 +51,7 @@ public class ArticleVersion {
         this.body = body;
 
         this.primaryCategoryId = primaryCategoryId;
-        this.topicIds = List.copyOf(topicIds);
+        this.topicIds = Set.copyOf(topicIds);
 
         this.coverMediaId = coverMediaId;
 
@@ -77,7 +77,7 @@ public class ArticleVersion {
     }
 
     public ArticleVersion restore(UUID id, VersionNumber versionNumber, ArticleTitle title, Summary summary,
-                                         Body body, UUID primaryCategoryId, List<UUID> topicIds, UUID coverMediaId,
+                                         Body body, UUID primaryCategoryId, Set<UUID> topicIds, UUID coverMediaId,
                                          List<Source> sources, List<ReviewCycle> reviewCycles, UserId createdBy,
                                          Instant createdAt, UserId lastModifiedBy, Instant lastModifiedAt) {
         if (id == null || versionNumber == null || createdBy == null || createdAt == null) {
@@ -104,7 +104,7 @@ public class ArticleVersion {
         version.body = body;
 
         version.primaryCategoryId = primaryCategoryId;
-        version.topicIds = List.copyOf(topicIds);
+        version.topicIds = Set.copyOf(topicIds);
 
         version.coverMediaId = coverMediaId;
         version.sources = List.copyOf(sources);
@@ -120,7 +120,7 @@ public class ArticleVersion {
         return version;
     }
 
-    public void updateContent(ArticleTitle title, Summary summary, Body body, UUID primaryCategoryId, List<UUID> topicIds,
+    public void updateContent(ArticleTitle title, Summary summary, Body body, UUID primaryCategoryId, Set<UUID> topicIds,
                               UUID coverMediaId, List<Source> sources, UserId modifiedBy, Instant modifiedAt) {
         if (modifiedBy == null || modifiedAt == null) {
             throw new BusinessException(ErrorCode.INVALID_ARTICLE_VERSION_DATA);
@@ -133,7 +133,7 @@ public class ArticleVersion {
         this.body = body;
 
         this.primaryCategoryId = primaryCategoryId;
-        this.topicIds = List.copyOf(topicIds);
+        this.topicIds = Set.copyOf(topicIds);
 
         this.coverMediaId = coverMediaId;
 
@@ -145,7 +145,7 @@ public class ArticleVersion {
 
     public static ArticleVersion createFirstDraft(UUID id, ArticleTitle title, UserId createdBy, Instant createdAt) {
         return new ArticleVersion(id, VersionNumber.first(), title, null, null, null,
-                List.of(), null, List.of(), createdAt, createdBy);
+                Set.of(), null, List.of(), createdAt, createdBy);
     }
 
     public void addReviewCycle(ReviewCycle reviewCycle) {
@@ -168,7 +168,7 @@ public class ArticleVersion {
                 .orElseThrow(() -> new BusinessException(ErrorCode.ARTICLE_REVIEW_CYCLE_NOT_FOUND));
     }
 
-    private void validateCollections(List<UUID> topicIds, List<Source> sources) {
+    private void validateCollections(Set<UUID> topicIds, List<Source> sources) {
         if (topicIds == null || sources == null) {
             throw new BusinessException(ErrorCode.INVALID_ARTICLE_COLLECTION);
         }
@@ -180,11 +180,6 @@ public class ArticleVersion {
         if (sources.stream().anyMatch(Objects::isNull)) {
             throw new BusinessException(ErrorCode.INVALID_ARTICLE_COLLECTION);
         }
-
-        if (new HashSet<>(topicIds).size() != topicIds.size()) {
-            throw new BusinessException(ErrorCode.INVALID_ARTICLE_COLLECTION);
-        }
-
     }
 
     public UUID getId() {
