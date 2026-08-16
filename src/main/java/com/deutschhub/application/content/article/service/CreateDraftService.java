@@ -32,6 +32,11 @@ public class CreateDraftService implements CreateDraftUseCase {
 
     @Override
     public CreateDraftResponse createDraft(CreateDraftCommand command) {
+
+        if (command == null) {
+            throw new BusinessException(ErrorCode.INVALID_ARTICLE_DATA);
+        }
+
         UserId ownerId = currentUserPort.getCurrentUserId();
 
         ArticleTitle title = new ArticleTitle(command.title());
