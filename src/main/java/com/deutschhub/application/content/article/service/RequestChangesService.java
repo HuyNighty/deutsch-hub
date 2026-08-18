@@ -4,7 +4,9 @@ import com.deutschhub.application.content.article.dto.request.RequestChangesComm
 import com.deutschhub.application.content.article.dto.response.RequestChangesResponse;
 import com.deutschhub.application.content.article.port.in.RequestChangesUseCase;
 import com.deutschhub.application.content.article.port.out.ArticleRepositoryPort;
-import com.deutschhub.application.content.article.port.out.CurrentUserPort;
+import com.deutschhub.application.content.shared.authorization.ContentAuthorizationPolicy;
+import com.deutschhub.application.shared.authorization.CurrentActor;
+import com.deutschhub.application.shared.authorization.CurrentActorPort;
 import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
 import com.deutschhub.domain.content.article.aggregate.Article;
@@ -25,7 +27,8 @@ import java.time.Instant;
 public class RequestChangesService implements RequestChangesUseCase {
 
     ArticleRepositoryPort articleRepositoryPort;
-    CurrentUserPort currentUserPort;
+    CurrentActorPort currentActorPort;
+    ContentAuthorizationPolicy authorizationPolicy;
 
     @Override
     public RequestChangesResponse requestChanges(RequestChangesCommand command) {
@@ -34,7 +37,11 @@ public class RequestChangesService implements RequestChangesUseCase {
             throw new BusinessException(ErrorCode.INVALID_ARTICLE_DATA);
         }
 
-        UserId reviewer = currentUserPort.getCurrentUserId();
+        CurrentActor actor = currentActorPort.getCurrentActor();
+
+        UserId reviewer = actor.userId();
+
+        authorizationPolicy.requireAdmin(actor);
 
         Article article = articleRepositoryPort.findById(command.articleId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.ARTICLE_NOT_FOUND));

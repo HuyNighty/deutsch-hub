@@ -1,12 +1,12 @@
 package com.deutschhub.infrastructure.config;
 
 import com.deutschhub.application.identity.port.out.UserRepositoryPort;
-import com.deutschhub.domain.identity.model.aggregate.User;
-import com.deutschhub.domain.identity.model.enums.RoleType;
-import com.deutschhub.domain.identity.model.valueobject.Email;
-import com.deutschhub.domain.identity.model.valueobject.FullName;
-import com.deutschhub.domain.identity.model.valueobject.Password;
-import com.deutschhub.domain.identity.model.valueobject.Username;
+import com.deutschhub.domain.identity.aggregate.User;
+import com.deutschhub.domain.identity.enums.RoleType;
+import com.deutschhub.domain.identity.valueobject.Email;
+import com.deutschhub.domain.identity.valueobject.FullName;
+import com.deutschhub.domain.identity.valueobject.Password;
+import com.deutschhub.domain.identity.valueobject.Username;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;

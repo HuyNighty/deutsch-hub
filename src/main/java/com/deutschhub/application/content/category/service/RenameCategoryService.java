@@ -1,9 +1,12 @@
 package com.deutschhub.application.content.category.service;
 
+import com.deutschhub.application.content.shared.authorization.ContentAuthorizationPolicy;
 import com.deutschhub.application.content.category.dto.request.RenameCategoryCommand;
 import com.deutschhub.application.content.category.dto.response.CategoryResponse;
 import com.deutschhub.application.content.category.port.in.RenameCategoryUseCase;
 import com.deutschhub.application.content.category.port.out.CategoryRepositoryPort;
+import com.deutschhub.application.shared.authorization.CurrentActor;
+import com.deutschhub.application.shared.authorization.CurrentActorPort;
 import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
 import com.deutschhub.domain.content.category.aggregate.Category;
@@ -21,12 +24,18 @@ import org.springframework.transaction.annotation.Transactional;
 public class RenameCategoryService implements RenameCategoryUseCase {
 
     CategoryRepositoryPort categoryRepositoryPort;
+    CurrentActorPort currentActorPort;
+    ContentAuthorizationPolicy authorizationPolicy;
 
     @Override
     public CategoryResponse rename(RenameCategoryCommand command) {
         if (command == null) {
             throw new BusinessException(ErrorCode.INVALID_CATEGORY_DATA);
         }
+
+        CurrentActor actor = currentActorPort.getCurrentActor();
+
+        authorizationPolicy.requireAdmin(actor);
 
         Category category = categoryRepositoryPort.findById(command.categoryId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.CATEGORY_NOT_FOUND));

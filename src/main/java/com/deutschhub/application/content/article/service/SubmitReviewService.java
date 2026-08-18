@@ -4,10 +4,14 @@ import com.deutschhub.application.content.article.dto.request.SubmitReviewComman
 import com.deutschhub.application.content.article.dto.response.SubmitReviewResponse;
 import com.deutschhub.application.content.article.port.in.SubmitReviewUseCase;
 import com.deutschhub.application.content.article.port.out.ArticleRepositoryPort;
-import com.deutschhub.application.content.article.port.out.CurrentUserPort;
+import com.deutschhub.application.content.article.validator.ArticleDraftReferenceValidator;
+import com.deutschhub.application.content.shared.authorization.ContentAuthorizationPolicy;
+import com.deutschhub.application.shared.authorization.CurrentActor;
+import com.deutschhub.application.shared.authorization.CurrentActorPort;
 import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
 import com.deutschhub.domain.content.article.aggregate.Article;
+import com.deutschhub.domain.content.article.entity.ArticleVersion;
 import com.deutschhub.domain.shared.valueobject.UserId;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +28,9 @@ import java.time.Instant;
 public class SubmitReviewService implements SubmitReviewUseCase {
 
     ArticleRepositoryPort articleRepositoryPort;
-    CurrentUserPort currentUserPort;
+    CurrentActorPort currentActorPort;
+    ContentAuthorizationPolicy authorizationPolicy;
+    ArticleDraftReferenceValidator articleDraftReferenceValidator;
 
     @Override
     public SubmitReviewResponse submitReview(SubmitReviewCommand command) {
@@ -33,12 +39,18 @@ public class SubmitReviewService implements SubmitReviewUseCase {
             throw new BusinessException(ErrorCode.INVALID_ARTICLE_DATA);
         }
 
-        UserId actorId = currentUserPort.getCurrentUserId();
+        CurrentActor actor = currentActorPort.getCurrentActor();
+
+        UserId actorId = actor.userId();
 
         Article article = articleRepositoryPort.findById(command.articleId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.ARTICLE_NOT_FOUND));
 
-        article.ensureOwnedBy(actorId);
+        authorizationPolicy.requireArticleOwnerOrAdmin(article, actor);
+
+        ArticleVersion draft = article.getCurrentDraft();
+
+        articleDraftReferenceValidator.validate(draft.getPrimaryCategoryId(), draft.getTopicIds(), draft.getCoverMediaId());
 
         article.submitReview(actorId, Instant.now());
 

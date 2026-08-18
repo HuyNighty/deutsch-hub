@@ -3,8 +3,10 @@ package com.deutschhub.application.content.article.service;
 import com.deutschhub.application.content.article.dto.request.CreateDraftCommand;
 import com.deutschhub.application.content.article.dto.response.CreateDraftResponse;
 import com.deutschhub.application.content.article.port.in.CreateDraftUseCase;
-import com.deutschhub.application.content.article.port.out.CurrentUserPort;
 import com.deutschhub.application.content.article.port.out.ArticleRepositoryPort;
+import com.deutschhub.application.content.shared.authorization.ContentAuthorizationPolicy;
+import com.deutschhub.application.shared.authorization.CurrentActor;
+import com.deutschhub.application.shared.authorization.CurrentActorPort;
 import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
 import com.deutschhub.domain.content.article.aggregate.Article;
@@ -27,8 +29,9 @@ import java.time.Instant;
 public class CreateDraftService implements CreateDraftUseCase {
 
     ArticleRepositoryPort articleRepositoryPort;
-    CurrentUserPort currentUserPort;
+    CurrentActorPort currentActorPort;
     SlugGenerator slugGenerator;
+    ContentAuthorizationPolicy authorizationPolicy;
 
     @Override
     public CreateDraftResponse createDraft(CreateDraftCommand command) {
@@ -37,7 +40,11 @@ public class CreateDraftService implements CreateDraftUseCase {
             throw new BusinessException(ErrorCode.INVALID_ARTICLE_DATA);
         }
 
-        UserId ownerId = currentUserPort.getCurrentUserId();
+        CurrentActor actor = currentActorPort.getCurrentActor();
+
+        authorizationPolicy.requireContentEditorOrAdmin(actor);
+
+        UserId actorId = actor.userId();
 
         ArticleTitle title = new ArticleTitle(command.title());
 
@@ -49,7 +56,7 @@ public class CreateDraftService implements CreateDraftUseCase {
 
         Instant now = Instant.now();
 
-        Article article = Article.createDraft(ownerId, title, slug, now);
+        Article article = Article.createDraft(actorId, title, slug, now);
 
         articleRepositoryPort.save(article);
 

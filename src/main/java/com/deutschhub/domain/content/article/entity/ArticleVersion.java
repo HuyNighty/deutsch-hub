@@ -126,18 +126,35 @@ public class ArticleVersion {
             throw new BusinessException(ErrorCode.INVALID_ARTICLE_VERSION_DATA);
         }
 
-        validateCollections(topicIds, sources);
+        if (title != null) {
+            this.title = title;
+        }
 
-        this.title = title;
-        this.summary = summary;
-        this.body = body;
+        if (summary != null) {
+            this.summary = summary;
+        }
 
-        this.primaryCategoryId = primaryCategoryId;
-        this.topicIds = Set.copyOf(topicIds);
+        if (body != null) {
+            this.body = body;
+        }
 
-        this.coverMediaId = coverMediaId;
+        if (primaryCategoryId != null) {
+            this.primaryCategoryId = primaryCategoryId;
+        }
 
-        this.sources = List.copyOf(sources);
+        if (topicIds != null) {
+            validateTopicIds(topicIds);
+            this.topicIds = Set.copyOf(topicIds);
+        }
+
+        if (coverMediaId != null) {
+            this.coverMediaId = coverMediaId;
+        }
+
+        if (sources != null) {
+            validateSources(sources);
+            this.sources = List.copyOf(sources);
+        }
 
         this.lastModifiedBy = modifiedBy;
         this.lastModifiedAt = modifiedAt;
@@ -166,6 +183,18 @@ public class ArticleVersion {
                 .filter(ReviewCycle::isPending)
                 .findFirst()
                 .orElseThrow(() -> new BusinessException(ErrorCode.ARTICLE_REVIEW_CYCLE_NOT_FOUND));
+    }
+
+    private static void validateTopicIds(Set<UUID> topicIds) {
+        if (topicIds.stream().anyMatch(Objects::isNull)) {
+            throw new BusinessException(ErrorCode.INVALID_ARTICLE_COLLECTION);
+        }
+    }
+
+    private static void validateSources(List<Source> sources) {
+        if (sources.stream().anyMatch(Objects::isNull)) {
+            throw new BusinessException(ErrorCode.INVALID_ARTICLE_COLLECTION);
+        }
     }
 
     private static void validateCollections(Set<UUID> topicIds, List<Source> sources) {

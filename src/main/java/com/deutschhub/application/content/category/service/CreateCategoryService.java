@@ -1,9 +1,12 @@
 package com.deutschhub.application.content.category.service;
 
+import com.deutschhub.application.content.shared.authorization.ContentAuthorizationPolicy;
 import com.deutschhub.application.content.category.dto.request.CreateCategoryCommand;
 import com.deutschhub.application.content.category.dto.response.CategoryResponse;
 import com.deutschhub.application.content.category.port.in.CreateCategoryUseCase;
 import com.deutschhub.application.content.category.port.out.CategoryRepositoryPort;
+import com.deutschhub.application.shared.authorization.CurrentActor;
+import com.deutschhub.application.shared.authorization.CurrentActorPort;
 import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
 import com.deutschhub.domain.content.category.aggregate.Category;
@@ -21,6 +24,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class CreateCategoryService implements CreateCategoryUseCase {
 
     CategoryRepositoryPort categoryRepositoryPort;
+    CurrentActorPort currentActorPort;
+    ContentAuthorizationPolicy authorizationPolicy;
 
     @Override
     public CategoryResponse create(CreateCategoryCommand command) {
@@ -28,6 +33,10 @@ public class CreateCategoryService implements CreateCategoryUseCase {
         if (command == null) {
             throw new BusinessException(ErrorCode.INVALID_CATEGORY_DATA);
         }
+
+        CurrentActor actor = currentActorPort.getCurrentActor();
+
+        authorizationPolicy.requireAdmin(actor);
 
         CategoryName categoryName = new CategoryName(command.name());
 

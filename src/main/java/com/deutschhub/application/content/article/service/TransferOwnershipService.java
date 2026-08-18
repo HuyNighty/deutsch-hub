@@ -4,7 +4,10 @@ import com.deutschhub.application.content.article.dto.request.TransferOwnershipC
 import com.deutschhub.application.content.article.dto.response.TransferOwnershipResponse;
 import com.deutschhub.application.content.article.port.in.TransferOwnershipUseCase;
 import com.deutschhub.application.content.article.port.out.ArticleRepositoryPort;
-import com.deutschhub.application.content.article.port.out.CurrentUserPort;
+import com.deutschhub.application.content.shared.authorization.ContentAuthorizationPolicy;
+import com.deutschhub.application.shared.authorization.CurrentActor;
+import com.deutschhub.application.shared.authorization.CurrentActorPort;
+import com.deutschhub.application.shared.identity.UserLookupPort;
 import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
 import com.deutschhub.domain.content.article.aggregate.Article;
@@ -24,7 +27,9 @@ import java.time.Instant;
 public class TransferOwnershipService implements TransferOwnershipUseCase {
 
     ArticleRepositoryPort articleRepositoryPort;
-    CurrentUserPort currentUserPort;
+    CurrentActorPort currentActorPort;
+    ContentAuthorizationPolicy authorizationPolicy;
+    UserLookupPort userLookupPort;
 
     @Override
     public TransferOwnershipResponse transferOwnership(TransferOwnershipCommand command) {
@@ -33,8 +38,17 @@ public class TransferOwnershipService implements TransferOwnershipUseCase {
             throw new BusinessException(ErrorCode.INVALID_ARTICLE_OWNERSHIP_TRANSFER_DATA);
         }
 
-        UserId transferredBy = currentUserPort.getCurrentUserId();
+        CurrentActor actor = currentActorPort.getCurrentActor();
+
+        authorizationPolicy.requireAdmin(actor);
+
+        UserId transferredBy = actor.userId();
+
         UserId newOwner = UserId.of(command.newOwnerId());
+
+        if (!userLookupPort.isActiveContentEditor(newOwner)) {
+            throw new BusinessException(ErrorCode.INVALID_ARTICLE_OWNER);
+        }
 
         Article article = articleRepositoryPort.findById(command.articleId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.ARTICLE_NOT_FOUND));

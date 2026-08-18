@@ -2,7 +2,7 @@ package com.deutschhub.infrastructure.identity.security;
 
 import com.deutschhub.application.identity.port.out.GeneratedToken;
 import com.deutschhub.application.identity.port.out.TokenGenerator;
-import com.deutschhub.domain.identity.model.aggregate.User;
+import com.deutschhub.domain.identity.aggregate.User;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;

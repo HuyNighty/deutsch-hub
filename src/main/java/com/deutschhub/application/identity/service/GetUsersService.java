@@ -5,7 +5,7 @@ import com.deutschhub.application.identity.dto.response.UserSummaryResponse;
 import com.deutschhub.application.identity.port.in.GetUsersUseCase;
 import com.deutschhub.application.identity.port.out.UserRepositoryPort;
 import com.deutschhub.common.util.PageResponse;
-import com.deutschhub.domain.identity.model.aggregate.User;
+import com.deutschhub.domain.identity.aggregate.User;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;

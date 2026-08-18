@@ -436,5 +436,9 @@ public class Article {
     public Instant getOwnershipTransferredAt() {
         return ownershipTransferredAt;
     }
+
+    public ArticleVersion getCurrentDraft() {
+        return getDraftVersion();
+    }
 }
 

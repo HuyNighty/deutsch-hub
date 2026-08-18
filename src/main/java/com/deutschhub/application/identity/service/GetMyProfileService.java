@@ -5,7 +5,7 @@ import com.deutschhub.application.identity.port.in.GetMyProfileUseCase;
 import com.deutschhub.application.identity.port.out.UserRepositoryPort;
 import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
-import com.deutschhub.domain.identity.model.aggregate.User;
+import com.deutschhub.domain.identity.aggregate.User;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;

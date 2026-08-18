@@ -1,4 +1,4 @@
-package com.deutschhub.domain.identity.model.enums;
+package com.deutschhub.domain.identity.enums;
 
 public enum PermissionType {
 

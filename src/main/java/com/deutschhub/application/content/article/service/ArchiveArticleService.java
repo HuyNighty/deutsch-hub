@@ -4,7 +4,9 @@ import com.deutschhub.application.content.article.dto.request.ArchiveArticleComm
 import com.deutschhub.application.content.article.dto.response.ArchiveArticleResponse;
 import com.deutschhub.application.content.article.port.in.ArchiveArticleUseCase;
 import com.deutschhub.application.content.article.port.out.ArticleRepositoryPort;
-import com.deutschhub.application.content.article.port.out.CurrentUserPort;
+import com.deutschhub.application.content.shared.authorization.ContentAuthorizationPolicy;
+import com.deutschhub.application.shared.authorization.CurrentActor;
+import com.deutschhub.application.shared.authorization.CurrentActorPort;
 import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
 import com.deutschhub.domain.content.article.aggregate.Article;
@@ -24,7 +26,8 @@ import java.time.Instant;
 public class ArchiveArticleService implements ArchiveArticleUseCase {
 
     ArticleRepositoryPort articleRepositoryPort;
-    CurrentUserPort currentUserPort;
+    CurrentActorPort currentActorPort;
+    ContentAuthorizationPolicy authorizationPolicy;
 
     @Override
     public ArchiveArticleResponse archive(ArchiveArticleCommand command) {
@@ -33,10 +36,14 @@ public class ArchiveArticleService implements ArchiveArticleUseCase {
             throw new BusinessException(ErrorCode.INVALID_ARTICLE_DATA);
         }
 
-        UserId actorId = currentUserPort.getCurrentUserId();
+        CurrentActor actor = currentActorPort.getCurrentActor();
+
+        UserId actorId = actor.userId();
 
         Article article = articleRepositoryPort.findById(command.articleId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.ARTICLE_NOT_FOUND));
+
+        authorizationPolicy.requireArticleOwnerOrAdmin(article, actor);
 
         Instant now = Instant.now();
 

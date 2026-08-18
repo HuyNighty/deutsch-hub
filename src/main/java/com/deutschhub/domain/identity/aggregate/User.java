@@ -1,13 +1,13 @@
-package com.deutschhub.domain.identity.model.aggregate;
+package com.deutschhub.domain.identity.aggregate;
 
 import com.deutschhub.common.domain.Auditable;
 import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
-import com.deutschhub.domain.identity.model.enums.RoleType;
-import com.deutschhub.domain.identity.model.valueobject.Email;
-import com.deutschhub.domain.identity.model.valueobject.FullName;
-import com.deutschhub.domain.identity.model.valueobject.Password;
-import com.deutschhub.domain.identity.model.valueobject.Username;
+import com.deutschhub.domain.identity.enums.RoleType;
+import com.deutschhub.domain.identity.valueobject.Email;
+import com.deutschhub.domain.identity.valueobject.FullName;
+import com.deutschhub.domain.identity.valueobject.Password;
+import com.deutschhub.domain.identity.valueobject.Username;
 
 import java.time.LocalDateTime;
 import java.util.Collections;

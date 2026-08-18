@@ -1,9 +1,9 @@
 package com.deutschhub.application.identity.port.out;
 
 import com.deutschhub.common.util.PageResponse;
-import com.deutschhub.domain.identity.model.aggregate.User;
-import com.deutschhub.domain.identity.model.valueobject.Email;
-import com.deutschhub.domain.identity.model.valueobject.Username;
+import com.deutschhub.domain.identity.aggregate.User;
+import com.deutschhub.domain.identity.valueobject.Email;
+import com.deutschhub.domain.identity.valueobject.Username;
 
 import java.util.Optional;
 import java.util.UUID;

@@ -5,10 +5,14 @@ import com.deutschhub.application.content.article.dto.request.UpdateDraftCommand
 import com.deutschhub.application.content.article.dto.response.UpdateDraftResponse;
 import com.deutschhub.application.content.article.port.in.UpdateDraftUseCase;
 import com.deutschhub.application.content.article.port.out.ArticleRepositoryPort;
-import com.deutschhub.application.content.article.port.out.CurrentUserPort;
+import com.deutschhub.application.content.article.validator.ArticleDraftReferenceValidator;
+import com.deutschhub.application.content.shared.authorization.ContentAuthorizationPolicy;
+import com.deutschhub.application.shared.authorization.CurrentActor;
+import com.deutschhub.application.shared.authorization.CurrentActorPort;
 import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
 import com.deutschhub.domain.content.article.aggregate.Article;
+import com.deutschhub.domain.content.article.entity.ArticleVersion;
 import com.deutschhub.domain.content.article.valueobject.ArticleTitle;
 import com.deutschhub.domain.content.article.valueobject.Body;
 import com.deutschhub.domain.content.article.valueobject.Source;
@@ -22,6 +26,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -30,29 +36,48 @@ import java.util.List;
 public class UpdateDraftService implements UpdateDraftUseCase {
 
     ArticleRepositoryPort articleRepositoryPort;
-    CurrentUserPort currentUserPort;
+    CurrentActorPort currentActorPort;
+    ContentAuthorizationPolicy authorizationPolicy;
+    ArticleDraftReferenceValidator articleDraftReferenceValidator;
 
     @Override
     public UpdateDraftResponse updateDraft(UpdateDraftCommand command) {
+
         if (command == null || command.articleId() == null) {
             throw new BusinessException(ErrorCode.INVALID_ARTICLE_DATA);
         }
 
-        UserId actorId = currentUserPort.getCurrentUserId();
+        CurrentActor actor = currentActorPort.getCurrentActor();
+
+        UserId actorId = actor.userId();
 
         Article article = articleRepositoryPort.findById(command.articleId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.ARTICLE_NOT_FOUND));
 
-        article.ensureOwnedBy(actorId);
+        authorizationPolicy.requireArticleOwnerOrAdmin(article, actor);
 
-        ArticleTitle title = new ArticleTitle(command.title());
+        ArticleVersion draft = article.getCurrentDraft();
+
+        UUID primaryCategoryId = command.primaryCategoryId() != null
+                ? command.primaryCategoryId()
+                : draft.getPrimaryCategoryId();
+
+        Set<UUID> topicIds = command.topicIds() != null
+                ? command.topicIds()
+                : draft.getTopicIds();
+
+        UUID coverMediaId = command.coverMediaId() != null
+                ? command.coverMediaId()
+                : draft.getCoverMediaId();
+
+        articleDraftReferenceValidator.validate(primaryCategoryId, topicIds, coverMediaId);
+
+        ArticleTitle title =command.title() != null ? new ArticleTitle(command.title()) : null;
+
         Summary summary = toSummary(command.summary());
         Body body = toBody(command.body());
 
-        List<Source> sources = command.sources()
-                .stream()
-                .map(this::toSource)
-                .toList();
+        List<Source> sources = command.sources() != null ? command.sources().stream().map(this::toSource).toList() : null;
 
         Instant now = Instant.now();
 

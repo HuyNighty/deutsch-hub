@@ -6,7 +6,7 @@ import com.deutschhub.application.identity.port.out.RefreshTokenProvider;
 import com.deutschhub.application.identity.port.out.UserSessionRepositoryPort;
 import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
-import com.deutschhub.domain.identity.model.aggregate.UserSession;
+import com.deutschhub.domain.identity.aggregate.UserSession;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;

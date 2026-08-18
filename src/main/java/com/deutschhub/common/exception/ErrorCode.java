@@ -202,6 +202,7 @@ public enum ErrorCode {
     INVALID_REVIEW_WITHDRAWAL_DATA("error.content.article.review.withdrawal.invalid.data", 17039),
     ARTICLE_SLUG_ALREADY_EXISTS("error.content.article.slug.already.exists", 17040),
     ARTICLE_NOT_FOUND("error.content.article.not.found", 17041),
+    INVALID_ARTICLE_NEW_OWNER("error.content.article.new.owner.invalid", 17042),
 
     INVALID_CATEGORY_NAME("error.content.category.name.invalid", 18000),
     CATEGORY_ALREADY_INACTIVE("error.content.category.already.inactive", 18001),
@@ -210,6 +211,7 @@ public enum ErrorCode {
     INVALID_CATEGORY_STATUS("error.content.category.status.invalid", 18004),
     CATEGORY_NAME_ALREADY_EXISTS("error.content.category.name.already.exists", 18005),
     CATEGORY_NOT_FOUND("error.content.category.not.found", 18006),
+    CATEGORY_NOT_ACTIVE("error.content.category.not.active", 18007),
 
     INVALID_TOPIC_NAME("error.content.topic.name.invalid", 19000),
     INVALID_TOPIC_CATEGORY("error.content.topic.category.invalid", 19001),
@@ -217,8 +219,13 @@ public enum ErrorCode {
     TOPIC_ALREADY_ACTIVE("error.content.topic.already.active", 19003),
     INVALID_TOPIC_DATA("error.content.topic.invalid.data", 19004),
     INVALID_TOPIC_STATUS("error.content.topic.status.invalid", 19005),
-    TOPIC_NAME_ALREADY_EXITS("error.content.topic.name.already.exists", 19006),
+    TOPIC_NAME_ALREADY_EXISTS("error.content.topic.name.already.exists", 19006),
     TOPIC_NOT_FOUND("error.content.topic.not.found", 19007),
+    TOPIC_NOT_ACTIVE("error.content.topic.not.active", 19008),
+    TOPIC_NOT_BELONG_TO_CATEGORY("error.content.topic.not.belong.to.category", 19009),
+
+    CONTENT_FORBIDDEN_ACTION("error.content.forbidden.action", 20000),
+    MEDIA_NOT_SUITABLE_FOR_COVER("error.content.media.not.suitable.for.cover", 20001),
 
     ;
 

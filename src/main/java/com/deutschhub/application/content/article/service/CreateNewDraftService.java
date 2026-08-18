@@ -4,7 +4,9 @@ import com.deutschhub.application.content.article.dto.request.CreateNewDraftComm
 import com.deutschhub.application.content.article.dto.response.CreateNewDraftResponse;
 import com.deutschhub.application.content.article.port.in.CreateNewDraftUseCase;
 import com.deutschhub.application.content.article.port.out.ArticleRepositoryPort;
-import com.deutschhub.application.content.article.port.out.CurrentUserPort;
+import com.deutschhub.application.content.shared.authorization.ContentAuthorizationPolicy;
+import com.deutschhub.application.shared.authorization.CurrentActor;
+import com.deutschhub.application.shared.authorization.CurrentActorPort;
 import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
 import com.deutschhub.domain.content.article.aggregate.Article;
@@ -24,7 +26,8 @@ import java.time.Instant;
 public class CreateNewDraftService implements CreateNewDraftUseCase {
 
     ArticleRepositoryPort articleRepositoryPort;
-    CurrentUserPort currentUserPort;
+    CurrentActorPort currentActorPort;
+    ContentAuthorizationPolicy authorizationPolicy;
 
     @Override
     public CreateNewDraftResponse createNewDraft(CreateNewDraftCommand command) {
@@ -32,12 +35,16 @@ public class CreateNewDraftService implements CreateNewDraftUseCase {
             throw new BusinessException(ErrorCode.INVALID_ARTICLE_DATA);
         }
 
-        UserId actorId = currentUserPort.getCurrentUserId();
+        CurrentActor actor = currentActorPort.getCurrentActor();
+
+        UserId ownerId = actor.userId();
 
         Article article = articleRepositoryPort.findById(command.articleId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.ARTICLE_NOT_FOUND));
 
-        article.createNewDraft(actorId, Instant.now());
+        authorizationPolicy.requireArticleOwnerOrAdmin(article, actor);
+
+        article.createNewDraft(ownerId, Instant.now());
 
         articleRepositoryPort.save(article);
 

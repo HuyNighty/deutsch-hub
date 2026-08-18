@@ -1,6 +1,6 @@
 package com.deutschhub.application.identity.port.out;
 
-import com.deutschhub.domain.identity.model.aggregate.UserSession;
+import com.deutschhub.domain.identity.aggregate.UserSession;
 
 import java.util.List;
 import java.util.Optional;

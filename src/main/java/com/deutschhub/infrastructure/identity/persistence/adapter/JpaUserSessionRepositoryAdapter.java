@@ -1,7 +1,7 @@
 package com.deutschhub.infrastructure.identity.persistence.adapter;
 
 import com.deutschhub.application.identity.port.out.UserSessionRepositoryPort;
-import com.deutschhub.domain.identity.model.aggregate.UserSession;
+import com.deutschhub.domain.identity.aggregate.UserSession;
 import com.deutschhub.infrastructure.identity.persistence.entity.UserSessionJpaEntity;
 import com.deutschhub.infrastructure.identity.persistence.repository.SpringDataUserSessionRepository;
 import lombok.AccessLevel;

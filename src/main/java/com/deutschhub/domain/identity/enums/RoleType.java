@@ -1,8 +1,9 @@
-package com.deutschhub.domain.identity.model.enums;
+package com.deutschhub.domain.identity.enums;
 
 public enum RoleType {
     USER("USER"),
-    ADMIN("ADMIN");
+    ADMIN("ADMIN"),
+    CONTENT_EDITOR("CONTENT_EDITOR");
 
     private final String roleName;
 

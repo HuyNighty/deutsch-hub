@@ -1,9 +1,12 @@
 package com.deutschhub.application.content.topic.service;
 
+import com.deutschhub.application.content.shared.authorization.ContentAuthorizationPolicy;
 import com.deutschhub.application.content.topic.dto.request.RenameTopicCommand;
 import com.deutschhub.application.content.topic.dto.response.TopicResponse;
 import com.deutschhub.application.content.topic.port.in.RenameTopicUseCase;
 import com.deutschhub.application.content.topic.port.out.TopicRepositoryPort;
+import com.deutschhub.application.shared.authorization.CurrentActor;
+import com.deutschhub.application.shared.authorization.CurrentActorPort;
 import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
 import com.deutschhub.domain.content.topic.aggregate.Topic;
@@ -21,12 +24,18 @@ import org.springframework.transaction.annotation.Transactional;
 public class RenameTopicService implements RenameTopicUseCase {
 
     TopicRepositoryPort topicRepositoryPort;
+    CurrentActorPort currentActorPort;
+    ContentAuthorizationPolicy authorizationPolicy;
 
     @Override
     public TopicResponse rename(RenameTopicCommand command) {
         if (command == null || command.topicId() == null) {
             throw new BusinessException(ErrorCode.INVALID_TOPIC_DATA);
         }
+
+        CurrentActor actor = currentActorPort.getCurrentActor();
+
+        authorizationPolicy.requireAdmin(actor);
 
         Topic topic = topicRepositoryPort.findById(command.topicId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.TOPIC_NOT_FOUND));
@@ -38,7 +47,7 @@ public class RenameTopicService implements RenameTopicUseCase {
         }
 
         if (topicRepositoryPort.existsByNameExcludingId(topic.getCategoryId(), newName, topic.getId())) {
-            throw new BusinessException(ErrorCode.TOPIC_NAME_ALREADY_EXITS);
+            throw new BusinessException(ErrorCode.TOPIC_NAME_ALREADY_EXISTS);
         }
 
         topic.rename(newName);

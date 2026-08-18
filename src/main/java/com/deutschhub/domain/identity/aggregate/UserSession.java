@@ -1,4 +1,4 @@
-package com.deutschhub.domain.identity.model.aggregate;
+package com.deutschhub.domain.identity.aggregate;
 
 import com.deutschhub.common.domain.Auditable;
 import com.deutschhub.common.exception.BusinessException;
