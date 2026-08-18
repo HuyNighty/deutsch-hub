@@ -203,6 +203,7 @@ public enum ErrorCode {
     ARTICLE_SLUG_ALREADY_EXISTS("error.content.article.slug.already.exists", 17040),
     ARTICLE_NOT_FOUND("error.content.article.not.found", 17041),
     INVALID_ARTICLE_NEW_OWNER("error.content.article.new.owner.invalid", 17042),
+    ARTICLE_ARCHIVED("error.content.article.archived", 17043),
 
     INVALID_CATEGORY_NAME("error.content.category.name.invalid", 18000),
     CATEGORY_ALREADY_INACTIVE("error.content.category.already.inactive", 18001),
