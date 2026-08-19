@@ -1,8 +1,9 @@
 package com.deutschhub.application.content.article.service;
 
-import com.deutschhub.application.content.article.dto.query.ArticleQueryModel;
+import com.deutschhub.application.content.article.dto.query.PublishedArticleDetailQueryModel;
 import com.deutschhub.application.content.article.dto.query.GetPublishedArticlesQuery;
 import com.deutschhub.application.content.article.dto.query.PageResult;
+import com.deutschhub.application.content.article.dto.query.PublishedArticleQueryModel;
 import com.deutschhub.application.content.article.dto.response.PublishedArticlePageResponse;
 import com.deutschhub.application.content.article.dto.response.PublishedArticleSummaryResponse;
 import com.deutschhub.application.content.article.port.in.GetPublishedArticlesUseCase;
@@ -29,7 +30,7 @@ public class GetPublishedArticlesService implements GetPublishedArticlesUseCase 
         int page = normalizePage(query);
         int size = normalizeSize(query);
 
-        PageResult<ArticleQueryModel> result = articleQueryPort.findPublishedArticles(page, size);
+        PageResult<PublishedArticleQueryModel> result = articleQueryPort.findPublishedArticles(page, size);
 
         List<PublishedArticleSummaryResponse> content = result.content()
                 .stream()
@@ -55,7 +56,7 @@ public class GetPublishedArticlesService implements GetPublishedArticlesUseCase 
         return query.size();
     }
 
-    private PublishedArticleSummaryResponse toResponse(ArticleQueryModel article) {
+    private PublishedArticleSummaryResponse toResponse(PublishedArticleQueryModel article) {
         return new PublishedArticleSummaryResponse(article.articleId(), article.versionId(), article.slug(),
                 article.title(), article.summary(), article.primaryCategoryId(), article.coverMediaId(), article.publishedAt());
     }

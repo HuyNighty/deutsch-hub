@@ -164,7 +164,6 @@ public enum ErrorCode {
     LESSON_ITEM_NOT_FOUND("error.lesson.item.not.found", 16000),
     LESSON_ITEM_MEDIA_NOT_FOUND("error.lesson.item.media.not.found", 16001),
 
-
     INVALID_ARTICLE_VERSION_NUMBER("error.content.article.invalid.version.number", 17000),
     INVALID_SOURCE_TITLE("error.content.article.invalid.source.title", 17006),
     INVALID_SOURCE_URL("error.content.article.invalid.source.url", 17007),
@@ -204,6 +203,7 @@ public enum ErrorCode {
     ARTICLE_NOT_FOUND("error.content.article.not.found", 17041),
     INVALID_ARTICLE_NEW_OWNER("error.content.article.new.owner.invalid", 17042),
     ARTICLE_ARCHIVED("error.content.article.archived", 17043),
+    ARTICLE_VERSION_NOT_FOUND("error.content.article.version.not.found", 17044),
 
     INVALID_CATEGORY_NAME("error.content.category.name.invalid", 18000),
     CATEGORY_ALREADY_INACTIVE("error.content.category.already.inactive", 18001),

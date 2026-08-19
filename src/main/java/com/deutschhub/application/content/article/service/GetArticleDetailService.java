@@ -2,8 +2,10 @@ package com.deutschhub.application.content.article.service;
 
 import com.deutschhub.application.content.article.dto.query.ArticleDetailQueryModel;
 import com.deutschhub.application.content.article.dto.query.ArticleVersionDetailQueryModel;
+import com.deutschhub.application.content.article.dto.query.SourceQueryModel;
 import com.deutschhub.application.content.article.dto.response.ArticleDetailResponse;
 import com.deutschhub.application.content.article.dto.response.ArticleVersionDetailResponse;
+import com.deutschhub.application.content.article.dto.response.SourceResponse;
 import com.deutschhub.application.content.article.port.in.GetArticleDetailUseCase;
 import com.deutschhub.application.content.article.port.out.ArticleQueryPort;
 import com.deutschhub.application.content.shared.authorization.ContentAuthorizationPolicy;
@@ -58,7 +60,12 @@ public class GetArticleDetailService implements GetArticleDetailUseCase {
         }
 
         return new ArticleVersionDetailResponse(version.versionId(), version.versionNumber(), version.title(), version.summary(),
-                version.body(), version.primaryCategoryId(), version.topicIds(), version.coverMediaId(), version.sources(),
+                version.body(), version.primaryCategoryId(), version.topicIds(), version.coverMediaId(),
+                version.sources().stream().map(this::toSourceResponse).toList(),
                 version.createdBy(), version.createdAt(), version.lastModifiedBy(), version.lastModifiedAt());
+    }
+
+    private SourceResponse toSourceResponse(SourceQueryModel source) {
+        return new SourceResponse(source.url(), source.title());
     }
 }

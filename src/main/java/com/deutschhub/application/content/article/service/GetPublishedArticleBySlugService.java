@@ -1,7 +1,9 @@
 package com.deutschhub.application.content.article.service;
 
-import com.deutschhub.application.content.article.dto.query.ArticleQueryModel;
+import com.deutschhub.application.content.article.dto.query.PublishedArticleDetailQueryModel;
+import com.deutschhub.application.content.article.dto.query.SourceQueryModel;
 import com.deutschhub.application.content.article.dto.response.PublishedArticleDetailResponse;
+import com.deutschhub.application.content.article.dto.response.SourceResponse;
 import com.deutschhub.application.content.article.port.in.GetPublishedArticleBySlugUseCase;
 import com.deutschhub.application.content.article.port.out.ArticleQueryPort;
 import com.deutschhub.common.exception.BusinessException;
@@ -27,7 +29,7 @@ public class GetPublishedArticleBySlugService implements GetPublishedArticleBySl
 
         Slug articleSlug = new Slug(slug);
 
-        ArticleQueryModel article = articleQueryPort.findBySlug(articleSlug)
+        PublishedArticleDetailQueryModel article = articleQueryPort.findPublishedBySlug(articleSlug)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ARTICLE_NOT_FOUND));
 
         if (article.publicationStatus() == PublicationStatus.ARCHIVED) {
@@ -41,9 +43,13 @@ public class GetPublishedArticleBySlugService implements GetPublishedArticleBySl
         return toResponse(article);
     }
 
-    private PublishedArticleDetailResponse toResponse(ArticleQueryModel article) {
+    private PublishedArticleDetailResponse toResponse(PublishedArticleDetailQueryModel article) {
         return new PublishedArticleDetailResponse( article.articleId(), article.versionId(), article.slug(), article.title(),
                 article.summary(), article.body(), article.primaryCategoryId(), article.topicIds(), article.coverMediaId(),
-                article.sources(), article.publishedAt());
+                article.sources().stream().map(this::toSourceResponse).toList(), article.publishedAt());
+    }
+
+    private SourceResponse toSourceResponse(SourceQueryModel source) {
+        return new SourceResponse(source.url(), source.title());
     }
 }

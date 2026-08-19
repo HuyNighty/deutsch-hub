@@ -75,6 +75,53 @@ public class ArticlePersistenceMapper {
         );
     }
 
+    public void updateJpa(ArticleJpaEntity entity, Article article) {
+
+        if (entity == null || article == null) {
+            return;
+        }
+
+        entity.setOwnerId(article.getOwnerId().value());
+        entity.setSlug(article.getSlug().value());
+        entity.setEditorialStatus(article.getEditorialStatus().name());
+        entity.setPublicationStatus(article.getPublicationStatus().name());
+
+        entity.setDraftVersionId(article.getDraftVersionId());
+        entity.setPublishedVersionId(article.getPublishedVersionId());
+
+        entity.setPublishedAt(article.getPublishedAt());
+        entity.setPublishedBy(toUuid(article.getPublishedBy()));
+
+        entity.setArchivedAt(article.getArchivedAt());
+        entity.setArchivedBy(toUuid(article.getArchivedBy()));
+
+        entity.setOwnershipTransferredAt(article.getOwnershipTransferredAt());
+
+        entity.setOwnershipTransferredBy(toUuid(article.getOwnershipTransferredBy()));
+
+        updateVersions(entity, article);
+    }
+
+    private void updateVersions(ArticleJpaEntity entity, Article article) {
+        for (ArticleVersion version : article.getVersions()) {
+
+            ArticleVersionJpaEntity existingVersion = entity.getVersions()
+                    .stream()
+                    .filter(item -> item.getId().equals(version.getId()))
+                    .findFirst()
+                    .orElse(null);
+
+            if (existingVersion != null) {
+                articleVersionPersistenceMapper.updateJpa(existingVersion, version);
+                continue;
+            }
+
+            ArticleVersionJpaEntity newVersion = articleVersionPersistenceMapper.toJpa(version);
+
+            entity.addVersion(newVersion);
+        }
+    }
+
     private void addVersions(ArticleJpaEntity entity, Article article) {
         for (ArticleVersion version : article.getVersions()) {
             ArticleVersionJpaEntity versionEntity = articleVersionPersistenceMapper.toJpa(version);

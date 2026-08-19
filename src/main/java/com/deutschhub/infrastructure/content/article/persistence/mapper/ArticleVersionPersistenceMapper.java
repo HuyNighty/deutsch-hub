@@ -77,6 +77,23 @@ public class ArticleVersionPersistenceMapper {
         );
     }
 
+    public void updateJpa(ArticleVersionJpaEntity entity, ArticleVersion version) {
+        if (version == null || entity == null) {
+            return;
+        }
+
+        entity.setVersionNumber(version.getVersionNumber().value());
+        entity.setTitle(toValue(version.getTitle()));
+        entity.setSummary(toValue(version.getSummary()));
+        entity.setBody(toValue(version.getBody()));
+
+        entity.setPrimaryCategoryId(version.getPrimaryCategoryId());
+        entity.setCoverMediaId(version.getCoverMediaId());
+
+        entity.setLastModifiedBy(version.getLastModifiedBy().value());
+        entity.setLastModifiedAt(version.getLastModifiedAt());
+    }
+
     private void addReviewCycles(ArticleVersionJpaEntity entity, List<ReviewCycle> reviewCycles) {
         for (ReviewCycle reviewCycle : reviewCycles) {
             ReviewCycleJpaEntity reviewCycleEntity = reviewCyclePersistenceMapper.toJpa(reviewCycle);

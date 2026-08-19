@@ -1,7 +1,5 @@
 package com.deutschhub.application.content.article.dto.query;
 
-import com.deutschhub.application.content.article.dto.response.SourceResponse;
-
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
@@ -16,7 +14,7 @@ public record ArticleVersionDetailQueryModel(
         UUID primaryCategoryId,
         Set<UUID> topicIds,
         UUID coverMediaId,
-        List<SourceResponse> sources,
+        List<SourceQueryModel> sources,
         UUID createdBy,
         Instant createdAt,
         UUID lastModifiedBy,
