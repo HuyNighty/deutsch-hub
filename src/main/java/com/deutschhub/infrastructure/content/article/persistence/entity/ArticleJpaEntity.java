@@ -81,6 +81,7 @@ public class ArticleJpaEntity {
             cascade = CascadeType.ALL,
             orphanRemoval = true
     )
+    @Builder.Default
     List<ArticleVersionJpaEntity> versions = new ArrayList<>();
 
     public void addVersion(ArticleVersionJpaEntity version) {

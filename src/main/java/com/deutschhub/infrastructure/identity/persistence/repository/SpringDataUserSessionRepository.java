@@ -17,11 +17,11 @@ public interface SpringDataUserSessionRepository extends JpaRepository<UserSessi
 
     @Modifying
     @Query("""
-            update UserSessionJpaEntity s
-            set s.revokedAt = :revokedAt,
+            UPDATE UserSessionJpaEntity s
+            SET s.revokedAt = :revokedAt,
                 s.updatedAt = :revokedAt
-            where s.userId = :userId
-              and s.revokedAt is null
+            WHERE s.userId = :userId
+              AND s.revokedAt IS NULL
             """)
     void revokeAllByUserId(
             @Param("userId") UUID userId, @Param("revokedAt") LocalDateTime revokedAt);

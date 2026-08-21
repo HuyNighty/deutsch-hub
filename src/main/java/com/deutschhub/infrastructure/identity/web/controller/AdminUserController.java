@@ -1,13 +1,12 @@
 package com.deutschhub.infrastructure.identity.web.controller;
 
 import com.deutschhub.application.identity.dto.request.GetUsersQuery;
+import com.deutschhub.application.identity.dto.request.GrantContentEditorCommand;
 import com.deutschhub.application.identity.dto.request.UpdateUserRolesCommand;
+import com.deutschhub.application.identity.dto.response.GrantContentEditorResponse;
 import com.deutschhub.application.identity.dto.response.UserDetailResponse;
 import com.deutschhub.application.identity.dto.response.UserSummaryResponse;
-import com.deutschhub.application.identity.port.in.DeactivateUserUseCase;
-import com.deutschhub.application.identity.port.in.GetUserDetailUseCase;
-import com.deutschhub.application.identity.port.in.GetUsersUseCase;
-import com.deutschhub.application.identity.port.in.UpdateUserRolesUseCase;
+import com.deutschhub.application.identity.port.in.*;
 import com.deutschhub.application.identity.service.ActivateUserService;
 import com.deutschhub.common.util.ApiResponse;
 import com.deutschhub.common.util.PageResponse;
@@ -36,6 +35,7 @@ public class AdminUserController {
     DeactivateUserUseCase deactivateUserUseCase;
     ActivateUserService activateUserUseCase;
     UpdateUserRolesUseCase updateUserRolesUseCase;
+    GrantContentEditorUseCase grantContentEditorUseCase;
 
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<UserSummaryResponse>>> getUsers(
@@ -104,17 +104,26 @@ public class AdminUserController {
     ) {
         UUID currentAdminId = UUID.fromString(jwt.getSubject());
 
-        UpdateUserRolesCommand command = new UpdateUserRolesCommand(
-                userId,
-                currentAdminId,
-                request.roles()
-        );
+        UpdateUserRolesCommand command = new UpdateUserRolesCommand(userId, currentAdminId, request.roles());
 
         UserDetailResponse response = updateUserRolesUseCase.updateRoles(command);
 
         return ResponseEntity.ok(
                 ApiResponse.<UserDetailResponse>builder()
                         .message("Update user roles successfully")
+                        .result(response)
+                        .build()
+        );
+    }
+
+    @PostMapping("/{userId}/content-editor")
+    public ResponseEntity<ApiResponse<GrantContentEditorResponse>> grantContentEditor(@PathVariable UUID userId) {
+        GrantContentEditorResponse response =
+                grantContentEditorUseCase.grantContentEditor(new GrantContentEditorCommand(userId));
+
+        return ResponseEntity.ok(
+                ApiResponse.<GrantContentEditorResponse>builder()
+                        .message("Grant content editor permission successfully")
                         .result(response)
                         .build()
         );

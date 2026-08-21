@@ -34,6 +34,7 @@ public class ArticleEditorController {
 
         return ResponseEntity.ok(
                 ApiResponse.<CreateDraftResponse>builder()
+                        .message("Create draft successfully")
                         .result(response)
                         .build()
         );

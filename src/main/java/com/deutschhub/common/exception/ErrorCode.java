@@ -7,6 +7,7 @@ public enum ErrorCode {
     UNCATEGORIZED_EXCEPTION("error.uncategorized", 9999),
 
     INVALID_USER_ID("error.shared.user.id.cannot.be.null", 1001),
+    ACCESS_DENIED("error.shared.access.denied", 1002    ),
 
     INVALID_EMAIL("error.identity.invalid.email", 3001),
     INVALID_ROLE_NAME("error.identity.invalid.role.name", 3002),
