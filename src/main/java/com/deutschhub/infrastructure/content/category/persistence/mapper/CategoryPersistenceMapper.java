@@ -4,7 +4,9 @@ import com.deutschhub.domain.content.category.aggregate.Category;
 import com.deutschhub.domain.content.category.enums.CategoryStatus;
 import com.deutschhub.domain.content.category.valueobject.CategoryName;
 import com.deutschhub.infrastructure.content.category.persistence.entity.CategoryJpaEntity;
+import org.springframework.stereotype.Component;
 
+@Component
 public class CategoryPersistenceMapper {
 
     public CategoryJpaEntity toJpa(Category category) {

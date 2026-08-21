@@ -5,9 +5,11 @@ import com.deutschhub.domain.content.article.enums.ReviewResult;
 import com.deutschhub.domain.content.article.valueobject.ReviewFeedback;
 import com.deutschhub.domain.shared.valueobject.UserId;
 import com.deutschhub.infrastructure.content.article.persistence.entity.ReviewCycleJpaEntity;
+import org.springframework.stereotype.Component;
 
 import java.util.UUID;
 
+@Component
 public class ReviewCyclePersistenceMapper {
 
     public ReviewCycleJpaEntity toJpa(ReviewCycle reviewCycle) {

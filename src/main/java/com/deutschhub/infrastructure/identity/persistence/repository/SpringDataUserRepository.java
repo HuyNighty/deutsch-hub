@@ -1,5 +1,6 @@
 package com.deutschhub.infrastructure.identity.persistence.repository;
 
+import com.deutschhub.domain.identity.enums.RoleType;
 import com.deutschhub.infrastructure.identity.persistence.entity.UserJpaEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -22,17 +23,26 @@ public interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, U
 
     Optional<UserJpaEntity> findByEmail(String email);
 
-    @Query(
-            """
-                    select u
-                    from UserJpaEntity u
-                    where :keyword is null
-                        or lower(u.username) like lower(concat('%', :keyword, '%'))
-                        or lower(u.email) like lower(concat('%', :keyword, '%'))
-                        or lower(u.phoneNumber) like lower(concat('%', :keyword, '%'))
-                        or lower(u.firstName) like lower(concat('%', :keyword, '%'))
-                        or lower(u.lastName) like lower(concat('%', :keyword, '%'))
-                    """
+    @Query("""
+        SELECT u
+        FROM UserJpaEntity u
+        WHERE :keyword IS NULL
+            OR LOWER(u.username) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            OR LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            OR LOWER(u.phoneNumber) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            OR LOWER(u.firstName) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            OR LOWER(u.lastName) LIKE LOWER(CONCAT('%', :keyword, '%'))
+    """
     )
     Page<UserJpaEntity> searchUsers(@Param("keyword") String keyword, Pageable pageable);
+
+    @Query("""
+           SELECT COUNT(u) > 0
+           FROM UserJpaEntity u
+           JOIN u.roles r
+           WHERE u.id = :userId
+                AND u.isActive = true
+                AND r = :role
+    """)
+    boolean existsActiveContentEditor(@Param("userId") UUID userId, @Param("role") RoleType role);
 }

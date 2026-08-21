@@ -3,11 +3,13 @@ package com.deutschhub.infrastructure.content.article.service;
 import com.deutschhub.domain.content.article.service.SlugGenerator;
 import com.deutschhub.domain.content.article.valueobject.ArticleTitle;
 import com.deutschhub.domain.content.article.valueobject.Slug;
+import org.springframework.stereotype.Component;
 
 import java.text.Normalizer;
 import java.util.Locale;
 import java.util.UUID;
 
+@Component
 public class DefaultSlugGenerator implements SlugGenerator {
 
     @Override

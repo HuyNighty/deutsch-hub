@@ -38,12 +38,12 @@ public class ArchiveArticleService implements ArchiveArticleUseCase {
 
         CurrentActor actor = currentActorPort.getCurrentActor();
 
+        authorizationPolicy.requireAdmin(actor);
+
         UserId actorId = actor.userId();
 
         Article article = articleRepositoryPort.findById(command.articleId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.ARTICLE_NOT_FOUND));
-
-        authorizationPolicy.requireArticleOwnerOrAdmin(article, actor);
 
         Instant now = Instant.now();
 

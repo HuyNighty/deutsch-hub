@@ -4,7 +4,9 @@ import com.deutschhub.domain.content.topic.aggregate.Topic;
 import com.deutschhub.domain.content.topic.enums.TopicStatus;
 import com.deutschhub.domain.content.topic.valueobject.TopicName;
 import com.deutschhub.infrastructure.content.topic.persistence.entity.TopicJpaEntity;
+import org.springframework.stereotype.Component;
 
+@Component
 public class TopicPersistenceMapper {
 
     public TopicJpaEntity toJpa(Topic topic) {

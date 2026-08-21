@@ -44,14 +44,14 @@ public class TransferOwnershipService implements TransferOwnershipUseCase {
 
         UserId transferredBy = actor.userId();
 
+        Article article = articleRepositoryPort.findById(command.articleId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.ARTICLE_NOT_FOUND));
+
         UserId newOwner = UserId.of(command.newOwnerId());
 
         if (!userLookupPort.isActiveContentEditor(newOwner)) {
             throw new BusinessException(ErrorCode.INVALID_ARTICLE_OWNER);
         }
-
-        Article article = articleRepositoryPort.findById(command.articleId())
-                .orElseThrow(() -> new BusinessException(ErrorCode.ARTICLE_NOT_FOUND));
 
         Instant now = Instant.now();
 
