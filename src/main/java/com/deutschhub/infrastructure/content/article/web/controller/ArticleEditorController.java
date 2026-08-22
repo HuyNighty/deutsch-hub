@@ -1,14 +1,8 @@
 package com.deutschhub.infrastructure.content.article.web.controller;
 
 import com.deutschhub.application.content.article.dto.request.*;
-import com.deutschhub.application.content.article.dto.response.CreateDraftResponse;
-import com.deutschhub.application.content.article.dto.response.SubmitReviewResponse;
-import com.deutschhub.application.content.article.dto.response.UpdateDraftResponse;
-import com.deutschhub.application.content.article.dto.response.WithdrawReviewResponse;
-import com.deutschhub.application.content.article.port.in.CreateDraftUseCase;
-import com.deutschhub.application.content.article.port.in.SubmitReviewUseCase;
-import com.deutschhub.application.content.article.port.in.UpdateDraftUseCase;
-import com.deutschhub.application.content.article.port.in.WithdrawReviewUseCase;
+import com.deutschhub.application.content.article.dto.response.*;
+import com.deutschhub.application.content.article.port.in.*;
 import com.deutschhub.common.util.ApiResponse;
 import com.deutschhub.infrastructure.content.article.web.request.CreateDraftRequest;
 import com.deutschhub.infrastructure.content.article.web.request.UpdateDraftRequest;
@@ -32,6 +26,7 @@ public class ArticleEditorController {
     UpdateDraftUseCase updateDraftUseCase;
     SubmitReviewUseCase submitReviewUseCase;
     WithdrawReviewUseCase withdrawReviewUseCase;
+    CreateNewDraftUseCase createNewDraftUseCase;
 
     @PreAuthorize("hasRole('CONTENT_EDITOR')")
     @PostMapping("/draft")
@@ -49,7 +44,7 @@ public class ArticleEditorController {
         );
     }
 
-    @PreAuthorize("hasRole('CONTENT_EDITOR')")
+    @PreAuthorize("hasAnyRole('CONTENT_EDITOR', 'ADMIN')")
     @PatchMapping("/{articleId}/draft")
     public ResponseEntity<ApiResponse<UpdateDraftResponse>> updateDraft(
             @PathVariable UUID articleId,
@@ -97,6 +92,20 @@ public class ArticleEditorController {
         return ResponseEntity.ok(
                 ApiResponse.<WithdrawReviewResponse>builder()
                         .message("Withdraw review successfully")
+                        .result(response)
+                        .build()
+        );
+    }
+
+    @PostMapping("/{articleId}/new-draft")
+    public ResponseEntity<ApiResponse<CreateNewDraftResponse>> createNewDraft(@PathVariable UUID articleId) {
+        CreateNewDraftCommand command = new CreateNewDraftCommand(articleId);
+
+        CreateNewDraftResponse response = createNewDraftUseCase.createNewDraft(command);
+
+        return ResponseEntity.ok(
+                ApiResponse.<CreateNewDraftResponse>builder()
+                        .message("Create new draft successfully")
                         .result(response)
                         .build()
         );

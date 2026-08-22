@@ -2,6 +2,7 @@ package com.deutschhub.infrastructure.content.article.web.controller;
 
 import com.deutschhub.application.content.article.port.in.GetPublishedArticleBySlugUseCase;
 import com.deutschhub.application.content.article.port.in.GetPublishedArticlesUseCase;
+import com.deutschhub.application.content.article.port.in.PublishArticleUseCase;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -16,4 +17,5 @@ public class ArticleController {
 
     GetPublishedArticleBySlugUseCase getPublishedArticleBySlugUseCase;
     GetPublishedArticlesUseCase getPublishedArticlesUseCase;
+    PublishArticleUseCase publishArticleUseCase;
 }
