@@ -97,6 +97,27 @@ public class ArticleVersionPersistenceMapper {
 
         entity.setLastModifiedBy(version.getLastModifiedBy().value());
         entity.setLastModifiedAt(version.getLastModifiedAt());
+
+        updateReviewCycles(entity, version.getReviewCycles());
+    }
+
+    private void updateReviewCycles(ArticleVersionJpaEntity entity, List<ReviewCycle> domainReviewCycles) {
+
+        for (ReviewCycle domainCycle : domainReviewCycles) {
+            ReviewCycleJpaEntity existingEntity = entity.getReviewCycles()
+                    .stream()
+                    .filter(jpaCycle -> jpaCycle.getId().equals(domainCycle.getId()))
+                    .findFirst()
+                    .orElse(null);
+
+            if (existingEntity != null) {
+                reviewCyclePersistenceMapper.updateJpa(existingEntity, domainCycle);
+            } else {
+                ReviewCycleJpaEntity newEntity = reviewCyclePersistenceMapper.toJpa(domainCycle);
+
+                entity.addReviewCycle(newEntity);
+            }
+        }
     }
 
     private void addReviewCycles(ArticleVersionJpaEntity entity, List<ReviewCycle> reviewCycles) {

@@ -49,6 +49,27 @@ public class ReviewCyclePersistenceMapper {
         );
     }
 
+    public void updateJpa(ReviewCycleJpaEntity entity, ReviewCycle reviewCycle) {
+        if (entity == null || reviewCycle == null) {
+            return;
+        }
+
+        entity.setSubmittedBy(reviewCycle.getSubmittedBy().value());
+        entity.setSubmittedAt(reviewCycle.getSubmittedAt());
+
+        entity.setReviewedBy(toUuid(reviewCycle.getReviewedBy()));
+
+        entity.setReviewedAt(reviewCycle.getReviewedAt());
+
+        entity.setWithdrawnBy(toUuid(reviewCycle.getWithdrawnBy()));
+
+        entity.setWithdrawnAt(reviewCycle.getWithdrawnAt());
+
+        entity.setResult(reviewCycle.getResult().name());
+
+        entity.setFeedback(toString(reviewCycle.getFeedback()));
+    }
+
     private UUID toUuid(UserId userId) {
         return userId == null ? null : userId.value();
     }

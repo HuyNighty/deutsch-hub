@@ -1,12 +1,14 @@
 package com.deutschhub.infrastructure.content.article.web.controller;
 
-import com.deutschhub.application.content.article.dto.request.CreateDraftCommand;
-import com.deutschhub.application.content.article.dto.request.SourceCommand;
-import com.deutschhub.application.content.article.dto.request.UpdateDraftCommand;
+import com.deutschhub.application.content.article.dto.request.*;
 import com.deutschhub.application.content.article.dto.response.CreateDraftResponse;
+import com.deutschhub.application.content.article.dto.response.SubmitReviewResponse;
 import com.deutschhub.application.content.article.dto.response.UpdateDraftResponse;
+import com.deutschhub.application.content.article.dto.response.WithdrawReviewResponse;
 import com.deutschhub.application.content.article.port.in.CreateDraftUseCase;
+import com.deutschhub.application.content.article.port.in.SubmitReviewUseCase;
 import com.deutschhub.application.content.article.port.in.UpdateDraftUseCase;
+import com.deutschhub.application.content.article.port.in.WithdrawReviewUseCase;
 import com.deutschhub.common.util.ApiResponse;
 import com.deutschhub.infrastructure.content.article.web.request.CreateDraftRequest;
 import com.deutschhub.infrastructure.content.article.web.request.UpdateDraftRequest;
@@ -28,6 +30,8 @@ public class ArticleEditorController {
 
     CreateDraftUseCase createDraftUseCase;
     UpdateDraftUseCase updateDraftUseCase;
+    SubmitReviewUseCase submitReviewUseCase;
+    WithdrawReviewUseCase withdrawReviewUseCase;
 
     @PreAuthorize("hasRole('CONTENT_EDITOR')")
     @PostMapping("/draft")
@@ -61,6 +65,38 @@ public class ArticleEditorController {
         return ResponseEntity.ok(
                 ApiResponse.<UpdateDraftResponse>builder()
                         .message("Update draft successfully")
+                        .result(response)
+                        .build()
+        );
+    }
+
+    @PreAuthorize("hasRole('CONTENT_EDITOR')")
+    @PostMapping("/{articleId}/submit")
+    public ResponseEntity<ApiResponse<SubmitReviewResponse>> submitReview(@PathVariable UUID articleId) {
+
+        SubmitReviewCommand command = new SubmitReviewCommand(articleId);
+
+        SubmitReviewResponse response = submitReviewUseCase.submitReview(command);
+
+        return ResponseEntity.ok(
+                ApiResponse.<SubmitReviewResponse>builder()
+                        .message("Submit review successfully")
+                        .result(response)
+                        .build()
+        );
+    }
+
+    @PreAuthorize("hasRole('CONTENT_EDITOR')")
+    @PostMapping("/{articleId}/withdraw-review")
+    public ResponseEntity<ApiResponse<WithdrawReviewResponse>> withdrawReview(@PathVariable UUID articleId) {
+
+        WithdrawReviewCommand command = new WithdrawReviewCommand(articleId);
+
+        WithdrawReviewResponse response = withdrawReviewUseCase.withdrawReview(command);
+
+        return ResponseEntity.ok(
+                ApiResponse.<WithdrawReviewResponse>builder()
+                        .message("Withdraw review successfully")
                         .result(response)
                         .build()
         );

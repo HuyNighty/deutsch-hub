@@ -52,17 +52,17 @@ public class CategoryAdminController {
     @GetMapping("/active")
     public ResponseEntity<ApiResponse<List<CategorySummaryResponse>>> getActiveCategories() {
 
-        List<CategorySummaryResponse> response = getActiveCategoriesUseCase.getActiveCategories();
+        List<CategorySummaryResponse> responses = getActiveCategoriesUseCase.getActiveCategories();
 
         return ResponseEntity.ok(
                 ApiResponse.<List<CategorySummaryResponse>>builder()
                         .message("Get active categories successfully")
-                        .result(response)
+                        .result(responses)
                         .build()
         );
     }
 
-    @PatchMapping("/{categoryId")
+    @PatchMapping("/{categoryId}")
     public ResponseEntity<ApiResponse<CategoryResponse>> renameCategory(
             @PathVariable UUID categoryId,
             @RequestBody @Valid RenameCategoryRequest request
