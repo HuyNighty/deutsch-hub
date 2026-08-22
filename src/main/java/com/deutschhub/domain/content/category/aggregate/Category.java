@@ -53,6 +53,12 @@ public class Category {
     }
 
     public void rename(CategoryName newName) {
+        if (categoryStatus != CategoryStatus.ACTIVE) {
+            throw new BusinessException(
+                    ErrorCode.CATEGORY_NOT_ACTIVE
+            );
+        }
+
         if (newName == null) {
             throw new BusinessException(ErrorCode.INVALID_CATEGORY_NAME);
         }

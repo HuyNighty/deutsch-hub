@@ -92,6 +92,9 @@ public class ArticleVersionPersistenceMapper {
         entity.setPrimaryCategoryId(version.getPrimaryCategoryId());
         entity.setCoverMediaId(version.getCoverMediaId());
 
+        entity.setTopicIds(toTopicIds(version.getTopicIds()));
+        entity.setSources(toSourcesJpa(version.getSources()));
+
         entity.setLastModifiedBy(version.getLastModifiedBy().value());
         entity.setLastModifiedAt(version.getLastModifiedAt());
     }

@@ -81,8 +81,7 @@ public class UpdateDraftService implements UpdateDraftUseCase {
 
         Instant now = Instant.now();
 
-        article.updateDraft(title, summary, body, command.primaryCategoryId(), command.topicIds(), command.coverMediaId(),
-                sources, actorId, now);
+        article.updateDraft(title, summary, body, primaryCategoryId, topicIds, coverMediaId, sources, actorId, now);
 
         articleRepositoryPort.save(article);
 

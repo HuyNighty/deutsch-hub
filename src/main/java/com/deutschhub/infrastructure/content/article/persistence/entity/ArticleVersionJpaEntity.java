@@ -66,12 +66,13 @@ public class ArticleVersionJpaEntity {
     )
     ArticleJpaEntity article;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(
             name = "article_version_sources",
             joinColumns = @JoinColumn(name = "article_version_id")
     )
     @OrderColumn(name = "source_order")
+    @Column(nullable = false)
     List<SourceJpaEntity> sources = new ArrayList<>();
 
     @OneToMany(
