@@ -3,6 +3,7 @@ package com.deutschhub.infrastructure.config;
 import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
 import com.deutschhub.common.exception.ErrorCodeDetail;
+import com.deutschhub.common.exception.ErrorHttpStatus;
 import com.deutschhub.common.util.ApiResponse;
 import com.deutschhub.common.util.MessageUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -26,18 +27,18 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(BusinessException.class)
-    public ResponseEntity<ApiResponse<Void>> handleBusinessException(BusinessException ex) {
+    public ResponseEntity<ApiResponse<Void>> handleBusinessException(
+            BusinessException ex
+    ) {
         ErrorCode errorCode = ex.getErrorCode();
-
-        String message = getMessage(ex);
 
         ApiResponse<Void> response = ApiResponse.<Void>builder()
                 .code(errorCode.getErrorCode())
-                .message(message)
+                .message(getMessage(ex))
                 .build();
 
         return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
+                .status(toHttpStatus(errorCode.getHttpStatus()))
                 .body(response);
     }
 
@@ -74,6 +75,10 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(response);
+    }
+
+    private HttpStatus toHttpStatus(ErrorHttpStatus status) {
+        return HttpStatus.valueOf(status.getValue());
     }
 
     private String getMessage(BusinessException ex) {

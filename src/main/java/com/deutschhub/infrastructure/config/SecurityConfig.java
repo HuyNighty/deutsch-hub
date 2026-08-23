@@ -38,6 +38,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/v2/admin/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/v2/articles/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v2/media/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/courses/**").permitAll()
                         .anyRequest().authenticated()
                 )

@@ -17,4 +17,5 @@ public interface ArticleQueryPort  {
 
     Optional<ArticleDetailQueryModel> findDetailById(UUID articleId);
 
+    boolean isMediaPubliclyReferenced(UUID mediaId);
 }

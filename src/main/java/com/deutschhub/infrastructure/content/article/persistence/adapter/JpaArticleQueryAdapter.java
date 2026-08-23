@@ -67,6 +67,15 @@ public class JpaArticleQueryAdapter implements ArticleQueryPort {
                 .map(this::toArticleDetailQueryModel);
     }
 
+    @Override
+    public boolean isMediaPubliclyReferenced(UUID mediaId) {
+        if (mediaId == null) {
+            return false;
+        }
+
+        return springDataArticleRepository.existsPublishedArticleByCoverMediaId(mediaId);
+    }
+
     private ArticleDetailQueryModel toArticleDetailQueryModel(ArticleDetailProjection projection) {
 
         ArticleVersionJpaEntity draft = findVersion(projection.draftVersionId());

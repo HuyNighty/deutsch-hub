@@ -65,4 +65,15 @@ public interface SpringDataArticleRepository extends JpaRepository<ArticleJpaEnt
         WHERE a.id = :articleId
     """)
     Optional<ArticleDetailProjection> findArticleDetailById(@Param("articleId") UUID articleId);
+
+
+    @Query("""
+        SELECT CASE WHEN COUNT(a) > 0 THEN true ELSE false END
+        FROM ArticleJpaEntity a
+        JOIN a.versions v
+        WHERE a.publishedVersionId = v.id
+            AND a.publicationStatus = 'PUBLISHED'
+            AND v.coverMediaId = :mediaId
+    """)
+    boolean existsPublishedArticleByCoverMediaId(@Param("mediaId") UUID mediaId);
 }

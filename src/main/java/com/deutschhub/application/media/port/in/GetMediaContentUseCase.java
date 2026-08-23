@@ -6,5 +6,5 @@ import java.util.UUID;
 
 public interface GetMediaContentUseCase {
 
-    MediaContentResponse getContent(UUID mediaId, UUID actorId);
+    MediaContentResponse getContent(UUID mediaId);
 }

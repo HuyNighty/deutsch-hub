@@ -27,6 +27,7 @@ public class ArticleEditorController {
     SubmitReviewUseCase submitReviewUseCase;
     WithdrawReviewUseCase withdrawReviewUseCase;
     CreateNewDraftUseCase createNewDraftUseCase;
+    GetArticleDetailUseCase getArticleDetailUseCase;
 
     @PreAuthorize("hasRole('CONTENT_EDITOR')")
     @PostMapping("/draft")
@@ -106,6 +107,20 @@ public class ArticleEditorController {
         return ResponseEntity.ok(
                 ApiResponse.<CreateNewDraftResponse>builder()
                         .message("Create new draft successfully")
+                        .result(response)
+                        .build()
+        );
+    }
+
+    @PreAuthorize("hasAnyRole('CONTENT_EDITOR', 'ADMIN')")
+    @GetMapping("/{articleId}")
+    public ResponseEntity<ApiResponse<ArticleDetailResponse>> getArticleDetail(@PathVariable UUID articleId) {
+
+        ArticleDetailResponse response = getArticleDetailUseCase.getById(articleId);
+
+        return ResponseEntity.ok(
+                ApiResponse.<ArticleDetailResponse>builder()
+                        .message("Get article detail successfully")
                         .result(response)
                         .build()
         );

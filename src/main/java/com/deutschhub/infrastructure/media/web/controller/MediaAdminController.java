@@ -28,15 +28,13 @@ import java.util.UUID;
 @RequestMapping("/api/v2/admin/media")
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-public class MediaController {
+public class MediaAdminController {
 
     UploadMediaUseCase uploadMediaUseCase;
     GetMediaUseCase getMediaUseCase;
-    GetMediaContentUseCase getMediaContentUseCase;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ApiResponse<MediaResponse>> upload(@RequestParam("file")MultipartFile file,
-                                                             @AuthenticationPrincipal Jwt jwt)
+    public ResponseEntity<ApiResponse<MediaResponse>> upload(@RequestParam("file")MultipartFile file, @AuthenticationPrincipal Jwt jwt)
             throws IOException {
         UUID userId = UUID.fromString(jwt.getSubject());
 
@@ -64,20 +62,5 @@ public class MediaController {
         return ApiResponse.<MediaResponse>builder()
                 .result(getMediaUseCase.getById(mediaId, currentUserId, isAdmin))
                 .build();
-    }
-
-    @GetMapping("/{mediaId}/content")
-    public ResponseEntity<Resource> getContent(@PathVariable UUID mediaId, @AuthenticationPrincipal Jwt jwt) {
-
-        UUID actorId = UUID.fromString(jwt.getSubject());
-
-        MediaContentResponse media = getMediaContentUseCase.getContent(mediaId, actorId);
-
-        InputStreamResource resource = new InputStreamResource(media.inputStream());
-
-        return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(media.mimeType()))
-                .contentLength(media.sizeBytes())
-                .body(resource);
     }
 }

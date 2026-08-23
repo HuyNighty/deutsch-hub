@@ -1,13 +1,16 @@
 package com.deutschhub.infrastructure.content.article.web.controller;
 
+import com.deutschhub.application.content.article.dto.query.GetPublishedArticlesQuery;
+import com.deutschhub.application.content.article.dto.response.PublishedArticleDetailResponse;
+import com.deutschhub.application.content.article.dto.response.PublishedArticlePageResponse;
 import com.deutschhub.application.content.article.port.in.GetPublishedArticleBySlugUseCase;
 import com.deutschhub.application.content.article.port.in.GetPublishedArticlesUseCase;
-import com.deutschhub.application.content.article.port.in.PublishArticleUseCase;
+import com.deutschhub.common.util.ApiResponse;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v2/articles")
@@ -17,5 +20,33 @@ public class ArticleController {
 
     GetPublishedArticleBySlugUseCase getPublishedArticleBySlugUseCase;
     GetPublishedArticlesUseCase getPublishedArticlesUseCase;
-    PublishArticleUseCase publishArticleUseCase;
+
+    @GetMapping
+    public ResponseEntity<ApiResponse<PublishedArticlePageResponse>> getPublishedArticles(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        GetPublishedArticlesQuery query = new GetPublishedArticlesQuery(page, size);
+
+        PublishedArticlePageResponse response = getPublishedArticlesUseCase.getPublishedArticles(query);
+
+        return ResponseEntity.ok(
+                ApiResponse.<PublishedArticlePageResponse>builder()
+                        .message("Get published articles successfully")
+                        .result(response)
+                        .build()
+        );
+    }
+
+    @GetMapping("/{slug}")
+    public ResponseEntity<ApiResponse<PublishedArticleDetailResponse>> getPublishedArticleBySlug(@PathVariable String slug) {
+        PublishedArticleDetailResponse response = getPublishedArticleBySlugUseCase.getBySlug(slug);
+
+        return ResponseEntity.ok(
+                ApiResponse.<PublishedArticleDetailResponse>builder()
+                        .message("Get published article by slug successfully")
+                        .result(response)
+                        .build()
+        );
+    }
 }

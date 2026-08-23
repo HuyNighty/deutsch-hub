@@ -6,10 +6,10 @@ import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
 import com.deutschhub.domain.identity.enums.RoleType;
 import com.deutschhub.domain.shared.valueobject.UserId;
-import com.deutschhub.infrastructure.identity.security.JwtRoleConverter;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -23,15 +23,13 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class SpringSecurityCurrentActorAdapter implements CurrentActorPort {
 
-    JwtRoleConverter jwtRoleConverter;
-
     @Override
     public CurrentActor getCurrentActor() {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        if (authentication == null || !authentication.isAuthenticated()) {
-            throw new BusinessException(ErrorCode.CONTENT_FORBIDDEN_ACTION);
+        if (authentication == null || !authentication.isAuthenticated() || authentication instanceof AnonymousAuthenticationToken) {
+            return null;
         }
 
         UUID userId = UUID.fromString(authentication.getName());
