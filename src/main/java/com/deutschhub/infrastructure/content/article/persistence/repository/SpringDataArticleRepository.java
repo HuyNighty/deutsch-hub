@@ -27,9 +27,25 @@ public interface SpringDataArticleRepository extends JpaRepository<ArticleJpaEnt
         JOIN a.versions v
         WHERE a.publishedVersionId = v.id
             AND a.publicationStatus = 'PUBLISHED'
+            AND (
+                :keyword IS NULL
+                OR LOWER(v.title) LIKE(CONCAT('%', :keyword, '%'))
+                OR LOWER(v.summary) LIKE(CONCAT('%', :summary, '%'))
+            )
+            AND (
+                :categoryId IS NULL
+                OR v.primaryCategoryId = :categoryId
+            )
+            AND (
+                :topicId IS NULL
+                OR :topicId MEMBER OF v.topicIds
+            )
         ORDER BY a.publishedAt DESC
     """)
-    Page<PublishedArticleProjection> findPublishedArticles(Pageable pageable);
+    Page<PublishedArticleProjection> findPublishedArticles(@Param("keyword") String keyword,
+                                                           @Param("categoryId") UUID categoryId,
+                                                           @Param("topicId") UUID topicId,
+                                                           Pageable pageable);
 
     @Query("""
         SELECT new com.deutschhub.infrastructure.content.article.persistence.projection.PublishedArticleDetailProjection(

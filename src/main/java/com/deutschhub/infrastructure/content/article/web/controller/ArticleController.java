@@ -12,6 +12,8 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 @RestController
 @RequestMapping("/api/v2/articles")
 @RequiredArgsConstructor
@@ -24,9 +26,12 @@ public class ArticleController {
     @GetMapping
     public ResponseEntity<ApiResponse<PublishedArticlePageResponse>> getPublishedArticles(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) UUID categoryId,
+            @RequestParam(required = false) UUID topicId
     ) {
-        GetPublishedArticlesQuery query = new GetPublishedArticlesQuery(page, size);
+        GetPublishedArticlesQuery query = new GetPublishedArticlesQuery(page, size, keyword, categoryId, topicId);
 
         PublishedArticlePageResponse response = getPublishedArticlesUseCase.getPublishedArticles(query);
 

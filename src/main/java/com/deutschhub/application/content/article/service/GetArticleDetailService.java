@@ -13,7 +13,6 @@ import com.deutschhub.application.shared.authorization.CurrentActor;
 import com.deutschhub.application.shared.authorization.CurrentActorPort;
 import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
-import com.deutschhub.domain.shared.valueobject.UserId;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -66,6 +65,6 @@ public class GetArticleDetailService implements GetArticleDetailUseCase {
     }
 
     private SourceResponse toSourceResponse(SourceQueryModel source) {
-        return new SourceResponse(source.url(), source.title());
+        return new SourceResponse(source.title(), source.url());
     }
 }

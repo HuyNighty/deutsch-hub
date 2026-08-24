@@ -44,10 +44,11 @@ public class JpaArticleQueryAdapter implements ArticleQueryPort {
     }
 
     @Override
-    public PageResult<PublishedArticleQueryModel> findPublishedArticles(int page, int size) {
+    public PageResult<PublishedArticleQueryModel> findPublishedArticles(int page, int size, String keyword,
+                                                                        UUID categoryId, UUID topicId) {
         Pageable pageable = PageRequest.of(page, size);
 
-        Page<PublishedArticleProjection> result = springDataArticleRepository.findPublishedArticles(pageable);
+        Page<PublishedArticleProjection> result = springDataArticleRepository.findPublishedArticles(keyword, categoryId, topicId, pageable);
 
         List<PublishedArticleQueryModel> content = result.getContent()
                 .stream()

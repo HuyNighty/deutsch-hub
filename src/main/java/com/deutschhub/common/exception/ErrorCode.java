@@ -8,6 +8,7 @@ public enum ErrorCode {
 
     INVALID_USER_ID("error.shared.user.id.cannot.be.null", 1001, ErrorHttpStatus.BAD_REQUEST),
     ACCESS_DENIED("error.shared.access.denied", 1002, ErrorHttpStatus.FORBIDDEN),
+    RESOURCE_VERSION_CONFLICT("error.common.resource.version.conflict", 1003, ErrorHttpStatus.CONFLICT),
 
     INVALID_EMAIL("error.identity.invalid.email", 3001, ErrorHttpStatus.BAD_REQUEST),
     INVALID_ROLE_NAME("error.identity.invalid.role.name", 3002, ErrorHttpStatus.BAD_REQUEST),

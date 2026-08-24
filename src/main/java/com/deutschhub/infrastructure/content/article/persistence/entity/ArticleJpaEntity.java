@@ -27,6 +27,10 @@ public class ArticleJpaEntity {
     @JdbcTypeCode(SqlTypes.VARCHAR)
     UUID id;
 
+    @Version
+    @Column(name = "lock_version", nullable = false)
+    Long lockVersion;
+
     @JdbcTypeCode(SqlTypes.VARCHAR)
     @Column(name = "owner_id", nullable = false)
     UUID ownerId;

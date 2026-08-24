@@ -7,6 +7,7 @@ import com.deutschhub.common.exception.ErrorHttpStatus;
 import com.deutschhub.common.util.ApiResponse;
 import com.deutschhub.common.util.MessageUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -27,9 +28,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(BusinessException.class)
-    public ResponseEntity<ApiResponse<Void>> handleBusinessException(
-            BusinessException ex
-    ) {
+    public ResponseEntity<ApiResponse<Void>> handleBusinessException(BusinessException ex) {
         ErrorCode errorCode = ex.getErrorCode();
 
         ApiResponse<Void> response = ApiResponse.<Void>builder()
@@ -56,9 +55,7 @@ public class GlobalExceptionHandler {
                 .errors(errors)
                 .build();
 
-        return ResponseEntity
-                .badRequest()
-                .body(response);
+        return ResponseEntity.badRequest().body(response);
     }
 
     @ExceptionHandler(Exception.class)
@@ -75,6 +72,16 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(response);
+    }
+
+    @ExceptionHandler(OptimisticLockingFailureException.class)
+    public ResponseEntity<ApiResponse<Void>> handleOptimisticLockingFailure(OptimisticLockingFailureException ex) {
+        ApiResponse<Void> response = ApiResponse.<Void>builder()
+                .code(ErrorCode.RESOURCE_VERSION_CONFLICT.getErrorCode())
+                .message(messageUtils.getMessage(ErrorCode.RESOURCE_VERSION_CONFLICT))
+                .build();
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
     }
 
     private HttpStatus toHttpStatus(ErrorHttpStatus status) {

@@ -13,7 +13,7 @@ public interface ArticleQueryPort  {
 
     Optional<PublishedArticleDetailQueryModel> findPublishedBySlug(Slug slug);
 
-    PageResult<PublishedArticleQueryModel> findPublishedArticles(int page, int size);
+    PageResult<PublishedArticleQueryModel> findPublishedArticles(int page, int size, String keyword, UUID categoryId, UUID topicId);
 
     Optional<ArticleDetailQueryModel> findDetailById(UUID articleId);
 

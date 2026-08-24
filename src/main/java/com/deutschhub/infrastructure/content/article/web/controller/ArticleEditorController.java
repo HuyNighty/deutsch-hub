@@ -66,7 +66,7 @@ public class ArticleEditorController {
         );
     }
 
-    @PreAuthorize("hasRole('CONTENT_EDITOR')")
+    @PreAuthorize("hasAnyRole('CONTENT_EDITOR', 'ADMIN')")
     @PostMapping("/{articleId}/submit")
     public ResponseEntity<ApiResponse<SubmitReviewResponse>> submitReview(@PathVariable UUID articleId) {
 
@@ -82,7 +82,7 @@ public class ArticleEditorController {
         );
     }
 
-    @PreAuthorize("hasRole('CONTENT_EDITOR')")
+    @PreAuthorize("hasAnyRole('CONTENT_EDITOR', 'ADMIN')")
     @PostMapping("/{articleId}/withdraw-review")
     public ResponseEntity<ApiResponse<WithdrawReviewResponse>> withdrawReview(@PathVariable UUID articleId) {
 
