@@ -15,6 +15,10 @@ import com.deutschhub.infrastructure.content.article.persistence.projection.Publ
 import com.deutschhub.infrastructure.content.article.persistence.projection.PublishedArticleProjection;
 import com.deutschhub.infrastructure.content.article.persistence.repository.SpringDataArticleRepository;
 import com.deutschhub.infrastructure.content.article.persistence.repository.SpringDataArticleVersionRepository;
+import com.deutschhub.infrastructure.content.category.persistence.entity.CategoryJpaEntity;
+import com.deutschhub.infrastructure.content.category.persistence.repository.SpringDataCategoryRepository;
+import com.deutschhub.infrastructure.content.topic.persistence.entity.TopicJpaEntity;
+import com.deutschhub.infrastructure.content.topic.persistence.repository.SpringDataTopicRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -24,6 +28,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
@@ -32,6 +37,8 @@ public class JpaArticleQueryAdapter implements ArticleQueryPort {
 
     SpringDataArticleRepository springDataArticleRepository;
     SpringDataArticleVersionRepository springDataArticleVersionRepository;
+    SpringDataCategoryRepository springDataCategoryRepository;
+    SpringDataTopicRepository springDataTopicRepository;
 
     @Override
     public Optional<PublishedArticleDetailQueryModel> findPublishedBySlug(Slug slug) {
@@ -126,7 +133,9 @@ public class JpaArticleQueryAdapter implements ArticleQueryPort {
     }
 
     private PublishedArticleDetailQueryModel toPublishedArticleDetailQueryModel(PublishedArticleDetailProjection projection) {
-        Set<UUID> topicIds = springDataArticleRepository.findTopicIdsByVersionId(projection.versionId());
+        CategorySummaryQuery primaryCategory = findCategorySummary(projection.primaryCategoryId());
+
+        Set<TopicSummaryQuery> topics = findTopicSummaries(projection.versionId());
 
         List<SourceQueryModel> sources = springDataArticleRepository.findSourcesByVersionId(projection.versionId())
                 .stream()
@@ -134,12 +143,43 @@ public class JpaArticleQueryAdapter implements ArticleQueryPort {
                 .toList();
 
         return new PublishedArticleDetailQueryModel(projection.articleId(), projection.versionId(), projection.slug(),
-                projection.title(), projection.summary(), projection.body(), projection.primaryCategoryId(), topicIds,
+                projection.title(), projection.summary(), projection.body(), primaryCategory, topics,
                 projection.coverMediaId(), sources, PublicationStatus.valueOf(projection.publicationStatus()),
                 projection.publishedAt());
     }
 
     private SourceQueryModel toSourceQueryModel(SourceJpaEntity entity) {
         return new SourceQueryModel(entity.getTitle(), entity.getUrl());
+    }
+
+    private CategorySummaryQuery findCategorySummary(UUID categoryId) {
+        if (categoryId == null) {
+            return null;
+        }
+
+        CategoryJpaEntity category = springDataCategoryRepository.findById(categoryId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CATEGORY_NOT_FOUND));
+
+        return new CategorySummaryQuery(category.getId(), category.getCategoryName()
+        );
+    }
+
+    private Set<TopicSummaryQuery> findTopicSummaries(UUID versionId) {
+
+        Set<UUID> topicIds = springDataArticleRepository.findTopicIdsByVersionId(versionId);
+
+        if (topicIds == null || topicIds.isEmpty()) {
+            return new LinkedHashSet<>();
+        }
+
+        return springDataTopicRepository
+                .findByIdIn(topicIds)
+                .stream()
+                .map(this::toTopicSummaryQuery)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    private TopicSummaryQuery toTopicSummaryQuery(TopicJpaEntity topic) {
+        return new TopicSummaryQuery(topic.getId(), topic.getCategoryId(), topic.getTopicName());
     }
 }

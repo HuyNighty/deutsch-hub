@@ -1,5 +1,8 @@
 package com.deutschhub.application.content.article.dto.response;
 
+import com.deutschhub.application.content.category.dto.response.CategorySummaryResponse;
+import com.deutschhub.application.content.topic.dto.response.TopicSummaryResponse;
+
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
@@ -12,8 +15,8 @@ public record PublishedArticleDetailResponse(
         String title,
         String summary,
         String body,
-        UUID primaryCategoryId,
-        Set<UUID> topicIds,
+        CategorySummaryResponse primaryCategory,
+        Set<TopicSummaryResponse> topics,
         UUID coverMediaId,
         List<SourceResponse> sources,
         Instant publishedAt

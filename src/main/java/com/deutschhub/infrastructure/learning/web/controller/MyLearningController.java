@@ -140,7 +140,8 @@ public class MyLearningController {
 
     @GetMapping("/{courseId}/lessons/{lessonId}")
     public ResponseEntity<ApiResponse<LessonDetailResponse>> getMyLessonDetail(@PathVariable UUID courseId,
-                                                                               @PathVariable UUID lessonId, @AuthenticationPrincipal Jwt jwt
+                                                                               @PathVariable UUID lessonId,
+                                                                               @AuthenticationPrincipal Jwt jwt
     ) {
         UUID userId = UUID.fromString(jwt.getSubject());
 

@@ -30,7 +30,7 @@ public interface SpringDataArticleRepository extends JpaRepository<ArticleJpaEnt
             AND (
                 :keyword IS NULL
                 OR LOWER(v.title) LIKE(CONCAT('%', :keyword, '%'))
-                OR LOWER(v.summary) LIKE(CONCAT('%', :summary, '%'))
+                OR LOWER(v.summary) LIKE(CONCAT('%', :keyword, '%'))
             )
             AND (
                 :categoryId IS NULL
