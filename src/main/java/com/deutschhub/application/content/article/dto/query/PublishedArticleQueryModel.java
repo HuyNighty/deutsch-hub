@@ -1,6 +1,7 @@
 package com.deutschhub.application.content.article.dto.query;
 
 import java.time.Instant;
+import java.util.Set;
 import java.util.UUID;
 
 public record PublishedArticleQueryModel(
@@ -9,7 +10,8 @@ public record PublishedArticleQueryModel(
         String slug,
         String title,
         String summary,
-        UUID primaryCategoryId,
+        CategorySummaryQuery primaryCategory,
+        Set<TopicSummaryQuery> topics,
         UUID coverMediaId,
         Instant publishedAt
 ) {

@@ -45,24 +45,21 @@ public class AuthController {
 
         UserResponse response = registerUserUseCase.register(command);
 
-        return ResponseEntity.ok(ApiResponse.<UserResponse>builder()
-                        .result(response)
-                .build());
+        return ResponseEntity.ok(ApiResponse.<UserResponse>builder().result(response).build());
     }
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<LoginResponse>> login(@RequestBody @Valid LoginUserRequest request) {
 
-        LoginUserCommand command = new LoginUserCommand(
-                request.usernameOrEmail(),
-                request.password()
-        );
+        LoginUserCommand command = new LoginUserCommand(request.usernameOrEmail(), request.password());
 
         LoginResponse response = loginUserUseCase.login(command);
 
-        return ResponseEntity.ok(ApiResponse.<LoginResponse>builder()
+        return ResponseEntity.ok(
+                ApiResponse.<LoginResponse>builder()
                         .result(response)
-                .build());
+                        .build()
+        );
     }
 
     @GetMapping("/me")

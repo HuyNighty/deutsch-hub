@@ -127,8 +127,12 @@ public class JpaArticleQueryAdapter implements ArticleQueryPort {
     }
 
     private PublishedArticleQueryModel toPublishedArticleQueryModel(PublishedArticleProjection projection) {
+        CategorySummaryQuery primaryCategory = findCategorySummary(projection.primaryCategoryId());
+
+        Set<TopicSummaryQuery> topics = findTopicSummaries(projection.versionId());
+
         return new PublishedArticleQueryModel(projection.articleId(), projection.versionId(), projection.slug(),
-                projection.title(), projection.summary(), projection.primaryCategoryId(), projection.coverMediaId(),
+                projection.title(), projection.summary(), primaryCategory, topics, projection.coverMediaId(),
                 projection.publishedAt());
     }
 
