@@ -1,141 +1,378 @@
 # DeutschHub Backend
 
-DeutschHub is the backend for a German learning and culture platform. It is a long-term portfolio project built to practise business-oriented backend design with Domain-Driven Design (DDD), Hexagonal Architecture, and a modular monolith approach.
+DeutschHub is the backend for a German learning and culture platform. It is a long-term portfolio project focused on practising business-oriented backend development with **Domain-Driven Design (DDD)**, **Hexagonal Architecture**, and a **modular monolith** approach.
 
-The current release delivers a complete learning MVP: users can authenticate, browse published courses, enroll, study lessons, track progress, and manage their account sessions. Administrators can manage users, courses, sections, lessons, and lesson content items.
+The backend is organized around business domains rather than technical layers alone. The current codebase contains implementations for **Identity, Learning, Content, and Media**, while the boundaries and responsibilities of some domains continue to evolve as the project develops.
 
-## Highlights
+## Project Status
 
-- Java 21 and Spring Boot 3.4
-- Domain-driven, ports-and-adapters architecture
-- JWT access tokens with role-based authorization
-- Opaque refresh tokens stored as hashes in server-side user sessions
-- Refresh-token rotation, per-session logout, and logout from all devices
-- Course authoring with sections, lessons, and ordered lesson items
-- Public course catalog and authenticated learning flow
-- Enrollment lifecycle, lesson completion, and course progress tracking
-- Consistent API envelopes and validation/business error responses
+DeutschHub is an actively evolving portfolio project.
 
-## Current Scope
+The current backend contains:
 
-### Identity and Access
+* Identity and authentication
+* User and session management
+* Course-based learning flows
+* Learning progress and enrollment
+* Content management for articles, categories, and topics
+* Media management and storage abstraction
+* Role-based authorization
+* Domain-oriented application and persistence structure
 
-- User registration and login by username or email
-- Short-lived JWT access tokens using HS512
-- Opaque refresh tokens with hashed persistence in `user_sessions`
-- Refresh-token rotation and session revocation
-- Get and update the current profile
-- Change password, deactivate an account, and revoke all personal sessions
-- View active and revoked sessions; revoke one specific session
-- Admin user search, detail lookup, activation/deactivation, and role management
+The **Learning Context is currently being reassessed in V3**. The existing implementation originated from the course-centered Learning work developed in V1, and V3 is focused on discovering and defining what the Learning Context should represent before further structural changes are made.
+
+## Core Domains
+
+### Identity
+
+The Identity implementation is responsible for users, authentication, authorization, and user sessions.
+
+Current capabilities include:
+
+* User registration and login
+* JWT access-token authentication
+* Opaque refresh tokens with server-side session persistence
+* Refresh-token rotation
+* Per-session logout
+* Logout from all active sessions
+* Current-user profile management
+* Password change
+* Account deactivation
+* Session listing and revocation
+* Administrative user management
+* Role management
+
+Relevant source:
+
+```text
+src/main/java/com/deutschhub/domain/identity/
+src/main/java/com/deutschhub/application/identity/
+src/main/java/com/deutschhub/infrastructure/identity/
+```
 
 ### Learning
 
-- Admin course CRUD, publishing, unpublishing, and soft deletion
-- Course sections and lessons with ordered content
-- Lesson items: `TEXT`, `VIDEO`, `PDF`, `DOCUMENT`, `AUDIO`, and `QUIZ`
-- Public published-course catalog, search, and course detail
-- Viewer course detail that includes enrollment information when a user is authenticated
-- Course enrollment and drop-course flow
-- My learning list, enrolled-course detail, lesson detail, and previous/next lesson navigation
-- Lesson completion, completed-lesson lookup, and progress calculation
-- Admin enrollment lookup and expiration
+The Learning implementation originated in V1 as a **course-centered learning implementation**.
+
+The current implementation includes:
+
+* Courses
+* Sections
+* Lessons
+* Lesson items
+* Course publication
+* Enrollment lifecycle
+* Lesson completion
+* Course progress
+* Learner course and lesson views
+* Media access from lesson items
+
+The current domain also contains additional concepts such as:
+
+* Quiz
+* Quiz Attempt
+* User Progress
+* Certificate
+* Questions and answers
+
+The presence of these domain concepts does not necessarily mean that all of them currently form complete learner-facing workflows.
+
+Relevant source:
+
+```text
+src/main/java/com/deutschhub/domain/learning/
+src/main/java/com/deutschhub/application/learning/
+src/main/java/com/deutschhub/infrastructure/learning/
+```
+
+The Learning Context is currently being investigated as part of **V3 — Learning Context**.
+
+### Content
+
+The Content implementation provides content management capabilities for articles and their taxonomy.
+
+Current source structure includes:
+
+```text
+src/main/java/com/deutschhub/domain/content/
+src/main/java/com/deutschhub/application/content/
+src/main/java/com/deutschhub/infrastructure/content/
+```
+
+Current Content capabilities include:
+
+* Article drafts
+* Article editing
+* Article review workflow
+* Article publishing
+* Article archiving
+* Article ownership transfer
+* Categories
+* Topics
+* Category and topic lifecycle management
+* Published article queries
+
+### Media
+
+Media is implemented as its own technical/domain area and is used by other parts of the backend where media resources are required.
+
+Relevant source:
+
+```text
+src/main/java/com/deutschhub/domain/media/
+src/main/java/com/deutschhub/application/media/
+src/main/java/com/deutschhub/infrastructure/media/
+```
+
+Current capabilities include:
+
+* Media upload
+* Media retrieval
+* Media content access
+* Media storage abstraction
+* Media access policies
+* Persistence for media metadata
+
+Database migrations for media were introduced after the initial Learning schema:
+
+```text
+src/main/resources/db/migration/V2__create_media_table.sql
+src/main/resources/db/migration/V3__replace_lesson_item_resource_url_with_media_id.sql
+```
 
 ## Architecture
 
-DeutschHub is organized by business domain. The domain layer contains business rules and does not depend on Spring, JPA, or web concerns. The application layer exposes use cases through input ports and depends on output ports. Infrastructure provides the web, persistence, and security adapters.
+DeutschHub follows a modular monolith structure organized around business domains.
 
 ```text
 src/main/java/com/deutschhub
-|
-|-- common/                         Shared exceptions, API utilities, and domain contracts
-|
-|-- domain/                         Framework-independent business model
-|   |-- identity/                   User, UserSession, roles, and value objects
-|   |-- learning/                   Course, Enrollment, Lesson, LessonItem, Quiz model
-|   `-- content/                    Early Content Context domain model
-|
-|-- application/                    Use cases, DTOs, and ports
-|   |-- identity/
-|   `-- learning/
-|
-`-- infrastructure/                 Technical adapters and framework configuration
-    |-- config/                     Spring Security and exception configuration
-    |-- identity/                   JWT, password, web, and JPA adapters
-    `-- learning/                   Course web and JPA adapters
+│
+├── common/
+│
+├── domain/
+│   ├── identity/
+│   ├── learning/
+│   ├── content/
+│   ├── media/
+│   └── shared/
+│
+├── application/
+│   ├── identity/
+│   ├── learning/
+│   ├── content/
+│   ├── media/
+│   └── shared/
+│
+└── infrastructure/
+    ├── config/
+    ├── identity/
+    ├── learning/
+    ├── content/
+    ├── media/
+    └── shared/
 ```
 
-### Request Flow
+The intended dependency direction is:
 
 ```text
-HTTP Controller -> Input Port -> Application Service -> Domain Model -> Output Port -> Adapter
+Infrastructure
+      ↓
+Application
+      ↓
+Domain
 ```
 
-For example, an enrollment request enters `MyLearningController`, invokes `EnrollCourseUseCase`, lets the `Enrollment` aggregate enforce its business rules, then persists through `EnrollmentRepositoryPort` and its JPA adapter.
+The application layer exposes use cases through input ports and depends on output ports. Infrastructure provides adapters for web, persistence, security, media storage, and other technical concerns.
+
+A typical request flow is:
+
+```text
+HTTP Controller
+      ↓
+Input Port
+      ↓
+Application Service
+      ↓
+Domain Model
+      ↓
+Output Port
+      ↓
+Infrastructure Adapter
+```
+
+The exact flow varies by use case and is documented within the corresponding domain implementation.
+
+## Repository Structure
+
+The main backend source tree is:
+
+```text
+src/
+├── main/
+│   ├── java/com/deutschhub/
+│   │   ├── common/
+│   │   ├── domain/
+│   │   ├── application/
+│   │   └── infrastructure/
+│   │
+│   └── resources/
+│       ├── db/migration/
+│       └── application.yaml
+│
+└── test/
+```
+
+Database schema evolution is managed through Flyway migrations:
+
+```text
+src/main/resources/db/migration/
+├── V1__initial_schema.sql
+├── V2__create_media_table.sql
+├── V3__replace_lesson_item_resource_url_with_media_id.sql
+├── V4__initial_schema_content_context.sql
+└── V5__add_article_optimistic_locking.sql
+```
 
 ## Security Model
 
-DeutschHub separates the two token responsibilities:
+Authentication uses two different token responsibilities:
 
-1. The access token is a short-lived JWT used to authorize API requests.
-2. The refresh token is an opaque random value. Only its hash is stored in the database.
-3. Each login creates a `UserSession`. Refreshing rotates the refresh token for that session.
-4. Logout revokes a session, while logout-all revokes every active session for the current user.
+1. A short-lived JWT access token is used to authorize API requests.
+2. A long-lived refresh token is represented as an opaque random value.
+3. Only the refresh-token hash is persisted on the server.
+4. Each login creates a `UserSession`.
+5. Refreshing a session rotates its refresh token.
+6. A session can be revoked independently.
+7. All active sessions can be revoked for the current user.
 
-This design allows server-side control over long-lived sessions without storing raw refresh tokens in the database.
-
-## API Overview
-
-All endpoints use the base path configured by the application:
+The security implementation is located primarily under:
 
 ```text
-http://localhost:8080/deutsch-hub/api/v1
+src/main/java/com/deutschhub/infrastructure/identity/security/
 ```
 
-| Area | Example endpoints |
-| --- | --- |
-| Authentication | `POST /auth/register`, `POST /auth/login`, `POST /auth/refresh`, `POST /auth/logout`, `GET /auth/me` |
-| Account | `PATCH /users/me/profile`, `PUT /users/me/password`, `GET /users/me/sessions`, `POST /users/me/logout-all` |
-| Public courses | `GET /courses`, `GET /courses/{courseId}`, `GET /courses/{courseId}/viewer` |
-| Learning | `POST /courses/{courseId}/enroll`, `GET /me/courses`, `GET /me/courses/{courseId}`, `POST /me/courses/{courseId}/lessons/{lessonId}/complete` |
-| Admin users | `GET /admin/users`, `PATCH /admin/users/{userId}/activate`, `PUT /admin/users/{userId}/roles` |
-| Admin courses | `POST /admin/courses`, section/lesson management, publish/unpublish, lesson-item management |
+Identity domain and application responsibilities are located under:
 
-Successful responses use a common `ApiResponse<T>` envelope. Validation errors and business errors return a stable `code`, `message`, and optional field-level `errors` collection.
+```text
+src/main/java/com/deutschhub/domain/identity/
+src/main/java/com/deutschhub/application/identity/
+```
+
+## API
+
+The backend exposes REST APIs under the `/api/v1` namespace.
+
+The main controller areas are:
+
+```text
+src/main/java/com/deutschhub/infrastructure/
+├── identity/web/controller/
+├── learning/web/controller/
+├── content/*/web/controller/
+└── media/web/controller/
+```
+
+The current API surface includes areas such as:
+
+| Area           | Main responsibilities                                                            |
+| -------------- | -------------------------------------------------------------------------------- |
+| Authentication | Registration, login, refresh, logout, current-user access                        |
+| Identity       | Profile, password, sessions, account management                                  |
+| Admin Identity | User search, activation/deactivation, role management                            |
+| Learning       | Course catalog, enrollment, learner course access, lessons, completion, progress |
+| Admin Learning | Course, section, lesson, lesson-item, and enrollment management                  |
+| Content        | Articles, drafts, review, publishing, categories, topics                         |
+| Media          | Upload, retrieval, content access, and media administration                      |
+
+The authoritative API definitions are the controllers and application use cases in the source tree rather than this README.
 
 ## Technology Stack
 
-| Technology | Purpose |
-| --- | --- |
-| Java 21 | Main programming language |
-| Spring Boot 3.4 | Web application framework |
+| Technology                             | Purpose                              |
+| -------------------------------------- | ------------------------------------ |
+| Java 21                                | Main programming language            |
+| Spring Boot 3.4.2                      | Application framework                |
+| Spring Web                             | REST API                             |
 | Spring Security OAuth2 Resource Server | JWT authentication and authorization |
-| Spring Data JPA and Hibernate | Persistence abstraction and ORM |
-| MySQL | Relational database |
-| Lombok | Boilerplate reduction |
-| MapStruct | DTO mapping support |
-| Jakarta Validation | Request validation |
-| Maven | Build and dependency management |
+| Spring Data JPA / Hibernate            | Persistence and ORM                  |
+| MySQL                                  | Relational database                  |
+| Flyway                                 | Database migration                   |
+| Jakarta Validation                     | Request validation                   |
+| Lombok                                 | Boilerplate reduction                |
+| MapStruct 1.6.3                        | DTO mapping                          |
+| Maven                                  | Build and dependency management      |
+| JaCoCo                                 | Test coverage reporting              |
 
-The React frontend lives in the companion `deutsch-hub-web` project and currently consumes the Identity and Learning APIs.
+The versions above are based on the project's `pom.xml`.
+
+## Development Direction
+
+DeutschHub is developed incrementally rather than treating the current implementation as a final architecture.
+
+The project currently includes separate development contexts:
+
+```text
+V1
+└── Course-centered Learning implementation
+
+V2
+└── Content Context
+
+V3
+└── Learning Context discovery and evolution
+```
+
+V3 is currently focused on the Learning Context.
+
+The V3 process is:
+
+```text
+Discovery
+    ↓
+Current State Analysis
+    ↓
+Domain Analysis
+    ↓
+Architecture Analysis
+    ↓
+Decision
+    ↓
+Target Model
+    ↓
+Refactoring
+    ↓
+Validation
+```
+
+The current V3 documentation is located under:
+
+```text
+docs/V3/
+```
+
+The V3 Learning Context work intentionally follows a discovery-first approach. Existing concepts are not automatically treated as the final domain model, and architectural changes are not made without a concrete domain or implementation reason.
 
 ## Run Locally
 
 ### Prerequisites
 
-- JDK 21
-- Maven 3.9+
-- MySQL 8+
+* JDK 21
+* Maven
+* MySQL
 
 ### Database Configuration
 
-Create a MySQL database named `deutsch-hub`, then configure these environment variables before starting the application:
+Create the required MySQL database and configure the environment variables used by the application.
+
+For example:
 
 ```powershell
 $env:DBMS_CONNECTION = "jdbc:mysql://localhost:3306/deutsch-hub"
-$env:DBMS_USERNAME = "****"
-$env:DBMS_PASSWORD = "****"
+$env:DBMS_USERNAME = "your-username"
+$env:DBMS_PASSWORD = "your-password"
 ```
+
+The application reads the database connection from the configured environment.
 
 ### Start the Application
 
@@ -143,31 +380,39 @@ $env:DBMS_PASSWORD = "****"
 mvn spring-boot:run
 ```
 
-The API starts at `http://localhost:8080/deutsch-hub` by default.
+The application uses the Spring Boot configuration under:
 
-## Development Status
+```text
+src/main/resources/application.yaml
+```
 
-Completed:
+## Frontend
 
-- Hexagonal Architecture and DDD project structure
-- Identity, authentication, authorization, and session management
-- Admin user management
-- Learning MVP: course, section, lesson, lesson-item, enrollment, and progress flows
-- React frontend integration for the core learning journey
+The React frontend is maintained in the companion repository:
 
-In progress:
+```text
+deutsch-hub-web
+```
 
-- Refactoring repeated Learning response and navigation logic
-- Manual regression coverage for the V1 learning flow
-- Frontend loading, empty, validation, and error states
+The frontend consumes the backend REST APIs but is maintained separately from this backend repository.
 
-Planned for V2:
+## Documentation
 
-- Media storage abstraction and upload management
-- Content Context for articles, pages, categories, topics, and publishing
-- Quiz authoring, attempts, scoring, and assessment rules
-- Automated unit, integration, and end-to-end tests
-- Database migrations, Docker, CI/CD, and production hardening
+Project documentation is organized under:
+
+```text
+docs/
+```
+
+Version-specific documentation is grouped by development context, for example:
+
+```text
+docs/V1/
+docs/V2/
+docs/V3/
+```
+
+V3 currently contains the documentation for the Learning Context discovery and current-state analysis.
 
 ## License
 
