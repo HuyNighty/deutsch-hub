@@ -2,1595 +2,1202 @@
 
 ## 1. Purpose
 
-This document defines the business actions of the Quiz domain.
+This document defines the business actions available within the Quiz domain.
 
-It describes the actions that actors can perform throughout the Quiz lifecycle, including:
+A Business Action describes a meaningful operation performed by an actor or triggered by a business condition.
 
-- creating a Quiz;
-- managing Draft Revisions;
-- managing Questions and their response configuration;
-- submitting a Revision for review;
-- reviewing a Revision;
-- requesting changes;
-- withdrawing a submission;
-- approving and publishing a Revision;
-- discarding a Draft Revision;
-- activating and deactivating a Quiz.
+This document focuses on:
 
-The document also defines the business rules that govern the relationship between Quiz, Quiz Revision, Question, Question Response, and Quiz Attempt.
+- who performs the action;
+- what business intent the action represents;
+- the required conditions;
+- the main business outcome.
 
-This document describes the target business behavior. It does not imply that every action is already implemented in the current codebase.
+It does not define REST endpoints, application service classes, persistence operations, or other implementation details.
 
 ---
 
-# 2. Domain Scope
+## 2. Business Actors
 
-A Quiz is an independent learning assessment.
+The current Quiz business actions involve the following actors:
 
-A Quiz may be used independently or placed inside a Course through a `LessonItem`.
+### 2.1 Quiz Manager
 
-The Quiz is not owned by a Course or Lesson.
+A Quiz Manager is responsible for managing Quiz definitions and their Revisions.
 
-The relationship between a Lesson and a Quiz is represented through the LessonItem:
+The exact authorization mapping between system roles and Quiz Manager remains an application authorization concern.
+
+The current source defines:
 
 ```text
-Lesson
-└── LessonItem
-     └── quizId
+src/main/java/com/deutschhub/domain/identity/model/enums/RoleType.java
 ````
 
-The Quiz remains an independent Aggregate Root.
-
-The target conceptual structure is:
+with:
 
 ```text
-Quiz
-├── Identity
-├── Governance / Lifecycle
-├── Visibility
-├── Availability
-└── Revisions
-     ├── Draft Revision
-     └── Published Revision
-          └── Questions
-               └── Answer Options
+USER
+ADMIN
+CONTENT_EDITOR
 ```
 
----
+No `INSTRUCTOR` role currently exists in the source.
 
-# 3. Core Concepts
-
-## 3.1 Quiz
-
-`Quiz` represents the identity and governance container of an assessment.
-
-Quiz is responsible for concepts that remain stable across revisions, including:
-
-* Quiz identity;
-* creator/author;
-* visibility;
-* availability;
-* revision lifecycle;
-* deletion and audit information.
-
-The actual assessment definition belongs to a `QuizRevision`.
-
-A Quiz is therefore not the same as a single immutable assessment definition.
+Therefore, this document does not assume a new `INSTRUCTOR` role.
 
 ---
 
-## 3.2 Quiz Revision
+### 2.2 Learner
 
-`QuizRevision` represents a concrete version of a Quiz's assessment definition.
+A Learner is the User who:
 
-A Revision contains the assessment data that may change between versions, including:
+* accesses an available Quiz;
+* creates a QuizAttempt;
+* answers Questions;
+* changes or clears answers;
+* resumes an active Attempt;
+* submits an Attempt;
+* cancels an Attempt;
+* retries a Quiz when eligible.
+
+---
+
+### 2.3 System
+
+The System may trigger business behavior based on time or other domain conditions.
+
+The most important example is Attempt expiration.
+
+The System is not treated as a human actor.
+
+---
+
+# 3. Quiz Management Actions
+
+## 3.1 Create Quiz
+
+### Actor
+
+Quiz Manager.
+
+### Intent
+
+Create a new Quiz identity with an initial Draft Revision.
+
+### Preconditions
+
+The actor must be authorized to create a Quiz.
+
+### Main Flow
+
+```text id="qba-create-quiz"
+Create Quiz
+    ↓
+create Quiz identity
+    ↓
+create initial Draft Revision
+```
+
+### Result
+
+A new Quiz exists with:
+
+* a unique Quiz identifier;
+* a Draft Revision;
+* no Published Revision yet.
+
+A newly created Quiz is not immediately available for learner assessment.
+
+---
+
+## 3.2 Edit Draft Revision
+
+### Actor
+
+Quiz Manager.
+
+### Intent
+
+Modify the assessment definition before publication.
+
+### Preconditions
+
+* A Draft Revision exists.
+* The actor is authorized.
+* The Revision is still editable.
+
+### Main Flow
+
+The Quiz Manager may modify the Draft Revision's assessment definition, including:
 
 * title;
 * description;
-* difficulty;
 * time limit;
-* maximum score;
-* optional passing score;
+* passing score;
 * maximum attempts;
+* completion policy;
+* difficulty;
 * Questions;
-* response configuration for Questions.
+* Answer definitions.
 
-A Quiz may have:
+### Result
 
-* at most one Draft Revision;
-* at most one Published Revision.
+The Draft Revision is updated.
 
-A Draft Revision and a Published Revision may coexist.
-
-For example:
-
-```text
-Quiz
-├── Draft Revision
-└── Published Revision
-```
-
-A Published Revision must not be modified directly.
-
-If the assessment definition needs to change, a new Draft Revision is created and edited. Publishing the new Revision replaces the currently active Published Revision as the current definition while preserving the historical definition.
+The current Published Revision, if any, remains unchanged.
 
 ---
 
-## 3.3 Question
+## 3.3 Add Question
 
-A Question is an assessment item within a Quiz Revision that presents a prompt or task to the learner, defines the expected form of response, and provides the information required to evaluate that response.
+### Actor
 
-Every Question has an individual score.
+Quiz Manager.
 
-The maximum score of a Quiz Revision is the sum of the scores of its Questions:
+### Intent
 
-```text
-Revision.maxScore
-=
+Add a Question to a Draft Revision.
+
+### Preconditions
+
+* The Revision is Draft.
+* The Question satisfies the Question domain constraints.
+
+### Result
+
+The Question becomes part of the Draft Revision.
+
+A Question cannot be added directly to a Published Revision.
+
+---
+
+## 3.4 Update Question
+
+### Actor
+
+Quiz Manager.
+
+### Intent
+
+Modify a Question within a Draft Revision.
+
+### Preconditions
+
+* The Revision is Draft.
+* The Question exists.
+* The resulting Question remains valid.
+
+### Result
+
+The Question definition is updated.
+
+A Published Revision remains unchanged.
+
+---
+
+## 3.5 Remove Question
+
+### Actor
+
+Quiz Manager.
+
+### Intent
+
+Remove a Question from a Draft Revision.
+
+### Preconditions
+
+* The Revision is Draft.
+* The Question exists.
+
+### Result
+
+The Question is removed from the Draft Revision.
+
+The Revision must still satisfy all publication requirements before it can be published.
+
+---
+
+## 3.6 Submit Draft Revision for Review
+
+### Actor
+
+Quiz Manager.
+
+### Intent
+
+Indicate that a Draft Revision is complete enough to be considered for publication.
+
+### Preconditions
+
+The Draft Revision must satisfy the required submission conditions.
+
+At minimum:
+
+* title must be provided;
+* required assessment information must be valid.
+
+A Draft Revision may still be incomplete before submission.
+
+### Result
+
+The Revision becomes eligible for the applicable review/publication process.
+
+The exact review workflow is not currently defined.
+
+---
+
+## 3.7 Publish Revision
+
+### Actor
+
+Quiz Manager.
+
+### Intent
+
+Make a valid Draft Revision the current Published Revision.
+
+### Preconditions
+
+The Draft Revision must:
+
+* contain at least one Question;
+* contain only valid Questions;
+* satisfy score consistency;
+* satisfy all required publication conditions.
+
+```text id="qba-publish-revision"
 sum(Question.score)
-```
-
-Questions do not need to have equal scores.
-
----
-
-## 3.4 Question Response
-
-Question Response defines how the learner responds to a Question.
-
-The current scope supports Choice Response:
-
-```text
-Question Response
-└── Choice Response
-    ├── SINGLE_CHOICE
-    ├── MULTIPLE_CHOICE
-    └── TRUE_FALSE
-```
-
-Choice Questions use Answer options.
-
-Current rules include:
-
-* a Question must contain at least 2 Answers;
-* a Question may contain at most 6 Answers;
-* at least one Answer must be correct;
-* `SINGLE_CHOICE` allows at most one correct Answer;
-* `TRUE_FALSE` requires exactly 2 Answers;
-* `TRUE_FALSE` requires exactly one correct Answer.
-
-Text Response is not part of the current scope.
-
-No `TEXT`, speaking, audio, matching, or other response type is introduced by this document.
-
-Future response types may be added when concrete business requirements exist.
-
----
-
-## 3.5 Quiz Attempt
-
-A `QuizAttempt` represents one learner's execution of a Quiz.
-
-An Attempt can only be started from a Published Quiz Revision.
-
-Once started, an Attempt is permanently bound to the exact Published Revision used at the time of start.
-
-Therefore, publishing a new Revision does not change an existing Attempt.
-
-For example:
-
-```text
-Quiz
-├── Published Revision A
-│    └── Attempt 1
-│
-└── Published Revision B
-     └── Attempt 2
-```
-
-Attempt 1 continues to use Revision A even after Revision B becomes the current Published Revision.
-
-This preserves the historical assessment definition used to evaluate the Attempt.
-
----
-
-## 3.6 Attempt Status
-
-Attempt Status represents the lifecycle state of a QuizAttempt.
-
-The current target states are:
-
-```text
-IN_PROGRESS
-SUBMITTED
-EXPIRED
-CANCELLED
-```
-
-`Assessment Result` is intentionally separate from Attempt Status.
-
----
-
-## 3.7 Assessment Result
-
-Assessment Result represents the outcome of an ended assessment.
-
-Possible results are:
-
-```text
-PASSED
-FAILED
-```
-
-Assessment Result is determined only when the Attempt ends through submission or expiration.
-
-If a `passingScore` exists:
-
-```text
-totalScore >= passingScore
-    → PASSED
-
-totalScore < passingScore
-    → FAILED
-```
-
-If `passingScore` does not exist, the Attempt has no Pass/Fail Assessment Result.
-
-Pass/Fail must not be interpreted as:
-
-* Competency;
-* Current Level;
-* learner proficiency.
-
-These are separate Learning concepts.
-
----
-
-# 4. Business Actions Overview
-
-The Quiz business actions are:
-
-```text
-Quiz Business Actions
-├── Create Quiz
-├── Edit Draft Revision
-│   ├── Update Basic Information
-│   │   ├── Update Title
-│   │   └── Update Description
-│   ├── Configure Assessment
-│   │   ├── Update Difficulty
-│   │   ├── Update Time Limit
-│   │   ├── Update Max Score
-│   │   ├── Update Passing Score
-│   │   └── Update Max Attempts
-│   └── Manage Questions
-│       ├── Add Question
-│       ├── Update Question
-│       ├── Remove Question
-│       └── Configure Question Response
-│           └── Choice Response
-│               ├── Add Answer
-│               ├── Update Answer
-│               ├── Remove Answer
-│               └── Mark Correct/Incorrect
-├── Submit for Review
-├── Withdraw Submission
-├── Review Quiz
-│   ├── View Revision
-│   └── Provide Feedback
-├── Request Changes
-├── Approve Revision
-├── Discard Draft Revision
-├── Activate Quiz
-└── Deactivate Quiz
-```
-
----
-
-# 5. Create Quiz
-
-**Actor:** Learning Author
-
-## Purpose
-
-Create a new Quiz and its initial Draft Revision.
-
-## Preconditions
-
-* The actor is authorized to create learning content.
-
-## Rules
-
-Creating a Quiz creates:
-
-```text
-Quiz
-└── Initial Draft Revision
-```
-
-The initial Draft Revision may be incomplete.
-
-A Draft does not need to satisfy all publication requirements immediately.
-
-In particular, the title may initially be empty or unset.
-
-The Quiz has no Published Revision immediately after creation.
-
-## Result
-
-```text
-Quiz
-└── Draft Revision
-```
-
-The Author can continue editing the Draft Revision.
-
----
-
-# 6. Edit Draft Revision
-
-Only the current Draft Revision can be edited.
-
-A Published Revision cannot be edited directly.
-
-Editing a Draft Revision consists of:
-
-```text
-Edit Draft Revision
-├── Update Basic Information
-├── Configure Assessment
-└── Manage Questions
-```
-
-The Author can edit the Draft while it is in the Draft state.
-
-If the Revision is submitted for review, editing is no longer allowed until the submission is withdrawn or changes are requested.
-
----
-
-# 7. Update Basic Information
-
-## 7.1 Update Title
-
-**Actor:** Learning Author
-
-Updates the title of the current Draft Revision.
-
-A Draft may initially have no title.
-
-However, a valid title is required when the Revision is submitted for review.
-
-Therefore:
-
-```text
-Create Draft
-    ↓
-Title may be empty
-    ↓
-Submit for Review
-    ↓
-Title must be valid
-```
-
-The title belongs to the Revision rather than Quiz identity.
-
----
-
-## 7.2 Update Description
-
-**Actor:** Learning Author
-
-Updates the description of the current Draft Revision.
-
-The description belongs to the Revision and may therefore differ between Quiz versions.
-
----
-
-# 8. Configure Assessment
-
-## 8.1 Update Difficulty
-
-**Actor:** Learning Author
-
-Updates the difficulty of the Draft Revision.
-
-Difficulty describes the specific assessment definition and therefore belongs to the Revision.
-
----
-
-## 8.2 Update Time Limit
-
-**Actor:** Learning Author
-
-Updates the time limit of the Draft Revision.
-
-The time limit applies to Attempts started from that Published Revision.
-
-Once an Attempt has started, later Revision changes do not alter the Attempt's bound Revision or its time limit.
-
-The time limit runs in real time from the start of the Attempt.
-
-Browser closure or network loss does not pause the time limit.
-
----
-
-## 8.3 Update Max Score
-
-**Actor:** Learning Author
-
-Updates the maximum score of the Draft Revision.
-
-The Revision must maintain score consistency:
-
-```text
-Revision.maxScore
 =
-sum(all Question scores)
+QuizRevision.maxScore
 ```
 
-A Revision that does not satisfy this rule cannot be submitted for review.
-
-Each Question has an individual score.
-
-Question scores do not need to be distributed equally.
-
----
-
-## 8.4 Update Passing Score
-
-**Actor:** Learning Author
-
-Updates the optional passing score of the Draft Revision.
-
-A Quiz may have no passing score.
-
-If a passing score exists:
+### Main Flow
 
 ```text
-0 ≤ passingScore ≤ maxScore
+Draft Revision
+      ↓
+validate
+      ↓
+publish
+      ↓
+Current Published Revision
 ```
 
-A Quiz without a passing score does not produce a Pass/Fail Assessment Result.
-
----
-
-## 8.5 Update Max Attempts
-
-**Actor:** Learning Author
-
-Updates the maximum number of Attempts allowed for the Draft Revision.
-
-`maxAttempts` is part of the assessment policy of the Revision.
-
-The policy may differ according to the purpose of the Quiz.
-
-Multiple Attempts are supported subject to this policy.
-
-Whether an Attempt may be started again after a learner has already passed or failed depends on the broader assessment attempt policy.
-
-The exact authorization boundary for changing this policy remains a Learning governance concern.
-
----
-
-# 9. Manage Questions
-
-Questions belong to the Draft Revision.
-
-The Author may:
+If another Published Revision exists:
 
 ```text
-Manage Questions
-├── Add Question
-├── Update Question
-├── Remove Question
-└── Configure Question Response
+Previous Published Revision
+          ↓
+      historical
+
+New Draft Revision
+          ↓
+      Published
 ```
 
-Published Questions cannot be modified in place.
+### Result
+
+The new Revision becomes the current Published Revision.
+
+Existing QuizAttempts remain associated with their original Revision.
 
 ---
 
-## 9.1 Add Question
+## 3.8 Discard Draft Revision
 
-**Actor:** Learning Author
+### Actor
 
-Adds a Question to the current Draft Revision.
+Quiz Manager.
 
-The Question may initially be incomplete while the Draft is being edited.
+### Intent
 
-Before submission for review, the Question must satisfy the rules of its response type.
+Remove an unpublished Draft Revision without affecting the Published Revision.
 
----
-
-## 9.2 Update Question
-
-**Actor:** Learning Author
-
-Updates the content or configuration of a Question in the current Draft Revision.
-
-Question changes are only performed on the Draft Revision.
-
-A Published Revision remains immutable.
-
----
-
-## 9.3 Remove Question
-
-**Actor:** Learning Author
-
-Removes a Question from the Draft Revision.
-
-After removal, the Draft must still satisfy all requirements when it is submitted for review.
-
-In particular, the Question scores must continue to be consistent with the Revision's maximum score.
-
----
-
-# 10. Configure Question Response
-
-The current Quiz scope supports Choice Response.
-
-```text
-Configure Question Response
-└── Choice Response
-    ├── Add Answer
-    ├── Update Answer
-    ├── Remove Answer
-    └── Mark Correct/Incorrect
-```
-
-No Text Response is currently defined.
-
----
-
-## 10.1 Add Answer
-
-**Actor:** Learning Author
-
-Adds an Answer option to a Choice Question.
-
-The Question must contain:
-
-```text
-2 ≤ number of Answers ≤ 6
-```
-
-before it can become valid for publication.
-
-Answer content must not violate the Question's duplicate-answer rule.
-
----
-
-## 10.2 Update Answer
-
-**Actor:** Learning Author
-
-Updates the content of an Answer within the Draft Question.
-
-The resulting Question must remain valid when submitted for review.
-
-Published Answer definitions cannot be modified directly.
-
----
-
-## 10.3 Remove Answer
-
-**Actor:** Learning Author
-
-Removes an Answer from a Draft Question.
-
-The resulting Question must satisfy the response-type rules before the Revision can be submitted for review.
-
----
-
-## 10.4 Mark Correct/Incorrect
-
-**Actor:** Learning Author
-
-Marks an Answer as correct or incorrect.
-
-The resulting Question must satisfy the correctness rules of its response type.
-
-### SINGLE_CHOICE
-
-At most one Answer may be correct.
-
-### MULTIPLE_CHOICE
-
-One or more Answers may be correct.
-
-### TRUE_FALSE
-
-Exactly one of the two Answers must be correct.
-
----
-
-# 11. Submit for Review
-
-**Actor:** Learning Author
-
-## Purpose
-
-Submit the current Draft Revision to the Learning Editor for review.
-
-## Preconditions
+### Preconditions
 
 * A Draft Revision exists.
-* The actor is authorized as the Author.
-* The Revision is not already under review.
+* The actor is authorized.
 
-## Validation
+### Result
 
-The Draft Revision must be complete enough for review.
+The Draft Revision is discarded.
 
-The validation includes:
-
-### Revision
-
-* title is present and valid;
-* required assessment configuration is valid;
-* maximum score is valid;
-* if `passingScore` exists, it is within the valid range;
-* maximum attempt policy is valid.
-
-### Questions
-
-* at least one Question exists;
-* every Question is valid;
-* every Question has a positive score;
-* Question scores sum to `maxScore`.
-
-### Choice Response
-
-For current Choice Questions:
-
-* the number of Answers is between 2 and 6;
-* at least one Answer is correct;
-* `SINGLE_CHOICE` has at most one correct Answer;
-* `TRUE_FALSE` contains exactly 2 Answers;
-* `TRUE_FALSE` contains exactly one correct Answer.
-
-Visibility and availability are separate concepts and are not part of Revision completeness.
-
-## Result
-
-```text
-DRAFT
-   ↓ Submit for Review
-IN_REVIEW
-```
-
-The Author can no longer edit the Revision while it is under review.
-
-Submitting for review does not create a new Revision.
+The current Published Revision remains unchanged.
 
 ---
 
-# 12. Withdraw Submission
+## 3.9 Change Quiz Visibility
 
-**Actor:** Learning Author
+### Actor
 
-## Purpose
+Quiz Manager.
 
-Allow the Author to withdraw their own submitted Revision before publication.
+### Intent
 
-## Preconditions
+Change who may access or discover the Quiz.
 
-* The Revision is currently under review.
-* The actor is the Author.
-* The Revision has not already been published.
+### Supported Values
 
-## Result
-
-```text
-IN_REVIEW
-    ↓ Withdraw Submission
-DRAFT
-```
-
-The same Revision returns to Draft.
-
-No new Revision is created.
-
-The Author may continue editing and submit the Revision again.
-
-`Withdraw Submission` is different from `Request Changes`.
-
-```text
-Author
-→ Withdraw Submission
-→ DRAFT
-```
-
-while:
-
-```text
-Learning Editor
-→ Request Changes
-→ DRAFT
-```
-
-Both actions return the same Revision to the Draft state, but they have different actors and business meanings.
-
----
-
-# 13. Review Quiz
-
-**Actor:** Learning Editor
-
-Review is performed on a Revision that has been submitted for review.
-
-```text
-Review Quiz
-├── View Revision
-└── Provide Feedback
-```
-
----
-
-## 13.1 View Revision
-
-The Learning Editor can inspect the submitted Revision, including:
-
-* Revision information;
-* Questions;
-* Answer options;
-* correctness configuration;
-* scoring configuration;
-* assessment configuration.
-
-The Reviewer does not directly modify the Revision during review.
-
----
-
-## 13.2 Provide Feedback
-
-The Learning Editor may provide feedback concerning the submitted Revision.
-
-Feedback may concern:
-
-* the Revision as a whole;
-* a Question;
-* an Answer;
-* other relevant assessment configuration.
-
-Review feedback is separate from directly modifying the Revision.
-
-Review history is retained so that multiple review cycles can be represented.
-
----
-
-# 14. Request Changes
-
-**Actor:** Learning Editor
-
-## Purpose
-
-Return an `IN_REVIEW` Revision to the Author because changes are required.
-
-## Preconditions
-
-* The Revision is currently under review.
-* The actor is authorized as Learning Editor.
-* Meaningful feedback is provided.
-* The Reviewer is not acting as the submitting Author.
-
-## Rules
-
-The Learning Editor provides feedback but does not directly modify the Revision.
-
-No new Revision is created.
-
-The Author may edit the same Revision after it is returned.
-
-## Result
-
-```text
-DRAFT
-   ↓ Submit for Review
-IN_REVIEW
-   ↓ Request Changes
-DRAFT
-```
-
-Multiple review cycles are allowed.
-
-The Author is not required to prove that a specific piece of content changed before resubmitting.
-
-The normal `Submit for Review` validation is performed again.
-
----
-
-# 15. Approve Revision
-
-**Actor:** Learning Editor
-
-## Purpose
-
-Approve the submitted Revision and publish it.
-
-There is intentionally no separate `APPROVED` state in the current scope.
-
-The workflow is:
-
-```text
-IN_REVIEW
-    ↓ Approve Revision
-PUBLISHED
-```
-
-## Preconditions
-
-* The Revision is under review.
-* The actor has Learning Editor authority.
-* Separation of duties is respected.
-* Final publication validation succeeds.
-
-The Author who submitted the Revision cannot approve and publish that same Revision.
-
-## Rules
-
-The Learning Editor does not modify the Revision during approval.
-
-The Revision must pass final publication validation.
-
-If validation fails, the approval is rejected and the Revision remains under review.
-
-## Result
-
-The Draft Revision becomes the new Published Revision.
-
-If a previous Published Revision exists, the previous definition becomes historical.
-
-```text
-Before:
-
-Quiz
-├── Published Revision A
-└── Draft Revision B
-
-
-After:
-
-Quiz
-└── Published Revision B
-
-Revision A → Historical
-```
-
-The publication of a new Revision does not invalidate existing Attempts.
-
-Existing Attempts remain bound to the Published Revision from which they were started.
-
----
-
-# 16. Discard Draft Revision
-
-**Actor:** Learning Author
-
-## Purpose
-
-Discard the current Draft Revision without affecting the Quiz identity or an existing Published Revision.
-
-## Preconditions
-
-* A Draft Revision exists.
-* The Draft is not currently under review.
-
-If the Draft is under review, the Author must first withdraw the submission or receive a `Request Changes` result.
-
-## Rules
-
-Discarding a Draft:
-
-* does not delete the Quiz;
-* does not modify the Published Revision;
-* does not affect historical QuizAttempts;
-* does not create another Revision.
-
-If a Published Revision exists:
-
-```text
-Quiz
-├── Published Revision
-└── Draft Revision
-
-        ↓ Discard Draft
-
-Quiz
-└── Published Revision
-```
-
-If the Quiz has never had a Published Revision, discarding the initial Draft leaves the Quiz without a usable Published Revision.
-
-The exact lifecycle handling of a Quiz that has no remaining Revision is a separate lifecycle-model concern and does not introduce another business action here.
-
----
-
-# 17. Activate Quiz
-
-**Actor:** Authorized Learning governance actor
-
-## Purpose
-
-Make the Quiz available for new Attempts.
-
-Availability is independent from:
-
-* Revision lifecycle;
-* visibility;
-* permissions;
-* Attempt status;
-* Assessment Result.
-
-Activation does not create or modify a Revision.
-
-A Quiz must have a valid Published Revision before a learner can start an Attempt.
-
----
-
-# 18. Deactivate Quiz
-
-**Actor:** Authorized Learning governance actor
-
-## Purpose
-
-Prevent new Attempts from being started for the Quiz.
-
-Deactivation does not modify the Published Revision.
-
-Deactivation also does not terminate existing `IN_PROGRESS` Attempts.
-
-Therefore:
-
-```text
-Quiz
-    ↓ Deactivate
-No new Attempts
-```
-
-while:
-
-```text
-Existing IN_PROGRESS Attempt
-    ↓
-May continue according to its Attempt rules
-```
-
-Availability therefore controls whether new Attempts may begin, rather than controlling the lifecycle of Attempts that have already started.
-
----
-
-# 19. Quiz Attempt Business Rules
-
-Although the main actions above focus on Quiz management, Quiz business behavior must respect the following Attempt rules.
-
-## 19.1 Start Attempt
-
-A learner may start an Attempt only from a Published Quiz Revision.
-
-The exact learner eligibility policy is outside the Quiz Revision itself and may depend on:
-
-* Quiz visibility;
-* enrollment;
-* learning access;
-* assessment policy;
-* other Learning rules.
-
----
-
-## 19.2 Revision Binding
-
-When an Attempt starts, it becomes permanently bound to the exact Published Revision used at that time.
-
-Later publication does not change the Attempt's definition.
-
-```text
-Attempt
-└── Published Revision used at start
-```
-
----
-
-## 19.3 Multiple Attempts
-
-A learner may have multiple Attempts subject to `maxAttempts`.
-
-At most one Attempt may be `IN_PROGRESS` for the same User and Quiz at a time.
-
----
-
-## 19.4 Attempt Quota
-
-The following Attempt statuses affect the attempt quota:
-
-```text
-SUBMITTED → consumes quota
-EXPIRED   → consumes quota
-CANCELLED → does not consume quota
-```
-
-An `IN_PROGRESS` Attempt is the currently active Attempt rather than a completed attempt.
-
----
-
-## 19.5 Resume Attempt
-
-A learner may resume an `IN_PROGRESS` Attempt.
-
-The Attempt remains bound to its original Published Revision.
-
----
-
-## 19.6 Time Limit
-
-The time limit begins when the Attempt starts.
-
-The business meaning of reaching the time limit is:
-
-```text
-IN_PROGRESS
-    ↓ Time limit reached
-EXPIRED
-```
-
-The technical mechanism used to detect the time limit is an implementation concern.
-
-Browser closure or network loss does not automatically cancel an Attempt.
-
----
-
-## 19.7 Expired Attempt
-
-An `EXPIRED` Attempt is terminal.
-
-It cannot be resumed.
-
-Answers from an expired Attempt are not carried into a new Attempt.
-
-Historical retention of expired answers is a persistence/data-retention concern and does not change the Attempt's terminal status.
-
----
-
-## 19.8 Cancellation
-
-An Attempt may be intentionally cancelled by:
-
-* the learner;
-* the system;
-* an authorized administrator/instructor where permitted by policy.
-
-Browser closure and network loss do not constitute cancellation.
-
-A cancelled Attempt does not consume the maximum attempt quota.
-
----
-
-# 20. Assessment Result Rules
-
-Assessment Result is calculated when an Attempt ends through submission or expiration.
-
-It is not assigned while the Attempt is `IN_PROGRESS`.
-
-If `passingScore` exists:
-
-```text
-totalScore >= passingScore
-    → PASSED
-
-totalScore < passingScore
-    → FAILED
-```
-
-For a timed-out Attempt:
-
-```text
-EXPIRED + passingScore
-    → FAILED
-```
-
-If the Quiz has no passing score:
-
-```text
-EXPIRED
-    → no PASSED/FAILED result
-```
-
-Assessment Result does not directly determine:
-
-* Competency;
-* Current Level;
-* Certification Level;
-* Learning Direction.
-
-Those concepts are handled by broader Learning domain responsibilities.
-
----
-
-# 21. Retry Rules
-
-Multiple Attempts are supported according to the assessment policy defined by the Quiz Revision.
-
-The current business model intentionally does not introduce separate fixed rules such as:
-
-```text
-allowRetryAfterPass
-allowRetryAfterFail
-```
-
-Instead, retry behavior belongs to the broader Attempt Policy.
-
-This allows different Quiz purposes to define different retry behavior without making Pass/Fail itself responsible for retry authorization.
-
----
-
-# 22. Quiz Visibility
-
-Quiz visibility is separate from Quiz availability.
-
-The current visibility concepts are:
-
-```text
+```text id="qba-visibility"
 PRIVATE
 COURSE_ONLY
 PUBLIC
 ```
 
-### PRIVATE
+### Result
 
-The Quiz is not publicly discoverable.
+The Quiz visibility changes.
 
-Access depends on authorization.
+Visibility does not modify:
 
-### COURSE_ONLY
-
-The Quiz is not independently discoverable.
-
-It is accessible through the Course learning context only when the learner has valid learning access to that Course.
-
-Enrollment is therefore relevant to access to a Course-only Quiz.
-
-### PUBLIC
-
-The Quiz may be independently discoverable.
-
-Public visibility does not automatically mean that any user may start an Attempt.
-
-Starting an Attempt still depends on the Published Revision, availability, and applicable eligibility/assessment policies.
+* Revision lifecycle;
+* existing Attempts;
+* historical results.
 
 ---
 
-# 23. Separation of Business Concepts
+## 3.10 Activate Quiz
 
-The following concepts must remain distinct.
+### Actor
 
-## 23.1 Quiz and Course
+Quiz Manager.
 
-```text
-Quiz ≠ Course
-```
+### Intent
 
-A Quiz may be placed into a Course through a LessonItem, but the Course does not own the Quiz Aggregate.
+Allow eligible learners to create new Attempts.
 
----
+### Preconditions
 
-## 23.2 Quiz and Quiz Revision
+The Quiz must satisfy the conditions required for activation.
 
-```text
-Quiz ≠ QuizRevision
-```
+### Result
 
-Quiz represents stable identity and governance.
-
-QuizRevision represents a concrete assessment definition.
+The Quiz becomes active for new Attempt creation.
 
 ---
 
-## 23.3 Revision and Attempt
+## 3.11 Deactivate Quiz
 
-```text
-QuizRevision ≠ QuizAttempt
-```
+### Actor
 
-Revision defines what is being assessed.
+Quiz Manager.
 
-Attempt represents a learner's execution of that definition.
+### Intent
 
----
+Prevent new Attempts from being created.
 
-## 23.4 Attempt Status and Assessment Result
+### Result
 
-```text
-Attempt Status ≠ Assessment Result
-```
+The Quiz becomes unavailable for new Attempt creation.
 
-For example:
-
-```text
-SUBMITTED + PASSED
-SUBMITTED + FAILED
-EXPIRED + FAILED
-```
-
-are conceptually different dimensions.
+Existing `IN_PROGRESS` Attempts are not automatically cancelled or expired.
 
 ---
 
-## 23.5 Assessment Result and Competency
+# 4. Learner Access Actions
 
-```text
-PASSED/FAILED ≠ Competency
+## 4.1 Access Quiz
+
+### Actor
+
+Learner.
+
+### Intent
+
+Open a Quiz for which the User may have access.
+
+### Preconditions
+
+The applicable access rules must be satisfied.
+
+Conceptually:
+
+```text id="qba-access"
+Visibility
+    ↓
+Access eligibility
+    ↓
+Quiz accessible
 ```
 
-A Quiz result does not automatically establish a learner's competency.
+For `COURSE_ONLY`, valid Course learning access is required.
+
+For `PRIVATE`, ordinary learners do not have access.
+
+The exact authorization implementation is outside the Quiz aggregate.
 
 ---
 
-## 23.6 Assessment Result and Current Level
+## 4.2 Check Attempt Eligibility
 
-```text
-PASSED/FAILED ≠ Current Level
+### Actor
+
+Learner / System.
+
+### Intent
+
+Determine whether a new QuizAttempt may be created.
+
+### Preconditions
+
+The applicable eligibility rules are evaluated.
+
+Conceptually:
+
+```text id="qba-eligibility"
+Quiz accessible
+      ↓
+Published Revision exists
+      ↓
+Quiz active
+      ↓
+Prerequisite / unlock satisfied
+      ↓
+No IN_PROGRESS Attempt
+      ↓
+Attempt quota available
 ```
 
-A Quiz score must not be directly converted into a learner's current level without an explicit Learning domain rule.
+The exact prerequisite or unlock rules are not yet defined.
+
+### Result
+
+The User is either:
+
+* eligible to create an Attempt; or
+* rejected with the applicable business reason.
 
 ---
 
-## 23.7 Visibility and Availability
+# 5. QuizAttempt Actions
 
-```text
-Visibility ≠ Availability
-```
+## 5.1 Start QuizAttempt
 
-Visibility answers whether and how the Quiz can be discovered/accessed.
+### Actor
 
-Availability answers whether new Attempts may currently begin.
+Learner.
 
----
+### Intent
 
-## 23.8 Visibility and Permission
+Create a new learner-specific execution of a Quiz.
 
-```text
-Visibility ≠ Permission
-```
+### Preconditions
 
-A Quiz being public does not mean every action on the Quiz is available to every actor.
+All required eligibility conditions must be satisfied:
 
-Authorization remains a separate concern.
+1. Quiz is accessible.
+2. A Published Revision exists.
+3. Quiz is active.
+4. Required prerequisite/unlock conditions are satisfied.
+5. User has no existing `IN_PROGRESS` Attempt for the Quiz.
+6. Attempt quota is available.
 
----
+### Main Flow
 
-## 23.9 Revision Lifecycle and Availability
-
-```text
-Revision Lifecycle ≠ Quiz Availability
-```
-
-Publishing a Revision does not by itself represent activation/deactivation of the Quiz.
-
-A Quiz can therefore have:
-
-```text
-Published Revision
-+
-Inactive Quiz
-```
-
-which means the assessment definition exists but new Attempts cannot start.
-
----
-
-# 24. Separation of Duties
-
-Learning governance follows a separation-of-duties principle.
-
-The conceptual responsibilities are:
-
-```text
-Learning Author
-→ create and edit own learning content
-→ submit Revision for review
-→ withdraw own submission
-
-Learning Editor
-→ review submitted learning content
-→ provide feedback
-→ request changes
-→ approve and publish
-
-Admin
-→ system-level authority
-```
-
-The Author who submits a Revision cannot approve and publish that same Revision.
-
-A Learning Editor's review authority does not automatically imply permission to edit another Author's content.
-
-The exact implementation of roles and permissions is a broader Learning/Identity concern.
-
----
-
-# 25. Revision Lifecycle
-
-The current target workflow is:
-
-```text
-                  ┌──────────────────────┐
-                  │                      │
-                  │ Request Changes      │
-                  │                      │
-                  ▼                      │
-DRAFT ──Submit──> IN_REVIEW ─────────────┘
-  │                  │
-  │                  │ Approve Revision
-  │                  ▼
-  │              PUBLISHED
-  │
-  └── Discard Draft
-```
-
-Author withdrawal provides:
-
-```text
-IN_REVIEW
-    │
-    └── Withdraw Submission
-              ↓
-            DRAFT
-```
-
-There is intentionally no:
-
-```text
-APPROVED
-```
-
-state in the current scope.
-
-Approval directly results in publication.
-
----
-
-# 26. Published Revision and Historical Attempts
-
-A Published Revision may later be replaced by a newer Published Revision.
-
-The previous definition must remain historically available because existing QuizAttempts depend on the exact assessment definition used when they started.
-
-Example:
-
-```text
-Quiz
-├── Revision A
-│    ├── Attempt 1
-│    └── Attempt 2
-│
-└── Revision B
-     ├── Attempt 3
-     └── Attempt 4
-```
-
-Attempts 1 and 2 continue to use Revision A even after Revision B becomes the current Published Revision.
-
-Publishing a new Revision therefore does not invalidate existing Attempts.
-
----
-
-# 27. Business Invariants
-
-The following invariants must remain true.
-
-## 27.1 Revision Count
-
-A Quiz has:
-
-```text
-At most one Draft Revision
-At most one Published Revision
-```
-
-A Draft and Published Revision may coexist.
-
----
-
-## 27.2 Published Immutability
-
-```text
-Published Revision
-→ cannot be edited directly
-```
-
-Changes require a new Draft Revision.
-
----
-
-## 27.3 Score Consistency
-
-```text
-Revision.maxScore
-=
-sum(Question.score)
-```
-
----
-
-## 27.4 Passing Score
-
-`passingScore` is optional.
-
-If present:
-
-```text
-0 ≤ passingScore ≤ maxScore
-```
-
----
-
-## 27.5 Choice Answer Count
-
-For current Choice Questions:
-
-```text
-2 ≤ number of Answers ≤ 6
-```
-
----
-
-## 27.6 Correct Answer
-
-Every Choice Question must contain at least one correct Answer before publication.
-
-Type-specific rules must also hold.
-
----
-
-## 27.7 Single Choice
-
-```text
-SINGLE_CHOICE
-→ maximum one correct Answer
-```
-
----
-
-## 27.8 True / False
-
-```text
-TRUE_FALSE
-→ exactly 2 Answers
-→ exactly 1 correct Answer
-```
-
----
-
-## 27.9 Attempt Revision Binding
-
-```text
-QuizAttempt
-→ permanently bound to the Published Revision used at start
-```
-
----
-
-## 27.10 Active Attempt
-
-For the same User and Quiz:
-
-```text
-At most one IN_PROGRESS Attempt
-```
-
----
-
-## 27.11 Assessment Result Timing
-
-```text
+```text id="qba-start-attempt"
+Check eligibility
+      ↓
+Create QuizAttempt
+      ↓
+Bind exact Published Revision
+      ↓
+Consume attempt quota
+      ↓
 IN_PROGRESS
-→ no PASSED/FAILED result
 ```
 
-Assessment Result is determined only when the Attempt ends.
+### Result
+
+A new QuizAttempt is created.
+
+The Attempt is permanently associated with the exact Published Revision used at creation.
+
+One attempt quota is consumed immediately after successful creation.
 
 ---
 
-# 28. Current Scope and Future Scope
+## 5.2 Resume QuizAttempt
 
-## 28.1 Current Scope
+### Actor
 
-The current Quiz domain includes:
+Learner.
 
-* Quiz identity;
-* Quiz Revision;
-* Draft Revision;
-* Published Revision;
-* Revision-based editing;
-* Quiz review workflow;
-* Revision publication;
-* Quiz activation/deactivation;
-* Choice Questions;
-* Single Choice;
-* Multiple Choice;
-* True/False;
-* Answer configuration;
-* individual Question scores;
-* Revision maximum score;
-* optional passing score;
-* maximum attempts;
-* Quiz Attempts;
-* Attempt lifecycle;
-* Pass/Fail Assessment Result.
+### Intent
+
+Continue an existing active Attempt.
+
+### Preconditions
+
+* Attempt exists.
+* Attempt belongs to the User.
+* Attempt status is `IN_PROGRESS`.
+* Attempt has not reached its deadline.
+
+### Result
+
+The User continues the same QuizAttempt.
+
+No new Attempt is created.
+
+No additional quota is consumed.
 
 ---
 
-## 28.2 Explicitly Out of Current Scope
+## 5.3 Answer Question
 
-The following are not defined as current Quiz capabilities:
+### Actor
 
-* Text Response;
-* AI-based text evaluation;
-* Speaking Response;
-* Audio Response;
-* Matching Response;
-* specialized `TextQuiz`;
-* specialized `SpeakingQuiz`;
-* specialized `ReadingQuiz`;
-* generic `LearningActivity` abstraction;
-* separate Assessment bounded context;
-* automatic Competency inference;
-* automatic Current Level inference;
-* automatic Certification Level inference from Quiz results.
+Learner.
 
-These concepts may be considered later if concrete business requirements require them.
+### Intent
+
+Record the current answer to a Question.
+
+### Preconditions
+
+* Attempt belongs to the User.
+* Attempt is `IN_PROGRESS`.
+* Question belongs to the Attempt's Revision.
+* Submitted answer is valid for the Question.
+
+### Result
+
+The current `UserAnswer` for that Question is created or replaced.
+
+Only the current answer is retained.
 
 ---
 
-# 29. Summary
+## 5.4 Change Answer
 
-The Quiz domain is centered around the distinction between the Quiz identity and its assessment definitions.
+### Actor
+
+Learner.
+
+### Intent
+
+Change an existing answer before the Attempt ends.
+
+### Preconditions
+
+* Attempt is `IN_PROGRESS`.
+* Question belongs to the Attempt's Revision.
+
+### Result
+
+The current `UserAnswer` is replaced by the new valid response.
+
+No answer history is created.
+
+---
+
+## 5.5 Clear Answer
+
+### Actor
+
+Learner.
+
+### Intent
+
+Remove the current answer from a Question.
+
+### Preconditions
+
+* Attempt is `IN_PROGRESS`.
+* Question belongs to the Attempt's Revision.
+
+### Result
+
+The Question returns to an unanswered state.
+
+No `SKIPPED` state is created.
+
+---
+
+## 5.6 Navigate / Skip Question
+
+### Actor
+
+Learner.
+
+### Intent
+
+Move between Questions without answering the current Question.
+
+### Result
+
+No assessment answer state is created.
+
+The Question remains unanswered.
+
+Skipping is navigation behavior rather than a persisted domain state.
+
+---
+
+## 5.7 Submit QuizAttempt
+
+### Actor
+
+Learner.
+
+### Intent
+
+Finish the QuizAttempt manually.
+
+### Preconditions
+
+The Attempt must be `IN_PROGRESS`.
+
+The Completion Policy determines whether unanswered Questions are allowed.
+
+### REQUIRED_ALL
+
+All Questions must be answered.
 
 ```text
-Quiz
-│
-├── Draft Revision
-│     └── Questions
-│           └── Choice Answers
-│
-└── Published Revision
-      └── Questions
-            └── Choice Answers
+All Questions answered
+        ↓
+submission allowed
 ```
 
-The core lifecycle is:
+### OPTIONAL
+
+Unanswered Questions are allowed.
 
 ```text
+Some Questions unanswered
+        ↓
+submission still allowed
+```
+
+### Main Flow
+
+```text id="qba-submit"
+IN_PROGRESS
+    ↓
+validate Completion Policy
+    ↓
+evaluate Questions
+    ↓
+create QuestionResults
+    ↓
+calculate totalScore
+    ↓
+calculate AssessmentResult when applicable
+    ↓
+SUBMITTED
+```
+
+### Result
+
+The Attempt becomes `SUBMITTED`.
+
+Question Results are finalized.
+
+The final `totalScore` is recorded.
+
+If a passing score exists, the Assessment Result becomes either:
+
+```text
+PASSED
+```
+
+or:
+
+```text
+FAILED
+```
+
+---
+
+## 5.8 Cancel QuizAttempt
+
+### Actor
+
+Learner.
+
+### Intent
+
+Intentionally stop an active Attempt without submitting it.
+
+### Preconditions
+
+* Attempt belongs to the User.
+* Attempt is `IN_PROGRESS`.
+
+### Main Flow
+
+```text id="qba-cancel"
+IN_PROGRESS
+      ↓
+CANCEL
+      ↓
+CANCELLED
+```
+
+### Result
+
+The Attempt becomes `CANCELLED`.
+
+The Attempt:
+
+* cannot be resumed;
+* does not produce an Assessment Result;
+* does not become a completed assessment;
+* does not return consumed quota.
+
+The User does not need to provide a cancellation reason.
+
+The frontend should confirm the cancellation intent before executing the action.
+
+---
+
+## 5.9 Expire QuizAttempt
+
+### Actor
+
+System.
+
+### Intent
+
+Terminate an Attempt whose time limit has elapsed.
+
+### Preconditions
+
+* Attempt is `IN_PROGRESS`.
+* Current server time has reached or passed the Attempt deadline.
+
+### Main Flow
+
+```text id="qba-expire"
+IN_PROGRESS
+      ↓
+deadline reached
+      ↓
+evaluate submitted answers
+      ↓
+unanswered Questions → 0
+      ↓
+create QuestionResults
+      ↓
+calculate totalScore
+      ↓
+calculate AssessmentResult when applicable
+      ↓
+EXPIRED
+```
+
+### Result
+
+The Attempt becomes `EXPIRED`.
+
+The Attempt cannot be resumed.
+
+If a passing score exists, the final Assessment Result is calculated.
+
+If no passing score exists, no Assessment Result is produced.
+
+---
+
+## 5.10 Retry Quiz
+
+### Actor
+
+Learner.
+
+### Intent
+
+Start another Attempt after a previous Attempt has ended.
+
+### Preconditions
+
+The User must:
+
+* be eligible to access the Quiz;
+* have a Published Revision available;
+* satisfy the applicable retry policy;
+* have remaining attempt quota;
+* have no existing `IN_PROGRESS` Attempt.
+
+### Result
+
+A new QuizAttempt is created.
+
+The new Attempt receives its own:
+
+* Attempt identifier;
+* Revision binding;
+* answers;
+* lifecycle;
+* results;
+* score.
+
+A previous Attempt is never reopened.
+
+A new quota is consumed when the new Attempt is created.
+
+---
+
+# 6. Assessment Result Actions
+
+## 6.1 Evaluate Attempt
+
+### Actor
+
+System / Domain.
+
+### Intent
+
+Determine the assessment evidence and final score when an Attempt reaches an assessment-ending state.
+
+### Trigger
+
+The Attempt reaches:
+
+```text
+SUBMITTED
+```
+
+or:
+
+```text
+EXPIRED
+```
+
+### Main Flow
+
+For every Question:
+
+```text id="qba-evaluate"
+Current UserAnswer
+       ↓
+evaluate against Revision definition
+       ↓
+QuestionResult
+```
+
+For unanswered Questions:
+
+```text
+UNANSWERED
++
+earnedScore = 0
+```
+
+Then:
+
+```text
+QuestionResults
+      ↓
+sum earnedScore
+      ↓
+totalScore
+```
+
+If a passing score exists:
+
+```text
+totalScore >= passingScore
+        ↓
+PASSED
+
+totalScore < passingScore
+        ↓
+FAILED
+```
+
+### Result
+
+The Attempt contains its historical assessment outcome.
+
+---
+
+## 6.2 Calculate Best Score
+
+### Actor
+
+System / Query capability.
+
+### Intent
+
+Determine the highest historical score for a User and Published Quiz Revision.
+
+### Input
+
+Historical QuizAttempts for:
+
+```text id="qba-best-score"
+User × Published Quiz Revision
+```
+
+### Calculation
+
+```text
+Best Score
+=
+MAX(totalScore)
+```
+
+### Result
+
+The highest score is returned as a derived value.
+
+Best Score is not written back into an individual QuizAttempt.
+
+---
+
+# 7. Revision Change Actions During Active Attempts
+
+## 7.1 Publish New Revision While Attempt Is Active
+
+### Actor
+
+Quiz Manager.
+
+### Preconditions
+
+A valid Draft Revision is available.
+
+### Result
+
+A new Published Revision becomes current.
+
+Existing `IN_PROGRESS` Attempts continue using their original Revision.
+
+```text id="qba-revision-change"
+Revision 1
+    ↓
+Attempt A → IN_PROGRESS
+
+Revision 2 published
+
+Attempt A
+    ↓
+still uses Revision 1
+```
+
+The existing Attempt is not migrated to Revision 2.
+
+---
+
+## 7.2 Inform Learner of Revision Change
+
+### Actor
+
+System.
+
+### Intent
+
+Inform a learner that a newer Quiz Revision has been published while they have an active Attempt.
+
+### Result
+
+The User may be informed of the change.
+
+The notification does not modify the existing Attempt.
+
+The exact notification mechanism is an application/presentation concern.
+
+---
+
+# 8. Business Action Summary
+
+The Quiz domain business actions can be grouped as follows.
+
+### Quiz Definition
+
+```text id="qba-summary-definition"
 Create Quiz
-    ↓
-Draft Revision
-    ↓
-Submit for Review
-    ↓
-In Review
-    ├── Request Changes ──→ Draft
-    ├── Withdraw Submission ──→ Draft
-    └── Approve Revision ──→ Published
+Edit Draft Revision
+Add Question
+Update Question
+Remove Question
+Submit Draft Revision for Review
+Publish Revision
+Discard Draft Revision
+Change Quiz Visibility
+Activate Quiz
+Deactivate Quiz
 ```
 
-A published definition is never edited directly.
+### Learner Assessment
 
-When changes are required after publication, a new Draft Revision is created and goes through the review process again.
-
-Quiz Attempts are permanently bound to the Published Revision from which they started.
-
-This allows new Quiz definitions to evolve without changing the meaning of historical assessment Attempts.
-
-The current Question Response scope is intentionally limited to Choice Response:
-
-```text
-Choice Response
-├── SINGLE_CHOICE
-├── MULTIPLE_CHOICE
-└── TRUE_FALSE
+```text id="qba-summary-learner"
+Access Quiz
+Check Attempt Eligibility
+Start QuizAttempt
+Resume QuizAttempt
+Answer Question
+Change Answer
+Clear Answer
+Navigate / Skip Question
+Submit QuizAttempt
+Cancel QuizAttempt
+Retry Quiz
 ```
 
-Future response mechanisms are not introduced until concrete requirements justify them.
+### System / Assessment Processing
+
+```text id="qba-summary-system"
+Expire QuizAttempt
+Evaluate Attempt
+Calculate Best Score
+Inform Learner of Revision Change
+```
+
+---
+
+# 9. Business Action Flow
+
+The normal assessment lifecycle is:
+
+```text id="qba-final-flow"
+                 Create Quiz
+                     │
+                     ▼
+               Draft Revision
+                     │
+              edit Questions
+                     │
+                     ▼
+             Submit for Review
+                     │
+                     ▼
+              Publish Revision
+                     │
+                     ▼
+               Quiz Available
+                     │
+                     ▼
+            Check Eligibility
+                     │
+                     ▼
+              Start Attempt
+                     │
+              quota consumed
+                     │
+                     ▼
+                IN_PROGRESS
+                 /    |    \
+                /     |     \
+           Answer   Cancel   Deadline
+              │       │        │
+              │       ▼        ▼
+              │   CANCELLED  EXPIRED
+              │                 │
+              ▼                 │
+           Submit               │
+              │                 │
+              ▼                 │
+          SUBMITTED ◄───────────┘
+              │
+              ▼
+       Question Results
+              │
+              ▼
+          totalScore
+              │
+       passingScore?
+          /       \
+        yes        no
+         │          │
+   PASSED/FAILED   score only
+```
+
+---
+
+# 10. Important Business Boundaries
+
+The following distinctions must be preserved:
+
+```text id="qba-boundaries"
+Quiz
+    ≠
+QuizAttempt
+
+Quiz Revision
+    ≠
+QuizAttempt
+
+Attempt Status
+    ≠
+Assessment Result
+
+QuestionResult
+    ≠
+Competency
+
+Quiz Score
+    ≠
+Learner Current Level
+
+Visibility
+    ≠
+Availability
+
+Retry
+    ≠
+Resume
+
+Skip
+    ≠
+Answer State
+
+Best Score
+    ≠
+QuizAttempt.totalScore
+```
+
+A Quiz defines what the assessment is.
+
+A QuizAttempt records one learner's execution of a specific Published Revision.
+
+A QuestionResult records assessment evidence for one Question within that Attempt.
+
+An AssessmentResult records the final pass/fail outcome when a passing score exists.
+
+---
+
+# 11. Current Implementation Status
+
+The current source contains the following related domain objects:
+
+```text id="qba-current"
+src/main/java/com/deutschhub/domain/learning/model/aggregate/Quiz.java
+src/main/java/com/deutschhub/domain/learning/model/aggregate/QuizAttempt.java
+
+src/main/java/com/deutschhub/domain/learning/model/entity/Question.java
+src/main/java/com/deutschhub/domain/learning/model/entity/AnswerQuestion.java
+src/main/java/com/deutschhub/domain/learning/model/entity/UserAnswer.java
+
+src/main/java/com/deutschhub/domain/learning/model/enums/AttemptStatus.java
+src/main/java/com/deutschhub/domain/learning/model/enums/QuestionType.java
+```
+
+The current source confirms that `QuizAttempt` currently supports the basic lifecycle and answer/scoring concepts.
+
+However, the complete business-action workflow described above is not yet implemented.
+
+In particular, the current source does not yet provide a complete application flow for:
+
+* Quiz Revision management;
+* exact Revision binding;
+* Attempt eligibility;
+* attempt quota consumption;
+* Completion Policy;
+* QuestionResult persistence;
+* AssessmentResult;
+* Best Score;
+* prerequisite/unlock evaluation.
+
+The current `QuizAttempt.create(...)` operation in:
+
+```text id="qba-current-create"
+src/main/java/com/deutschhub/domain/learning/model/aggregate/QuizAttempt.java
+```
+
+currently performs object creation and initial state setup but does not implement the complete eligibility workflow defined by the target business model.
+
+The target actions therefore represent agreed business behavior, not a claim that the current implementation already supports all of them.
 
