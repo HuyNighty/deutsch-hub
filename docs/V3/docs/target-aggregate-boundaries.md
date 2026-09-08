@@ -280,17 +280,356 @@ The relationship is therefore conceptual/application-level rather than Aggregate
 ```text
 Quiz Aggregate
 └── Quiz
+    └── QuizRevision
+        └── Question
+            └── Answer
 ```
 
-The existing root is:
+The Aggregate Root is:
 
 ```text
 src/main/java/com/deutschhub/domain/learning/model/aggregate/Quiz.java
 ```
 
-Quiz represents the definition of an assessment.
+The target internal structure is:
 
-It is therefore distinct from the learner's execution of that assessment.
+```text
+Quiz
+└── QuizRevision
+    └── Question
+        └── Answer
+```
+
+`Quiz` represents the stable identity, ownership, governance, and lifecycle of an assessment.
+
+`QuizRevision` represents a concrete version of the assessment definition.
+
+`Question` and `Answer` belong to a specific `QuizRevision` and are part of that revision's consistency boundary.
+
+---
+
+## 6.2 Quiz Aggregate Responsibilities
+
+The Quiz Aggregate is responsible for the consistency of the assessment definition.
+
+Conceptually:
+
+```text
+Quiz
+├── Identity
+├── Ownership
+├── Governance
+├── Visibility
+├── Availability
+└── Revision Lifecycle
+     └── QuizRevision
+          ├── Definition
+          ├── Questions
+          │    └── Answers
+          ├── Scoring Configuration
+          └── Assessment Rules
+```
+
+The Aggregate therefore protects invariants involving:
+
+```text
+Quiz
+    +
+current / draft Revision
+    +
+Questions
+    +
+Answers
+    +
+Revision-specific assessment configuration
+```
+
+The exact application services and persistence representation are outside the scope of this document.
+
+---
+
+## 6.3 QuizRevision Boundary
+
+`QuizRevision` is an Entity inside the Quiz Aggregate.
+
+It is not an independent Aggregate Root.
+
+```text
+Quiz Aggregate
+└── QuizRevision
+```
+
+A Revision represents a concrete assessment definition that can become published and subsequently remain historically stable.
+
+Revision-specific data includes concepts such as:
+
+```text
+Title
+Description
+Difficulty
+Time Limit
+Maximum Score
+Passing Percentage
+Maximum Attempts
+Questions
+Answers
+```
+
+`maxScore` is derived from the scores of the Questions in the Revision rather than being an independent author-entered source of truth.
+
+---
+
+## 6.4 Revision Lifecycle
+
+The Quiz lifecycle and QuizRevision lifecycle are separate.
+
+Quiz lifecycle:
+
+```text
+ACTIVE
+   ↓
+ARCHIVED
+   ↓
+DELETED
+```
+
+QuizRevision lifecycle:
+
+```text
+DRAFT
+   ↓
+IN_REVIEW
+   ↓
+PUBLISHED
+   ↓
+HISTORICAL
+```
+
+Publishing a new Revision does not mutate the previously published Revision.
+
+Conceptually:
+
+```text
+Quiz
+├── Revision A → HISTORICAL
+└── Revision B → PUBLISHED
+```
+
+Published and Historical Revisions remain immutable.
+
+The Quiz Aggregate therefore contains multiple historical Revision definitions while maintaining the stable identity of the Quiz itself.
+
+---
+
+## 6.5 Revision Independence
+
+Each Revision owns its own Question and Answer instances.
+
+For example:
+
+```text
+Quiz
+├── Revision A
+│    ├── Question A1
+│    │    ├── Answer A
+│    │    └── Answer B
+│    └── Question A2
+│
+└── Revision B
+     ├── Question B1
+     │    ├── Answer A
+     │    └── Answer B
+     └── Question B2
+```
+
+A new Revision may be created from an existing Revision, but the resulting Questions and Answers are independent domain instances.
+
+Therefore:
+
+```text
+Question A1
+    ≠
+Question B1
+```
+
+even when Revision B was created from Revision A.
+
+This prevents later changes to a Draft Revision from altering the definition of an already published or historical Revision.
+
+---
+
+## 6.6 Why QuizRevision Is Inside Quiz
+
+`QuizRevision` remains inside the Quiz Aggregate because Revision lifecycle and Quiz governance are part of the same assessment-definition consistency boundary.
+
+The Quiz Aggregate must be able to enforce rules such as:
+
+```text
+A Quiz must have a valid Revision before publication.
+
+A Revision must contain valid Questions before publication.
+
+A Question must satisfy its Answer invariants before publication.
+
+A Published Revision must remain immutable.
+
+A Historical Revision must remain immutable.
+
+A new Revision must belong to the same Quiz identity.
+```
+
+These rules concern the integrity of the assessment definition owned by the Quiz.
+
+Therefore:
+
+```text
+QuizRevision
+    ∈
+Quiz Aggregate
+```
+
+rather than:
+
+```text
+QuizRevision
+    =
+Independent Aggregate Root
+```
+
+---
+
+## 6.7 Quiz and QuizAttempt Are Separate
+
+The Quiz Aggregate represents the assessment definition:
+
+```text
+Quiz
+└── QuizRevision
+    └── Question
+        └── Answer
+```
+
+The QuizAttempt Aggregate represents the learner's execution:
+
+```text
+QuizAttempt
+└── UserAnswer(s)
+```
+
+Therefore:
+
+```text
+Quiz
+    ≠
+QuizAttempt
+```
+
+A Quiz may have many Attempts:
+
+```text
+Quiz
+├── Attempt A
+├── Attempt B
+└── Attempt C
+```
+
+but these Attempts are not internal entities of the Quiz Aggregate.
+
+---
+
+## 6.8 Revision Binding of QuizAttempt
+
+Each `QuizAttempt` must be bound to the exact Published `QuizRevision` used when the Attempt was started.
+
+Conceptually:
+
+```text
+QuizAttempt
+    └── QuizRevision identity
+```
+
+The Attempt does not dynamically follow the latest Published Revision.
+
+For example:
+
+```text
+Quiz
+├── Revision A → HISTORICAL
+└── Revision B → PUBLISHED
+
+Attempt 1 → Revision A
+Attempt 2 → Revision B
+```
+
+An existing Attempt therefore remains evaluated against the Revision it originally started with.
+
+Publishing a newer Revision does not alter the definition used by an existing Attempt.
+
+This preserves the historical meaning of the assessment execution.
+
+---
+
+## 6.9 Aggregate Boundary Summary
+
+The target Quiz Aggregate is therefore:
+
+```text
+┌──────────────────────────────────┐
+│ Quiz Aggregate                   │
+│                                  │
+│ Quiz                             │
+│ └── QuizRevision                 │
+│      └── Question                │
+│           └── Answer             │
+└──────────────────────────────────┘
+```
+
+While assessment execution remains separate:
+
+```text
+┌──────────────────────────────────┐
+│ QuizAttempt Aggregate            │
+│                                  │
+│ QuizAttempt                      │
+│ └── UserAnswer(s)                │
+└──────────────────────────────────┘
+```
+
+The distinction is:
+
+```text
+Quiz Aggregate
+    → Assessment Definition
+
+QuizAttempt Aggregate
+    → Assessment Execution
+    → Learning Evidence
+```
+
+---
+
+## 6.10 Boundary Decision
+
+The target boundary is:
+
+```text
+Quiz Aggregate
+└── Quiz
+    └── QuizRevision
+        └── Question
+            └── Answer
+```
+
+with:
+
+```text
+QuizAttempt
+    → Separate Aggregate Root
+```
+
+`QuizRevision` is intentionally not introduced as a separate Aggregate Root.
+
+The Quiz Aggregate owns the consistency of the assessment definition, while QuizAttempt independently owns the lifecycle and state of an individual learner execution.
 
 ---
 
@@ -306,15 +645,15 @@ QuizAttempt Aggregate
     └── UserAnswer(s)
 ```
 
-The existing root is:
+The Aggregate Root is:
 
 ```text
 src/main/java/com/deutschhub/domain/learning/model/aggregate/QuizAttempt.java
 ```
 
-QuizAttempt represents a learner-specific assessment execution.
+QuizAttempt represents one learner-specific execution of a Published QuizRevision.
 
-It has its own identity and assessment state.
+It has its own identity, lifecycle, answers, and evaluation state.
 
 Conceptually:
 
@@ -323,6 +662,10 @@ Quiz
     ↓
 Assessment Definition
 
+QuizRevision
+    ↓
+Concrete Assessment Definition
+
 QuizAttempt
     ↓
 Assessment Execution
@@ -330,11 +673,35 @@ Assessment Execution
 Learning Evidence
 ```
 
----
+## 7.2 Revision Binding
 
-## 7.2 Why QuizAttempt Is Separate from Quiz
+Each QuizAttempt is bound to the exact Published `QuizRevision` used when the Attempt was created.
 
-A Quiz can have multiple learner attempts:
+Conceptually:
+
+```text
+QuizAttempt
+    └── QuizRevision identity
+```
+
+The Attempt does not dynamically follow the latest Published Revision.
+
+For example:
+
+```text
+Quiz
+├── Revision A → HISTORICAL
+└── Revision B → PUBLISHED
+
+Attempt 1 → Revision A
+Attempt 2 → Revision B
+```
+
+An existing Attempt therefore continues to use the Revision under which it was started.
+
+## 7.3 Why QuizAttempt Is Separate from Quiz
+
+A Quiz may have many learner Attempts:
 
 ```text
 Quiz
@@ -343,15 +710,15 @@ Quiz
  └── Attempt C
 ```
 
-The attempts belong to different learner executions and have their own lifecycle.
+The Attempts represent independent learner executions and have their own lifecycle.
 
-Therefore, making all attempts internal to the Quiz Aggregate would unnecessarily expand the consistency boundary.
+Therefore, making all Attempts internal to the Quiz Aggregate would unnecessarily expand the consistency boundary.
 
-## 7.3 Boundary Decision
+## 7.4 Boundary Decision
 
-Quiz and QuizAttempt remain independent Aggregate Roots.
+QuizAttempt remains a separate Aggregate Root.
 
-QuizAttempt can additionally serve as Learning Evidence.
+QuizAttempt may additionally serve as Learning Evidence.
 
 These are two different classifications:
 
@@ -451,18 +818,19 @@ No independent Current Level Aggregate is introduced at this stage.
 
 Learner State is treated as a business responsibility rather than a single Aggregate.
 
-Conceptually:
+It represents the broader state of a learner that may be derived from or informed by multiple learning sources.
+
+Potential areas include:
 
 ```text
-Learner State
-├── Progress
-├── Competency
-├── Current Level
-├── Learning History
-├── XP
-├── Streak
-├── Achievements
-└── Statistics
+Course-scoped Progress
+Competency
+Current Level
+Learning History
+XP
+Streak
+Achievements
+Statistics
 ```
 
 These concepts do not currently have enough evidence to establish a shared consistency boundary.
@@ -474,6 +842,39 @@ LearnerState Aggregate
 ```
 
 as a replacement for the current `UserProgress`.
+
+Importantly, Course-scoped `Progress` remains owned by the Enrollment Aggregate:
+
+```text
+Enrollment
+└── Progress
+```
+
+Learner State may consume or derive information from such course-scoped state, but this does not make `Progress` an internal entity of a Learner State Aggregate.
+
+---
+
+## 10.2 Boundary Principle
+
+The following distinction must remain explicit:
+
+```text
+Enrollment.Progress
+    → Course-scoped learning progress
+
+Learner State
+    → Broader learner-level condition
+```
+
+Therefore:
+
+```text
+Progress
+    ≠
+Complete Learner State
+```
+
+The final representation of Learner State remains open until its business rules, sources of truth, and update semantics are established.
 
 ---
 
@@ -614,6 +1015,9 @@ The currently established boundaries are:
 │ Quiz Aggregate                   │
 │                                  │
 │ Quiz                             │
+│ └── QuizRevision                 │
+│      └── Question                │
+│           └── Answer             │
 └──────────────────────────────────┘
 
 
@@ -648,43 +1052,59 @@ Learning Goal
 
 # 14. Aggregate Relationships
 
-The target model can be represented conceptually as:
+The target model describes business relationships between Aggregates and domain concepts without implying direct Aggregate ownership.
+
+A simplified conceptual view is:
 
 ```text
-                  Course Aggregate
-                         │
-                         │
-                    Course Structure
-                         │
-                         ↓
-                  Learning Activity
-                         │
-                         ↓
-                  Learning Evidence
-                    ┌────┴────┐
-                    ↓         ↓
-            LessonCompletion  QuizAttempt
-                    │         │
-                    │         │
-                    ↓         ↓
-              Enrollment   Assessment
-                 │
-                 ↓
-              Progress
-                 │
-                 ↓
-           Learner State
-             ├── Competency
-             └── Current Level
-                 │
-                 ↓
-        Learning Direction
-                 │
-                 ↓
-       Next Learning Activity
+Course Aggregate
+        │
+        │ provides learning structure
+        ↓
+Learning Flow
+        │
+        ├──────────────→ Learning Activity
+        │
+        └──────────────→ Learning Activity
+                              │
+                              ↓
+                       Learning Evidence
+                              │
+                    ┌─────────┴─────────┐
+                    ↓                   ↓
+             LessonCompletion      QuizAttempt
+                    │                   │
+                    │                   │
+                    ↓                   ↓
+              Enrollment          Assessment Result
+                    │
+                    ↓
+                 Progress
 ```
 
-This diagram describes business relationships and does not imply direct Aggregate ownership.
+This diagram represents business relationships and evidence flow.
+
+It does not imply:
+
+```text
+Course
+    └── LearningActivity
+```
+
+or:
+
+```text
+Course
+    └── LearningEvidence
+```
+
+as Aggregate ownership.
+
+A Learning Activity may exist independently of a Course, Section, or Lesson.
+
+Similarly, Learning Evidence may remain an independent domain record or Aggregate depending on its own business boundary.
+
+The exact relationships between Learning Activity, Learning Evidence, Learner State, and Learning Direction remain subject to their respective domain decisions.
 
 ---
 
@@ -755,6 +1175,9 @@ Otherwise, concepts should remain independent.
 | Progress           | Inside Enrollment           | Confirmed             |
 | LessonCompletion   | Independent Evidence Entity | Confirmed / Preferred |
 | Quiz               | Quiz Aggregate              | Confirmed             |
+| QuizRevision       | Inside Quiz Aggregate       | Confirmed             |
+| Question           | Inside QuizRevision         | Confirmed             |
+| Answer             | Inside Question             | Confirmed             |
 | QuizAttempt        | Independent Aggregate       | Confirmed             |
 | Competency         | TBD                         | Open                  |
 | Current Level      | TBD                         | Open                  |
@@ -801,17 +1224,16 @@ LessonCompletion
     → records Learning Evidence independently
 
 Quiz
-    → owns assessment definition
+    → owns assessment identity, governance, and Revision lifecycle
+
+QuizRevision
+    → owns a concrete assessment definition
 
 QuizAttempt
     → owns learner-specific assessment execution
-
-Learner State
-    → represents broader learner condition without assuming one Aggregate
-
-Learning Direction
-    → determines or recommends next learning actions without assuming one Aggregate
 ```
+
+Learner State and Learning Direction remain broader business responsibilities without assuming a single Aggregate boundary.
 
 The most important boundary decisions are:
 
@@ -826,6 +1248,8 @@ LessonCompletion ∉ Enrollment
 
 Quiz ≠ QuizAttempt
 
+QuizRevision ∈ Quiz Aggregate
+
 Evidence ≠ Learner State
 
 Course Structure ≠ Learning Activity
@@ -835,3 +1259,4 @@ These boundaries provide the domain foundation for subsequent architecture decis
 
 The next stage should determine how these business boundaries should be reflected in the target architecture and code organization without allowing the current package structure to dictate the domain model.
 
+````

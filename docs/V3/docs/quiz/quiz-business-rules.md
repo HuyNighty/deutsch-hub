@@ -2,21 +2,25 @@
 
 ## 1. Purpose
 
-This document defines the business rules governing Quiz definitions, Quiz Revisions, Questions, QuizAttempts, assessment results, retry policies, Quiz availability, and learner access within the Learning context.
+This document defines the business rules governing Quiz definitions, Quiz Revisions, Questions, Answers, QuizAttempts, assessment results, retry policies, Quiz availability, learner eligibility, and learning completion requirements within the Learning Context.
 
-The rules are based on the current DeutschHub implementation and the target domain decisions established during Quiz domain discovery.
+The rules are based on:
+
+- the current DeutschHub implementation;
+- the target Learning domain model;
+- the Quiz domain decisions established during domain discovery.
 
 The document distinguishes confirmed business rules from decisions that remain open.
 
 ---
 
-## 2. Quiz Definition Rules
+# 2. Quiz Definition Rules
 
-### BR-QUIZ-01 — Quiz Is an Independent Assessment Definition
+## BR-QUIZ-01 — Quiz Is an Independent Assessment Definition
 
-A Quiz is an independent assessment definition within the Learning context.
+A Quiz is an independent assessment definition within the Learning Context.
 
-A Quiz is not owned by a Course or Lesson aggregate.
+A Quiz is not owned by a Course or Lesson Aggregate.
 
 A Quiz may be placed inside a Lesson through a `LessonItem`, which references the Quiz by identifier.
 
@@ -28,13 +32,32 @@ Course
             └── quizId → Quiz
 ````
 
+The Quiz Aggregate owns the Quiz identity, governance, and Revision lifecycle.
+
 ---
 
-### BR-QUIZ-02 — Published Quiz Definitions Are Immutable
+## BR-QUIZ-02 — Quiz Is the Stable Assessment Identity
 
-A Published Quiz definition must not be modified in place.
+The Quiz represents the stable identity of an assessment across multiple definitions.
 
-Any modification to a Published Quiz definition must be performed through a new Draft Revision.
+The Quiz does not directly contain the mutable assessment content.
+
+The concrete assessment definition belongs to a `QuizRevision`.
+
+```text
+Quiz
+└── QuizRevision
+    └── Question
+        └── Answer
+```
+
+---
+
+## BR-QUIZ-03 — Published Revisions Are Immutable
+
+A Published Quiz Revision must not be modified in place.
+
+Any modification to a Published assessment definition must be performed through a new Draft Revision.
 
 The existing Published Revision remains unchanged.
 
@@ -42,11 +65,23 @@ This protects the integrity of existing QuizAttempts that depend on the previous
 
 ---
 
-### BR-QUIZ-03 — Quiz Visibility Is Separate from Availability
+## BR-QUIZ-04 — Historical Revisions Are Preserved
+
+When a new Revision becomes Published, the previous Published Revision becomes Historical.
+
+Historical Revisions must be retained.
+
+Historical Revisions are immutable.
+
+They remain available as the assessment definition referenced by existing historical QuizAttempts.
+
+---
+
+## BR-QUIZ-05 — Quiz Visibility Is Separate from Availability
 
 Quiz visibility and Quiz availability are independent concepts.
 
-Visibility determines the high-level audience or discoverability of the Quiz.
+Visibility determines the high-level access mode of the Quiz.
 
 Availability determines whether the Quiz currently accepts new Attempts.
 
@@ -56,11 +91,11 @@ Therefore:
 Visibility ≠ Availability
 ```
 
-Changing Quiz availability does not change the lifecycle of existing QuizAttempts.
+Changing Quiz availability does not terminate existing `IN_PROGRESS` QuizAttempts.
 
 ---
 
-### BR-QUIZ-04 — Quiz Visibility
+## BR-QUIZ-06 — Quiz Visibility
 
 The supported Quiz visibility concepts are:
 
@@ -73,45 +108,181 @@ PUBLIC
 The business meaning is:
 
 * `PRIVATE`: ordinary learners cannot access the Quiz.
-* `PUBLIC`: the Quiz may proceed to the applicable eligibility checks.
-* `COURSE_ONLY`: the User must have valid Course learning access.
+* `PUBLIC`: the learner may access the Quiz subject to eligibility checks.
+* `COURSE_ONLY`: valid Course learning access is required.
 
-The exact access-check implementation is outside the Quiz aggregate.
+Visibility is distinct from:
+
+```text
+Access Requirements
+Learning Prerequisites
+Availability
+Current Level
+```
+
+The exact access-check implementation is outside the Quiz Aggregate.
 
 ---
 
-## 3. Quiz Revision Rules
+## BR-QUIZ-07 — Quiz Availability
 
-### BR-REV-01 — Draft and Published Revisions
-
-A Quiz may have:
-
-* at most one Draft Revision;
-* at most one Published Revision.
-
-A Draft Revision and a Published Revision may coexist.
+Quiz availability is represented by:
 
 ```text
-Quiz
-├── Published Revision
-└── Draft Revision
+ACTIVE
+INACTIVE
+```
+
+An inactive Quiz cannot accept new Attempts.
+
+Deactivating a Quiz does not automatically terminate existing `IN_PROGRESS` Attempts.
+
+Availability therefore controls new Attempt creation rather than the lifecycle of existing Attempts.
+
+---
+
+# 3. Quiz Lifecycle Rules
+
+## BR-LIFECYCLE-01 — Quiz Lifecycle
+
+The Quiz lifecycle is:
+
+```text
+ACTIVE
+   ↓
+ARCHIVED
+   ↓
+DELETED
+```
+
+Quiz lifecycle is separate from:
+
+```text
+Revision Lifecycle
+Availability
+Attempt Lifecycle
 ```
 
 ---
 
-### BR-REV-02 — Creating a New Revision
+## BR-LIFECYCLE-02 — Archive
 
-When a Published Quiz needs to be modified, the modification must be performed on a new Draft Revision.
+Archiving a Quiz prevents new Attempts from being created.
 
-The existing Published Revision remains unchanged.
+Archiving does not automatically terminate existing `IN_PROGRESS` Attempts.
 
-A new Draft Revision must not be created while another active Draft Revision already exists.
-
-The existing Draft must instead be edited, published, or discarded.
+Existing Attempts remain bound to their original Revision.
 
 ---
 
-### BR-REV-03 — Draft Revision May Be Discarded
+## BR-LIFECYCLE-03 — Delete
+
+A Quiz may be deleted only from the `ARCHIVED` state.
+
+Deletion is a soft-delete operation.
+
+A Quiz must not be deleted while it has an `IN_PROGRESS` QuizAttempt.
+
+Deleting a Quiz does not delete:
+
+* Historical Revisions;
+* completed QuizAttempts;
+* expired QuizAttempts;
+* cancelled QuizAttempts;
+* assessment evidence.
+
+---
+
+## BR-LIFECYCLE-04 — Restore
+
+A deleted Quiz may be restored.
+
+Restoring a Quiz returns it to:
+
+```text
+ARCHIVED
+```
+
+A restored Quiz must be explicitly activated before new Attempts may be created.
+
+---
+
+## BR-LIFECYCLE-05 — Deleted Quiz Is Management-Blocked
+
+While a Quiz is `DELETED`, management operations are blocked.
+
+This includes:
+
+* creating a new Revision;
+* editing a Draft Revision;
+* publishing a Revision;
+* changing the author;
+* changing visibility;
+* changing availability;
+* creating new Attempts.
+
+Restore must occur before further management is allowed.
+
+---
+
+# 4. Quiz Revision Rules
+
+## BR-REV-01 — Revision Lifecycle
+
+The target Revision lifecycle is:
+
+```text
+DRAFT
+   ↓
+IN_REVIEW
+   ↓
+PUBLISHED
+   ↓
+HISTORICAL
+```
+
+A Revision may move to Historical when a newer Revision becomes Published.
+
+---
+
+## BR-REV-02 — Revision Cardinality
+
+A Quiz may have:
+
+* at most one Draft Revision;
+* at most one Revision in Review;
+* at most one Published Revision;
+* zero or more Historical Revisions.
+
+A Draft and a Published Revision may coexist.
+
+A Revision in Review may coexist with the current Published Revision.
+
+---
+
+## BR-REV-03 — Creating a New Revision
+
+When a Published Quiz definition needs to be modified, the modification must be performed on a new Draft Revision.
+
+The existing Published Revision remains unchanged.
+
+A new Draft Revision must not be created while another Draft Revision already exists.
+
+The existing Draft must instead be edited, submitted for review, published, or discarded.
+
+---
+
+## BR-REV-04 — Draft Revision Is Mutable
+
+A Draft Revision may be edited.
+
+A Draft Revision may temporarily be incomplete.
+
+Temporary incomplete states do not prevent Draft editing.
+
+---
+
+## BR-REV-05 — Draft Revision May Be Discarded
 
 A Draft Revision may be discarded before publication.
 
@@ -129,78 +300,144 @@ Published Revision 1
 
 ---
 
-### BR-REV-04 — Publishing a New Revision
+## BR-REV-06 — Submit Draft Revision for Review
 
-When a Draft Revision is published:
+A Draft Revision may be submitted for review when the required review conditions are satisfied.
 
-1. The Draft becomes the new Published Revision.
-2. The previous Published Revision becomes historical.
-3. Existing QuizAttempts remain associated with their original Revision.
+Submission moves the Revision to:
 
-Historical Revisions must be retained because existing QuizAttempts may depend on their assessment definitions.
+```text
+IN_REVIEW
+```
+
+A Revision in Review is not yet available for new Attempts.
+
+The exact review workflow and reviewer authorization are outside the core Revision definition rules.
 
 ---
 
-### BR-REV-05 — Revision Contains Assessment Rules
+## BR-REV-07 — Publish Revision
+
+A Revision may become Published only when all required publication conditions are satisfied.
+
+When a new Revision is published:
+
+1. The Draft/Review Revision becomes the Published Revision.
+2. The previous Published Revision becomes Historical.
+3. Existing QuizAttempts remain associated with their original Revision.
+
+---
+
+## BR-REV-08 — Revision Contains Assessment Rules
 
 Assessment configuration belongs to the applicable Quiz Revision.
 
 This includes:
 
+* Questions;
+* Answer definitions;
+* Question scores;
 * maximum score;
-* passing score, when defined;
+* passing percentage;
 * time limit;
 * maximum attempts;
 * completion policy;
-* Questions;
-* Answer definitions;
-* other assessment rules defined for that Revision.
+* other Revision-specific assessment rules.
 
-A historical QuizAttempt must continue to use the rules of the Revision from which it started.
+A historical QuizAttempt continues to use the rules of the Revision from which it started.
 
 ---
 
-## 4. Question and Answer Rules
+# 5. Question and Answer Rules
 
-### BR-QUESTION-01 — Question Answer Count
+## BR-QUESTION-01 — Draft Question May Be Incomplete
 
-A Question must contain at least two answers and no more than six answers.
+A Draft Question may temporarily contain:
 
----
+```text
+0 Answers
+```
 
-### BR-QUESTION-02 — Correct Answer Requirement
+and may temporarily contain no correct Answer.
 
-A Question must contain at least one correct answer.
+These states are allowed during Draft editing.
 
----
-
-### BR-QUESTION-03 — Single Choice
-
-A `SINGLE_CHOICE` Question may have at most one correct answer.
+A Question must satisfy all publication invariants before its Revision can be Published.
 
 ---
 
-### BR-QUESTION-04 — True/False
+## BR-QUESTION-02 — Question Answer Count for Publication
 
-A `TRUE_FALSE` Question must contain exactly two answers and exactly one correct answer.
+A publishable Question must contain:
 
----
-
-### BR-QUESTION-05 — Answer Uniqueness
-
-Answer content must be unique within a Question, ignoring case.
+```text
+2 to 6 Answers
+```
 
 ---
 
-### BR-QUESTION-06 — Question Score
+## BR-QUESTION-03 — Correct Answer Requirement
 
-A Question must have a positive score.
-
-The total score of all Questions must match the Quiz Revision's `maxScore` before that Revision can be published.
+A publishable Question must contain at least one correct Answer.
 
 ---
 
-### BR-QUESTION-07 — Supported Question Types
+## BR-QUESTION-04 — Single Choice
+
+A `SINGLE_CHOICE` Question must contain exactly one correct Answer before publication.
+
+---
+
+## BR-QUESTION-05 — Multiple Choice
+
+A `MULTIPLE_CHOICE` Question must contain at least one correct Answer before publication.
+
+---
+
+## BR-QUESTION-06 — True/False
+
+A `TRUE_FALSE` Question must contain exactly:
+
+```text
+2 Answers
+1 correct Answer
+```
+
+before publication.
+
+---
+
+## BR-QUESTION-07 — Answer Uniqueness
+
+Answer content must be unique within a Question.
+
+The target normalization rule is:
+
+```text
+case-insensitive comparison
+```
+
+Therefore, two Answers whose normalized contents differ only by letter case are considered duplicates.
+
+---
+
+## BR-QUESTION-08 — Question Score
+
+A publishable Question must have a positive score.
+
+The Revision maximum score is derived from Question scores.
+
+```text
+maxScore
+=
+sum(Question.score)
+```
+
+`maxScore` is not an independent author-entered source of truth.
+
+---
+
+## BR-QUESTION-09 — Supported Question Types
 
 The currently supported Question types are:
 
@@ -210,127 +447,203 @@ MULTIPLE_CHOICE
 TRUE_FALSE
 ```
 
-Text-based Questions are not part of the current Quiz scope.
+Text-based Question types are not part of the current Quiz scope.
 
 ---
 
-## 5. Quiz Publication Rules
+## BR-QUESTION-10 — Answer Order
 
-### BR-PUBLISH-01 — Questions Are Required
+Answer order is domain data.
 
-A Quiz Revision cannot be published without Questions.
+Within a Question, Answer order must be:
+
+* unique;
+* contiguous;
+* starting from 1.
+
+Adding, removing, or reordering Answers may cause their order values to be normalized.
 
 ---
 
-### BR-PUBLISH-02 — Questions Must Be Valid
+## BR-QUESTION-11 — Question Type Changes
 
-Every Question in a Quiz Revision must satisfy its domain validation rules before publication.
+A Draft Question may change its Question type.
+
+Changing the type does not automatically modify:
+
+* existing Answers;
+* Answer identities;
+* correctness states.
+
+The resulting Question must satisfy the invariants of its final type before publication.
 
 ---
 
-### BR-PUBLISH-03 — Maximum Score Consistency
+## BR-QUESTION-12 — Published Questions Are Immutable
 
-The sum of Question scores must equal the Revision's configured `maxScore` before publication.
+Questions belonging to a Published or Historical Revision are immutable.
+
+Changes require a new Draft Revision.
+
+---
+
+## BR-QUESTION-13 — Published Answers Are Immutable
+
+Answers belonging to a Published or Historical Revision are immutable.
+
+Changes require a new Draft Revision.
+
+---
+
+# 6. Publication Rules
+
+## BR-PUBLISH-01 — Questions Are Required
+
+A Quiz Revision cannot be Published without at least one Question.
+
+---
+
+## BR-PUBLISH-02 — Questions Must Be Valid
+
+Every Question in a Quiz Revision must satisfy all required publication invariants.
+
+This includes:
+
+* valid Question type;
+* valid Answer count;
+* valid correctness configuration;
+* valid Answer content;
+* valid Answer order;
+* positive Question score.
+
+---
+
+## BR-PUBLISH-03 — Maximum Score Is Derived
+
+The Revision maximum score is:
 
 ```text
-sum(Question.score) = QuizRevision.maxScore
+sum(Question.score)
+```
+
+A Published Revision therefore always has a positive maximum score because it contains at least one valid Question with a positive score.
+
+---
+
+## BR-PUBLISH-04 — Passing Percentage Must Be Valid
+
+When `passingPercentage` is defined:
+
+```text
+0 < passingPercentage <= 100
 ```
 
 ---
 
-### BR-PUBLISH-04 — Published Definition Cannot Be Modified
+## BR-PUBLISH-05 — Published Definition Cannot Be Modified
 
-After publication, the Quiz Revision is immutable.
+After publication, the Revision and its Questions and Answers are immutable.
 
 Changes must be made through a new Draft Revision.
 
 ---
 
-## 6. Passing Score Rules
+# 7. Passing and Assessment Result Rules
 
-### BR-SCORE-01 — Passing Score Is Optional
+## BR-SCORE-01 — Passing Percentage Is Optional
 
-A Quiz Revision does not have to define a passing score.
+A Quiz Revision does not have to define a passing percentage.
 
 This supports both practice-oriented and assessment-oriented Quizzes.
 
 ```text
-Practice
-passingScore = none
-
-Assessment
-passingScore = defined
+passingPercentage = null
+→ AssessmentResult = NONE
 ```
 
-The absence of a passing score means that the Attempt may still produce a numeric score but does not produce a `PASSED` or `FAILED` Assessment Result.
+The Attempt may still produce a numeric score.
 
 ---
 
-### BR-SCORE-02 — Passing Score Must Be Valid
+## BR-SCORE-02 — Passing Percentage Belongs to the Revision
 
-When a passing score is defined:
+`passingPercentage` is part of the Quiz Revision.
 
-```text
-0 <= passingScore <= maxScore
-```
-
-The passing score belongs to the Quiz Revision.
+An Attempt evaluates its result using the passing percentage of the exact Revision associated with that Attempt.
 
 ---
 
-### BR-SCORE-03 — Assessment Result
+## BR-SCORE-03 — Assessment Result Uses Score Percentage
 
-If a Quiz Revision defines a passing score, the final score of a QuizAttempt determines its Assessment Result.
+When a passing percentage is defined:
 
 ```text
-totalScore >= passingScore
+scorePercentage
+=
+(totalScore / maxScore) × 100
+```
+
+Then:
+
+```text
+scorePercentage >= passingPercentage
         ↓
      PASSED
 
-totalScore < passingScore
+scorePercentage < passingPercentage
         ↓
      FAILED
 ```
 
+The comparison uses the exact Revision associated with the Attempt.
+
+No fixed `passingScore` is used as the source of truth.
+
 ---
 
-### BR-SCORE-04 — No Passing Score Means No Pass/Fail Result
+## BR-SCORE-04 — No Passing Percentage Means No Pass/Fail Result
 
-When a Quiz Revision has no passing score:
+When a Quiz Revision has no passing percentage:
 
 ```text
-AssessmentResult = none
+AssessmentResult = NONE
 ```
 
-The QuizAttempt may still have a numeric `totalScore`.
+The Attempt may still have a numeric `totalScore`.
 
 ---
 
-### BR-SCORE-05 — Assessment Result Is Separate from Attempt Status
+## BR-SCORE-05 — Assessment Result Is Separate from Attempt Status
 
-`PASSED` and `FAILED` are Assessment Results.
-
-They are not QuizAttempt lifecycle statuses.
+Attempt lifecycle statuses are:
 
 ```text
-Attempt Status
-├── IN_PROGRESS
-├── SUBMITTED
-├── EXPIRED
-└── CANCELLED
+IN_PROGRESS
+SUBMITTED
+EXPIRED
+CANCELLED
+```
 
-Assessment Result
-├── PASSED
-└── FAILED
+Assessment Results are:
+
+```text
+PASSED
+FAILED
+NONE
+```
+
+Therefore:
+
+```text
+PASSED ≠ Attempt Status
+FAILED  ≠ Attempt Status
 ```
 
 ---
 
-### BR-SCORE-06 — Assessment Result Is Determined at Attempt Completion
+## BR-SCORE-06 — Assessment Result Is Determined at Completion
 
-Assessment Result must not be determined while an Attempt remains `IN_PROGRESS`.
-
-It is determined only when the Attempt reaches an assessment-ending state:
+Assessment Result is determined exactly once when an Attempt reaches an assessment-ending state:
 
 ```text
 SUBMITTED
@@ -342,17 +655,45 @@ A `CANCELLED` Attempt does not produce an Assessment Result.
 
 ---
 
-## 7. QuizAttempt Creation Rules
+## BR-SCORE-07 — Expired Does Not Mean Failed
 
-### BR-ATTEMPT-01 — Attempt Starts from Published Revision
+An expired Attempt is evaluated using the answers recorded before expiration.
 
-A QuizAttempt may only be started from a Published Quiz Revision.
+Therefore:
 
-A Draft Revision cannot be used to start an Attempt.
+```text
+EXPIRED
+```
+
+does not inherently mean:
+
+```text
+FAILED
+```
+
+An expired Attempt may be:
+
+```text
+PASSED
+FAILED
+NONE
+```
+
+depending on the Revision's passing percentage and final score.
 
 ---
 
-### BR-ATTEMPT-02 — Exact Revision Binding
+# 8. QuizAttempt Creation Rules
+
+## BR-ATTEMPT-01 — Attempt Starts from Published Revision
+
+A QuizAttempt may only be started from a Published Quiz Revision.
+
+A Draft, In-Review, or Historical Revision cannot be used to start a new Attempt.
+
+---
+
+## BR-ATTEMPT-02 — Exact Revision Binding
 
 When a QuizAttempt starts, it becomes permanently associated with the exact Published Quiz Revision used at that time.
 
@@ -369,7 +710,7 @@ QuizAttempt
 
 ---
 
-### BR-ATTEMPT-03 — Historical Assessment Integrity
+## BR-ATTEMPT-03 — Historical Assessment Integrity
 
 Changes to the Quiz after an Attempt starts must not change the assessment definition used by that Attempt.
 
@@ -379,27 +720,35 @@ The Attempt's:
 * Answers;
 * Question scores;
 * maximum score;
-* passing score;
+* passing percentage;
 * time limit;
 * completion policy;
-* attempt policy;
+* maximum attempt policy;
 * other applicable assessment rules
 
 remain determined by its associated Revision.
 
 ---
 
-### BR-ATTEMPT-04 — Quiz Must Be Active for New Attempts
+## BR-ATTEMPT-04 — Quiz Must Be Active for New Attempts
 
-A Quiz must be active before a new QuizAttempt may be created.
+A Quiz must be in the appropriate active lifecycle state and have active availability before a new QuizAttempt may be created.
 
-Deactivating a Quiz prevents creation of new Attempts.
+A Quiz that is:
 
-Deactivation does not automatically terminate existing `IN_PROGRESS` Attempts.
+```text
+ARCHIVED
+or
+DELETED
+```
+
+cannot accept new Attempts.
+
+An `INACTIVE` Quiz cannot accept new Attempts.
 
 ---
 
-### BR-ATTEMPT-05 — Attempt Creation Requires Eligibility
+## BR-ATTEMPT-05 — Attempt Creation Requires Eligibility
 
 Before creating a new QuizAttempt, the applicable eligibility conditions must be satisfied.
 
@@ -408,51 +757,63 @@ Conceptually:
 ```text
 Quiz accessible
       ↓
-Published Revision available
+Access Requirements satisfied
       ↓
 Quiz active
       ↓
-Prerequisite / unlock satisfied
+Availability allows Start
+      ↓
+Published Revision available
+      ↓
+Learning Prerequisites satisfied
       ↓
 No existing IN_PROGRESS Attempt
       ↓
 Attempt quota available
       ↓
 Create Attempt
+      ↓
+Consume quota
 ```
 
-The exact prerequisite and unlock conditions remain OPEN.
-
-No specific prerequisite model is assumed until those business conditions are defined.
+The exact prerequisite and unlock conditions remain outside the Quiz Aggregate.
 
 ---
 
-## 8. Attempt Limit and Retry Rules
+## BR-ATTEMPT-06 — Eligibility and Attempt Creation Are One Logical Operation
 
-### BR-ATTEMPT-LIMIT-01 — Multiple Attempts
+Eligibility validation and Attempt creation must behave as one logical business operation.
+
+A concurrent race must not allow the system to exceed:
+
+* the one-IN_PROGRESS Attempt rule;
+* the applicable maximum attempt quota.
+
+---
+
+# 9. Attempt Limit and Retry Rules
+
+## BR-ATTEMPT-LIMIT-01 — Multiple Attempts
 
 A Quiz Revision may allow multiple Attempts.
 
-The maximum number of Attempts is defined by the applicable assessment policy.
-
-Examples:
+The maximum number of Attempts is defined by:
 
 ```text
-Practice
-maxAttempts = 10
-
-Formal Assessment
-maxAttempts = 1
-
-Other Assessment
-maxAttempts = 3
+maxAttempts
 ```
 
-These examples illustrate policy possibilities and are not fixed system defaults.
+When:
+
+```text
+maxAttempts = null
+```
+
+the number of Attempts is unlimited.
 
 ---
 
-### BR-ATTEMPT-LIMIT-02 — Attempt Quota Is Per User and Published Revision
+## BR-ATTEMPT-LIMIT-02 — Attempt Quota Is Per User and Published Revision
 
 The attempt quota applies to:
 
@@ -460,13 +821,11 @@ The attempt quota applies to:
 User × Published Quiz Revision
 ```
 
-Historical Attempts remain associated with the Revision from which they were created.
-
 A new Published Revision has its own applicable attempt quota.
 
 ---
 
-### BR-ATTEMPT-LIMIT-03 — Attempt Quota Is Consumed at Creation
+## BR-ATTEMPT-LIMIT-03 — Attempt Quota Is Consumed at Creation
 
 A successfully created QuizAttempt consumes one attempt quota immediately.
 
@@ -482,98 +841,66 @@ IN_PROGRESS
 
 ---
 
-### BR-ATTEMPT-LIMIT-04 — Cancelled Attempts Do Not Return Quota
+## BR-ATTEMPT-LIMIT-04 — Cancelled Attempts Do Not Return Quota
 
 A `CANCELLED` Attempt does not return previously consumed quota.
 
-For example:
-
-```text
-maxAttempts = 3
-
-Attempt 1 → CANCELLED → quota consumed: 1
-Attempt 2 → FAILED    → quota consumed: 2
-Attempt 3 → PASSED    → quota consumed: 3
-```
-
-Cancellation does not restore the consumed quota.
-
 ---
 
-### BR-ATTEMPT-LIMIT-05 — Passed Attempt Retry
+## BR-ATTEMPT-LIMIT-05 — Passed Attempt Retry
 
-A User may retry after `PASSED` when the applicable Attempt Policy and remaining quota permit it.
+A User may retry after `PASSED` when the applicable attempt policy and remaining quota permit it.
 
 Passing does not universally prevent another Attempt.
 
-The exact retry policy remains configurable at the assessment-policy level.
+---
+
+## BR-ATTEMPT-LIMIT-06 — Failed Attempt Retry
+
+A User may retry after `FAILED` when the applicable attempt policy and remaining quota permit it.
+
+Any temporal retry restriction remains policy-specific.
 
 ---
 
-### BR-ATTEMPT-LIMIT-06 — Failed Attempt Retry
-
-A User may retry after `FAILED` when the applicable Attempt Policy and remaining quota permit it.
-
-A policy may allow immediate retry or impose a temporal restriction.
-
-The exact temporal retry policy remains OPEN.
-
----
-
-### BR-ATTEMPT-LIMIT-07 — Retry Creates a New Attempt
+## BR-ATTEMPT-LIMIT-07 — Retry Creates a New Attempt
 
 Retrying a Quiz creates a new QuizAttempt.
 
 A previous Attempt is never reopened or converted into a new Attempt.
 
-```text
-Attempt 1
-    ↓
-FAILED
-
-Retry
-    ↓
-Attempt 2
-    ↓
-IN_PROGRESS
-```
-
 Answers from the previous Attempt are not carried into the new Attempt.
 
 ---
 
-## 9. Concurrent Attempt Rules
+# 10. Concurrent Attempt Rules
 
-### BR-CONCURRENT-01 — One Active Attempt
+## BR-CONCURRENT-01 — One Active Attempt per User and Quiz
 
 A User may have at most one `IN_PROGRESS` QuizAttempt for the same Quiz at a time.
 
-Allowed:
+This rule is scoped to the Quiz identity rather than only to one Revision.
+
+Therefore:
 
 ```text
-Quiz A
-
-User
-├── Attempt 1 → SUBMITTED
-├── Attempt 2 → EXPIRED
-└── Attempt 3 → IN_PROGRESS
-```
-
-Not allowed:
-
-```text
-Quiz A
-
-User
-├── Attempt 3 → IN_PROGRESS
-└── Attempt 4 → IN_PROGRESS
+User × Quiz
+    → maximum one IN_PROGRESS Attempt
 ```
 
 ---
 
-## 10. Attempt Resume Rules
+## BR-CONCURRENT-02 — Concurrency Must Respect Attempt Quota
 
-### BR-RESUME-01 — IN_PROGRESS Attempts May Be Resumed
+Concurrent Attempt creation must not allow a User to exceed the configured `maxAttempts` for the applicable Published Revision.
+
+The quota check and successful Attempt creation must be treated as one logical operation.
+
+---
+
+# 11. Attempt Resume Rules
+
+## BR-RESUME-01 — IN_PROGRESS Attempts May Be Resumed
 
 An `IN_PROGRESS` QuizAttempt may be resumed after the User temporarily leaves the Quiz.
 
@@ -587,7 +914,7 @@ These events do not automatically terminate the Attempt.
 
 ---
 
-### BR-RESUME-02 — Browser Closure Does Not Cancel an Attempt
+## BR-RESUME-02 — Browser Closure Does Not Cancel an Attempt
 
 Closing the browser or leaving the Quiz does not automatically change the Attempt status.
 
@@ -603,53 +930,78 @@ resume
 
 ---
 
-### BR-RESUME-03 — Resume Uses the Same Attempt
+## BR-RESUME-03 — Resume Uses the Same Attempt
 
 Resuming an Attempt continues the existing QuizAttempt.
 
-It does not create a new Attempt and does not consume another quota.
+It:
 
-A new quota is consumed only when a new QuizAttempt is created.
-
----
-
-## 11. Time Limit Rules
-
-### BR-TIME-01 — Time Limit Starts with the Attempt
-
-When a Quiz Revision has a time limit, the timer starts when the QuizAttempt starts.
+* does not create a new Attempt;
+* does not consume another quota;
+* does not re-run Start Attempt eligibility;
+* does not switch the Attempt to another Revision.
 
 ---
 
-### BR-TIME-02 — Time Limit Uses Real Elapsed Time
+## BR-RESUME-04 — Resume Does Not Reset Time
+
+Resuming an Attempt does not reset or extend its remaining time.
+
+The original Attempt deadline remains authoritative.
+
+---
+
+# 12. Time and Expiration Rules
+
+## BR-TIME-01 — Time Limit Is Revision-Specific
+
+A Quiz Revision may define a time limit.
+
+When configured:
+
+```text
+timeLimit > 0
+```
+
+When:
+
+```text
+timeLimit = null
+```
+
+the Attempt has unlimited duration.
+
+---
+
+## BR-TIME-02 — Time Limit Starts with the Attempt
+
+When a timed QuizAttempt starts, the timer starts from the Attempt's `startedAt`.
+
+The Attempt deadline is based on:
+
+```text
+startedAt + Revision.timeLimit
+```
+
+---
+
+## BR-TIME-03 — Time Limit Uses Real Elapsed Time
 
 The time limit continues to run in real time.
 
 Leaving the Quiz, closing the browser, or losing network connectivity does not pause the timer.
 
-```text
-Attempt starts
-      ↓
-time continues
-      ↓
-temporary interruption
-      ↓
-time continues
-      ↓
-deadline
-```
+---
+
+## BR-TIME-04 — Server Time Is the Source of Truth
+
+Server-side time is authoritative for determining whether the Attempt has reached its deadline.
+
+If the server determines that the deadline has passed, the Attempt is expired.
 
 ---
 
-### BR-TIME-03 — Server Time Is the Source of Truth
-
-The server-side time is the source of truth for determining whether the Attempt has reached its deadline.
-
-If a User sends an operation before the deadline but the server processes the operation after the deadline, the Attempt is considered expired.
-
----
-
-### BR-TIME-04 — Deadline Terminates the Attempt
+## BR-TIME-05 — Deadline Terminates the Attempt
 
 When the time limit is reached, the Attempt becomes:
 
@@ -657,11 +1009,11 @@ When the time limit is reached, the Attempt becomes:
 EXPIRED
 ```
 
-Expiration is based on the Attempt deadline rather than on User interaction.
+Expiration is based on the Attempt deadline rather than User interaction.
 
 ---
 
-### BR-TIME-05 — Expired Attempt Cannot Be Resumed
+## BR-TIME-06 — Expired Attempt Cannot Be Resumed
 
 An `EXPIRED` Attempt is terminal.
 
@@ -671,53 +1023,21 @@ If the User is eligible for another Attempt, a new QuizAttempt must be created.
 
 ---
 
-### BR-TIME-06 — Expired Attempt Produces Assessment Result When Applicable
+## BR-TIME-07 — Expired Attempt Is Evaluated
 
-If the Quiz Revision defines a passing score:
+When an Attempt expires:
 
-```text
-EXPIRED
-+
-passingScore exists
-        ↓
-calculate final score
-        ↓
-PASSED or FAILED
-```
-
-If no passing score exists:
-
-```text
-EXPIRED
-+
-no passingScore
-        ↓
-no Assessment Result
-```
+1. the current valid responses are evaluated;
+2. unanswered Questions receive zero score;
+3. QuestionResults are produced for every Question;
+4. totalScore is calculated;
+5. Assessment Result is determined according to `passingPercentage`.
 
 ---
 
-### BR-TIME-07 — Unanswered Questions on Expiration
+# 13. Completion Policy Rules
 
-When an Attempt expires, unanswered Questions receive:
-
-```text
-earnedScore = 0
-```
-
-They still produce a `QuestionResult` with:
-
-```text
-responseStatus = UNANSWERED
-isCorrect = null
-earnedScore = 0
-```
-
----
-
-## 12. Completion Policy Rules
-
-### BR-COMPLETION-01 — Completion Policy
+## BR-COMPLETION-01 — Completion Policy
 
 A Quiz Revision defines how unanswered Questions affect manual submission.
 
@@ -730,7 +1050,7 @@ OPTIONAL
 
 ---
 
-### BR-COMPLETION-02 — REQUIRED_ALL
+## BR-COMPLETION-02 — REQUIRED_ALL
 
 Under `REQUIRED_ALL`:
 
@@ -741,7 +1061,7 @@ Under `REQUIRED_ALL`:
 
 ---
 
-### BR-COMPLETION-03 — OPTIONAL
+## BR-COMPLETION-03 — OPTIONAL
 
 Under `OPTIONAL`:
 
@@ -751,7 +1071,7 @@ Under `OPTIONAL`:
 
 ---
 
-### BR-COMPLETION-04 — Expiration Is Independent of Completion Policy
+## BR-COMPLETION-04 — Expiration Is Independent of Completion Policy
 
 Completion Policy controls manual submission.
 
@@ -763,79 +1083,104 @@ Therefore, even under `REQUIRED_ALL`, a timed-out Attempt becomes:
 EXPIRED
 ```
 
-rather than remaining `IN_PROGRESS` until every Question is answered.
+and is evaluated.
 
 ---
 
-## 13. Answer Rules
+# 14. Answer Rules
 
-### BR-ANSWER-01 — One Current Answer per Question
+## BR-ANSWER-01 — One Current Answer per Question
 
-A QuizAttempt maintains one current UserAnswer for each answered Question.
+A QuizAttempt maintains at most one current UserAnswer for each Question.
 
 ```text
-One UserAnswer
+One current UserAnswer
 per Question
 per Attempt
 ```
 
 ---
 
-### BR-ANSWER-02 — Answers May Be Changed
+## BR-ANSWER-02 — Answers May Be Changed
 
-While an Attempt is `IN_PROGRESS`, the User may change the current answer to a Question.
+While an Attempt is `IN_PROGRESS`, the User may change the current response to a Question.
 
-The latest valid answer becomes the current response.
-
----
-
-### BR-ANSWER-03 — Answers May Be Cleared
-
-A User may clear the current answer.
-
-Clearing an answer returns the Question to an unanswered state.
+The latest valid response becomes the current response.
 
 ---
 
-### BR-ANSWER-04 — Skip Is Not an Answer State
+## BR-ANSWER-03 — Answers May Be Cleared
+
+A User may clear the current response.
+
+Clearing a response returns the Question to an unanswered state.
+
+---
+
+## BR-ANSWER-04 — Skip Is Not an Answer State
 
 Skipping a Question is navigation behavior.
 
-The domain does not persist a separate `SKIPPED` answer state.
+The domain does not persist a separate:
 
-A Question is either:
+```text
+SKIPPED
+```
+
+answer state.
+
+For assessment purposes, a Question is:
 
 ```text
 ANSWERED
-```
-
-or:
-
-```text
+or
 UNANSWERED
 ```
 
-for assessment-result purposes.
-
 ---
 
-### BR-ANSWER-05 — No Answer History
+## BR-ANSWER-05 — No Answer History
 
-The current target model does not maintain an answer-change history.
+The target model does not maintain an answer-change history.
 
 Only the current response is required while the Attempt is `IN_PROGRESS`.
 
 ---
 
-## 14. Scoring Rules
+## BR-ANSWER-06 — No Correctness Evaluation During Attempt
 
-### BR-SCORING-01 — Question Has Fixed Score
+Correctness is not evaluated while the Attempt remains `IN_PROGRESS`.
 
-Each Question has a fixed score defined by the Quiz Revision.
+Evaluation occurs when the Attempt reaches:
+
+```text
+SUBMITTED
+or
+EXPIRED
+```
 
 ---
 
-### BR-SCORING-02 — Single Choice Scoring
+## BR-ANSWER-07 — Answer Reference Integrity
+
+A UserAnswer may only reference:
+
+* a Question belonging to the Attempt's Revision;
+* Answers belonging to that Question.
+
+Cross-Revision or cross-Question Answer references are invalid.
+
+---
+
+# 15. Scoring Rules
+
+## BR-SCORING-01 — Question Has Fixed Positive Score
+
+Each Question has a fixed positive score defined by its Quiz Revision.
+
+---
+
+## BR-SCORING-02 — Single Choice Scoring
 
 For `SINGLE_CHOICE`:
 
@@ -849,7 +1194,7 @@ incorrect answer
 
 ---
 
-### BR-SCORING-03 — True/False Scoring
+## BR-SCORING-03 — True/False Scoring
 
 For `TRUE_FALSE`:
 
@@ -863,7 +1208,7 @@ incorrect answer
 
 ---
 
-### BR-SCORING-04 — Multiple Choice Scoring
+## BR-SCORING-04 — Multiple Choice Scoring
 
 For `MULTIPLE_CHOICE`:
 
@@ -881,11 +1226,11 @@ Otherwise:
 0
 ```
 
-Partial credit is not supported.
+The comparison is based on the exact selected set.
 
 ---
 
-### BR-SCORING-05 — No Partial Credit
+## BR-SCORING-05 — No Partial Credit
 
 A Question is scored using full-score or zero-score evaluation.
 
@@ -893,7 +1238,7 @@ There is no partial credit.
 
 ---
 
-### BR-SCORING-06 — No Negative Marking
+## BR-SCORING-06 — No Negative Marking
 
 Incorrect answers do not reduce the score below zero.
 
@@ -901,9 +1246,9 @@ There is no negative marking.
 
 ---
 
-### BR-SCORING-07 — Total Score
+## BR-SCORING-07 — Total Score
 
-When the Attempt reaches an assessment-ending state:
+When an Attempt is evaluated:
 
 ```text
 totalScore
@@ -913,33 +1258,33 @@ sum(QuestionResult.earnedScore)
 
 ---
 
-### BR-SCORING-08 — Total Score Is Historical
+## BR-SCORING-08 — Total Score Is Historical
 
-Once an Attempt has ended with an assessment outcome, its final `totalScore` represents a historical fact.
+Once an Attempt has reached an assessment-ending state, its final `totalScore` is a historical fact.
 
 A later Quiz Revision must not change that score.
 
 ---
 
-### BR-SCORING-09 — Percentage Is Derived
+## BR-SCORING-09 — Score Percentage Is Derived
 
-The system does not need to store score percentage as an independent historical fact.
-
-Percentage may be derived using:
+Score percentage is derived from:
 
 ```text
-totalScore / QuizRevision.maxScore
+(totalScore / QuizRevision.maxScore) × 100
 ```
 
-where the exact Quiz Revision is the Revision associated with the Attempt.
+using the exact Revision associated with the Attempt.
+
+Score percentage is not an independent source-of-truth field.
 
 ---
 
-## 15. Question Result Rules
+# 16. Question Result Rules
 
-### BR-RESULT-01 — QuestionResult Is Assessment Evidence
+## BR-RESULT-01 — QuestionResult Is Assessment Evidence
 
-A `QuestionResult` represents the assessment outcome for one Question in one Attempt.
+A `QuestionResult` represents the historical assessment outcome for one Question in one Attempt.
 
 It is not:
 
@@ -949,15 +1294,23 @@ It is not:
 
 ---
 
-### BR-RESULT-02 — Every Question Produces a Result
+## BR-RESULT-02 — Every Question Produces a Result
 
-When an Attempt reaches an assessment-ending state, every Question in the associated Revision produces a `QuestionResult`.
+When an Attempt is evaluated, every Question in the associated Revision produces exactly one `QuestionResult`.
 
 This includes unanswered Questions.
 
 ---
 
-### BR-RESULT-03 — Answered Correctly
+## BR-RESULT-03 — QuestionResult Stores Evaluated Selection
+
+For an answered Question, `QuestionResult` stores the selected Answer identities used during evaluation.
+
+The stored selection is historical evidence of what was evaluated.
+
+---
+
+## BR-RESULT-04 — Answered Correctly
 
 For a correctly answered Question:
 
@@ -969,7 +1322,7 @@ earnedScore = full Question score
 
 ---
 
-### BR-RESULT-04 — Answered Incorrectly
+## BR-RESULT-05 — Answered Incorrectly
 
 For an incorrectly answered Question:
 
@@ -981,21 +1334,28 @@ earnedScore = 0
 
 ---
 
-### BR-RESULT-05 — Unanswered
+## BR-RESULT-06 — Unanswered
 
 For an unanswered Question:
 
 ```text
 responseStatus = UNANSWERED
+selectedAnswerIds = empty
 isCorrect = null
 earnedScore = 0
 ```
 
 ---
 
-## 16. Submission Rules
+## BR-RESULT-07 — QuestionResult Is Immutable
 
-### BR-SUBMIT-01 — Manual Submission
+Once produced for an evaluated Attempt, a QuestionResult is historical assessment evidence and must not be recalculated against a later Revision.
+
+---
+
+# 17. Submission Rules
+
+## BR-SUBMIT-01 — Manual Submission
 
 A User may submit an `IN_PROGRESS` Attempt when the applicable Completion Policy permits submission.
 
@@ -1005,7 +1365,7 @@ For `OPTIONAL`, unanswered Questions are allowed.
 
 ---
 
-### BR-SUBMIT-02 — Submission Ends the Attempt
+## BR-SUBMIT-02 — Submission Ends the Attempt
 
 A valid manual submission transitions the Attempt from:
 
@@ -1023,38 +1383,45 @@ The Attempt is then terminal.
 
 ---
 
-### BR-SUBMIT-03 — Score Is Calculated at Completion
+## BR-SUBMIT-03 — Submission Is Atomic
 
-When an Attempt is submitted:
+Final submission is one logical business operation:
 
-1. Question Results are determined.
-2. Total Score is calculated.
-3. Assessment Result is determined when a passing score exists.
-4. The Attempt becomes `SUBMITTED`.
+```text
+Evaluate Questions
+      ↓
+Create QuestionResults
+      ↓
+Calculate totalScore
+      ↓
+Determine AssessmentResult
+      ↓
+Complete Attempt
+```
+
+The Attempt must not become partially evaluated.
 
 ---
 
-## 17. Cancellation Rules
+# 18. Cancellation Rules
 
-### BR-CANCEL-01 — User May Cancel Own Attempt
+## BR-CANCEL-01 — User May Cancel Own Attempt
 
 A User may intentionally cancel their own `IN_PROGRESS` QuizAttempt.
 
 Administrative or Instructor cancellation is outside the current scope.
 
-No cancellation reason is required by the current business model.
-
 ---
 
-### BR-CANCEL-02 — Cancellation Is Intentional
+## BR-CANCEL-02 — Cancellation Is Intentional
 
 Cancellation is an explicit User action.
 
-The frontend should confirm the User's intention before cancellation.
+The User interface should confirm the User's intention before cancellation.
 
 ---
 
-### BR-CANCEL-03 — Accidental Interruption Does Not Cancel
+## BR-CANCEL-03 — Accidental Interruption Does Not Cancel
 
 The following do not automatically cancel an Attempt:
 
@@ -1062,64 +1429,48 @@ The following do not automatically cancel an Attempt:
 * network disconnection;
 * leaving the Quiz temporarily.
 
-The Attempt remains `IN_PROGRESS` unless another valid terminal condition occurs.
-
 ---
 
-### BR-CANCEL-04 — Cancelled Attempts Are Terminal
+## BR-CANCEL-04 — Cancelled Attempts Are Terminal
 
-A `CANCELLED` Attempt cannot be resumed.
+A `CANCELLED` Attempt cannot be resumed or submitted.
 
 If the User is eligible for another Attempt, a new QuizAttempt must be created.
 
 ---
 
-### BR-CANCEL-05 — Cancellation Does Not Produce Assessment Result
+## BR-CANCEL-05 — Cancellation Does Not Produce Assessment Result
 
 A cancelled Attempt does not produce:
 
 ```text
 PASSED
-```
-
-or:
-
-```text
 FAILED
 ```
 
-It is not considered a completed assessment.
+It produces no Assessment Result.
+
+It also does not produce final QuestionResults.
 
 ---
 
-### BR-CANCEL-06 — Cancellation Does Not Return Quota
+## BR-CANCEL-06 — Cancellation Does Not Return Quota
 
 The quota consumed when the Attempt was created remains consumed after cancellation.
 
 ---
 
-## 18. Revision Changes During an Active Attempt
+# 19. Revision Changes During an Active Attempt
 
-### BR-REV-ATTEMPT-01 — Publishing a New Revision Does Not Invalidate Active Attempts
+## BR-REV-ATTEMPT-01 — Publishing a New Revision Does Not Invalidate Active Attempts
 
 Publishing a new Quiz Revision does not automatically terminate or invalidate existing `IN_PROGRESS` Attempts.
 
-An existing Attempt may continue and be submitted.
-
-```text
-Revision 1 → Published
-     │
-     └── Attempt A → IN_PROGRESS
-
-Revision 2 → Published
-
-Attempt A
-└── continues using Revision 1
-```
+An existing Attempt may continue and be submitted against its original Revision.
 
 ---
 
-### BR-REV-ATTEMPT-02 — Existing Attempt Remains Bound to Original Revision
+## BR-REV-ATTEMPT-02 — Existing Attempt Remains Bound to Original Revision
 
 An active Attempt continues to use:
 
@@ -1127,7 +1478,7 @@ An active Attempt continues to use:
 * the original Answer definitions;
 * the original Question scores;
 * the original maximum score;
-* the original passing score;
+* the original passing percentage;
 * the original time limit;
 * the original completion policy;
 * the original applicable Attempt Policy.
@@ -1136,7 +1487,7 @@ The new Revision applies to future Attempts.
 
 ---
 
-### BR-REV-ATTEMPT-03 — User May Be Informed of Revision Change
+## BR-REV-ATTEMPT-03 — User May Be Informed of Revision Change
 
 When a newer Revision has been published while a User has an active Attempt, the User may be informed that the Quiz has been updated.
 
@@ -1144,23 +1495,13 @@ This notification does not change the existing Attempt.
 
 ---
 
-### BR-REV-ATTEMPT-04 — Prerequisite Assessment Exception
+# 20. Best Score Rules
 
-If a Quiz is used as a prerequisite for progressing to a new learning stage, the business may require the User to satisfy that prerequisite using the applicable newer Revision.
-
-This does not change the historical identity or Revision association of an existing Attempt.
-
-The exact prerequisite and learning-stage eligibility rules remain outside the current Quiz model.
-
----
-
-## 19. Best Score Rules
-
-### BR-BEST-SCORE-01 — Best Score Is Derived
+## BR-BEST-SCORE-01 — Best Score Is Derived
 
 Best Score is not stored as a field on an individual QuizAttempt.
 
-It is derived across historical Attempts for:
+It is derived across eligible historical Attempts for:
 
 ```text
 User × Published Quiz Revision
@@ -1168,7 +1509,7 @@ User × Published Quiz Revision
 
 ---
 
-### BR-BEST-SCORE-02 — Highest Score Wins
+## BR-BEST-SCORE-02 — Highest Score Wins
 
 Best Score is:
 
@@ -1176,7 +1517,7 @@ Best Score is:
 MAX(totalScore)
 ```
 
-across the applicable historical Attempts.
+across eligible evaluated Attempts.
 
 Example:
 
@@ -1192,7 +1533,13 @@ A later lower-scoring Attempt does not overwrite a previous higher score.
 
 ---
 
-### BR-BEST-SCORE-03 — Historical Attempts Remain Preserved
+## BR-BEST-SCORE-03 — Cancelled Attempts Are Excluded
+
+Cancelled Attempts do not contribute to Best Score because they do not produce an evaluated assessment result.
+
+---
+
+## BR-BEST-SCORE-04 — Historical Attempts Remain Preserved
 
 All historical Attempts remain stored as individual assessment records.
 
@@ -1200,9 +1547,235 @@ Best Score is a derived view over those Attempts rather than a replacement for t
 
 ---
 
-## 20. Practice and Formal Assessment Rules
+# 21. Completion Requirement Rules
 
-### BR-ASSESSMENT-POLICY-01 — Practice and Formal Assessment May Have Different Policies
+## BR-COMPLETE-01 — Quiz Is Not Inherently Mandatory
+
+A Quiz may be used as:
+
+```text
+Practice
+Diagnostic
+Completion Requirement
+```
+
+A Quiz is not inherently mandatory simply because it exists within the Learning Context.
+
+---
+
+## BR-COMPLETE-02 — Completion Requirement May Belong to Lesson or Section
+
+A Completion Requirement may be associated with:
+
+```text
+Lesson
+or
+Section
+```
+
+---
+
+## BR-COMPLETE-03 — Completion Requirement References a Specific Revision
+
+A Completion Requirement references a specific Published QuizRevision.
+
+It does not reference only the stable Quiz identity.
+
+```text
+Completion Requirement
+        ↓
+Published QuizRevision
+```
+
+---
+
+## BR-COMPLETE-04 — Passing Attempt Satisfies Requirement
+
+A Completion Requirement is satisfied when there is at least one valid:
+
+```text
+PASSED QuizAttempt
+```
+
+for the required Published QuizRevision.
+
+The latest Attempt does not need to be the passing Attempt.
+
+---
+
+## BR-COMPLETE-05 — Completion Is Historical
+
+Once a Completion Requirement has been satisfied and the associated Lesson or Section completion is achieved, later QuizRevision publication does not automatically revoke or rewrite the completed state.
+
+Historical completion remains a historical fact.
+
+---
+
+## BR-COMPLETE-06 — Multiple Completion Requirements
+
+Multiple Completion Requirements are supported.
+
+The default relationship is:
+
+```text
+AND
+```
+
+meaning all mandatory requirements must be satisfied.
+
+A simple `OR` relationship may be supported when a concrete business need exists.
+
+No nested generic expression engine is introduced.
+
+---
+
+## BR-COMPLETE-07 — Completion Requirement Is Not Learning Prerequisite
+
+Completion Requirement and Learning Prerequisite are separate domain concepts.
+
+```text
+Completion Requirement
+    → contributes to completing a Lesson or Section
+
+Learning Prerequisite
+    → blocks a learner from starting a new activity or assessment
+```
+
+One must not be treated as the other.
+
+---
+
+# 22. Learning Completion Impact Rules
+
+## BR-IMPACT-01 — Revision Completion Impact
+
+A QuizRevision may explicitly declare whether the change affects learning completion.
+
+Supported concepts are:
+
+```text
+NO_IMPACT
+AFFECTS_COMPLETION
+```
+
+---
+
+## BR-IMPACT-02 — NO_IMPACT
+
+When a Revision change is marked:
+
+```text
+NO_IMPACT
+```
+
+it does not alter the validity of existing completion state.
+
+---
+
+## BR-IMPACT-03 — AFFECTS_COMPLETION
+
+When a Revision change is marked:
+
+```text
+AFFECTS_COMPLETION
+```
+
+it may affect completion evaluation for learners who have not yet completed the associated requirement.
+
+It does not:
+
+* delete historical evidence;
+* rewrite historical Attempts;
+* reset the entire Course;
+* automatically invalidate already achieved completion.
+
+---
+
+## BR-IMPACT-04 — Historical Completion Is Preserved
+
+A later QuizRevision does not revoke an already achieved completion solely because the assessment definition changed.
+
+Material completion impact concerns learners who have not yet completed the applicable requirement.
+
+---
+
+# 23. Access and Eligibility Rules
+
+## BR-ACCESS-01 — Visibility Is Not Eligibility
+
+Visibility determines the high-level access mode of a Quiz.
+
+It does not by itself determine whether the User may start an Attempt.
+
+```text
+Visibility
+    ≠
+Eligibility
+```
+
+---
+
+## BR-ACCESS-02 — Access Requirements Are Separate
+
+Access Requirements are distinct from:
+
+```text
+Visibility
+Availability
+Learning Prerequisites
+Current Level
+```
+
+Multiple Access Requirements may apply.
+
+The default relationship is:
+
+```text
+AND
+```
+
+A hard access failure blocks the Attempt.
+
+There is no general "Continue Anyway" behavior for hard access failures.
+
+---
+
+## BR-ACCESS-03 — Course Access Is Distinct from Quiz Eligibility
+
+Valid Course learning access does not automatically make a User eligible to start every Quiz.
+
+Additional Access Requirements or Learning Prerequisites may still block the Attempt.
+
+Course completion does not automatically revoke Course access.
+
+---
+
+## BR-ACCESS-04 — Current Level Is a Soft Recommendation
+
+Current Level is not a hard Quiz prerequisite in the current target model.
+
+When a learner's Current Level is below the recommended level, the system may provide a warning.
+
+Conceptually:
+
+```text
+Recommended level not met
+        ↓
+Warning
+   /        \
+Continue    Go back
+anyway
+```
+
+Only choosing to continue creates the Attempt and consumes quota.
+
+The exact Current Level calculation and source remain outside the Quiz model.
+
+---
+
+# 24. Practice and Formal Assessment Rules
+
+## BR-ASSESSMENT-POLICY-01 — Different Assessment Policies Are Allowed
 
 Practice-oriented and formal assessment-oriented Quizzes may use different policies for:
 
@@ -1217,19 +1790,34 @@ These differences are policy concerns.
 
 ---
 
-### BR-ASSESSMENT-POLICY-02 — No Separate Assessment Type Model Yet
+## BR-ASSESSMENT-POLICY-02 — No Separate AssessmentType Model Yet
 
-The current domain does not establish a separate `AssessmentType`, `PracticeQuiz`, or `Exam` entity.
+The current target model does not establish a separate:
 
-Such a model must not be assumed until the business requirements define a concrete domain distinction requiring it.
+```text
+AssessmentType
+PracticeQuiz
+Exam
+```
+
+domain entity.
+
+Such a model must not be introduced without a concrete business distinction requiring it.
 
 ---
 
-### BR-ASSESSMENT-POLICY-03 — QuestionResult Is Independent of Feedback Policy
+## BR-ASSESSMENT-POLICY-03 — Feedback Is Separate from QuestionResult
 
 QuestionResult represents assessment evidence.
 
-Whether the User can see detailed Question Results or correct answers is a separate feedback/access policy.
+Whether the User can view:
+
+* correct Answers;
+* detailed QuestionResults;
+* explanations;
+* feedback
+
+is a separate feedback/access policy.
 
 Therefore:
 
@@ -1239,99 +1827,118 @@ QuestionResult
 Feedback Policy
 ```
 
-A practice Quiz may expose detailed Question Results, while a formal assessment may restrict detailed feedback.
+---
+
+# 25. Learning State Separation Rules
+
+## BR-LEARNING-01 — Assessment Result Is Not Competency
+
+`PASSED`, `FAILED`, and `NONE` are outcomes of one assessment execution.
+
+They must not automatically be interpreted as a Competency state.
 
 ---
 
-## 21. Learning State Separation Rules
-
-### BR-LEARNING-01 — Assessment Result Is Not Competency
-
-`PASSED` or `FAILED` must not automatically be interpreted as a Competency state.
-
----
-
-### BR-LEARNING-02 — Score Is Not Current Level
+## BR-LEARNING-02 — Score Is Not Current Level
 
 A Quiz score must not automatically be interpreted as the User's Current Level.
 
 ---
 
-### BR-LEARNING-03 — Question Result Is Evidence
+## BR-LEARNING-03 — QuestionResult Is Learning Evidence
 
-Question Results may later be consumed by learner-state or analytics capabilities.
+QuestionResults are historical assessment evidence.
 
-However, a single QuestionResult must not directly define:
+They may later be consumed by broader Learning State or analytics capabilities.
+
+However, a QuestionResult does not directly define:
 
 * Competency;
 * Current Level;
 * Learning Direction.
 
-Those concepts belong to broader Learning State and Learning Direction decisions.
-
 ---
 
-## 22. Rule Summary
+# 26. Rule Summary
 
-The core Quiz business rules can be summarized as:
+The core Quiz business model can be summarized as:
 
 ```text
 Quiz
 │
-├── owns identity, visibility, availability, and revisions
+├── Identity
+├── Ownership
+├── Governance
+├── Visibility
+├── Availability
+├── Quiz Lifecycle
 │
-└── Published Revision
-        │
-        ├── Questions
-        ├── Answer definitions
-        ├── Time limit
-        ├── Passing score?
-        ├── Maximum attempts
-        └── Completion policy
-                │
-                ▼
-          Create Attempt
-                │
-          eligibility checks
-                │
-          quota consumed
-                │
-                ▼
-           IN_PROGRESS
-           /    |     \
-          /     |      \
-     SUBMIT   EXPIRE   CANCEL
-        │       │        │
-        ▼       ▼        ▼
-    score    score    no result
-        │       │
-        └───┬───┘
-            ▼
-     QuestionResult
-            │
-            ▼
-       totalScore
-            │
-      passingScore?
-        /       \
-      yes        no
-       │          │
- PASSED/FAILED   no AssessmentResult
+└── QuizRevision
+      │
+      ├── Revision Lifecycle
+      │     DRAFT
+      │       ↓
+      │    IN_REVIEW
+      │       ↓
+      │    PUBLISHED
+      │       ↓
+      │    HISTORICAL
+      │
+      ├── Questions
+      │     └── Answers
+      │
+      ├── maxScore
+      │     → derived from Question scores
+      │
+      ├── passingPercentage?
+      ├── timeLimit?
+      ├── maxAttempts?
+      └── completionPolicy
+              │
+              ▼
+        Create Attempt
+              │
+        eligibility checks
+              │
+        quota consumed
+              │
+              ▼
+         IN_PROGRESS
+         /    |     \
+        /     |      \
+   SUBMIT   EXPIRE   CANCEL
+      │       │        │
+      ▼       ▼        ▼
+   evaluate evaluate  no evaluation
+      │       │
+      └───┬───┘
+          ▼
+   QuestionResults
+          │
+          ▼
+      totalScore
+          │
+   passingPercentage?
+      /          \
+    yes           no
+     │             │
+PASSED/FAILED    NONE
 ```
 
 The fundamental historical rule is:
 
 ```text
-Quiz Revision
-      │
-      │ exact binding
-      ▼
-QuizAttempt
-      │
-      ├── UserAnswer
-      ├── QuestionResult
-      ├── totalScore
-      └── AssessmentResult?
+Quiz
+└── QuizRevision
+        │
+        │ exact binding
+        ▼
+   QuizAttempt
+        │
+        ├── UserAnswer
+        ├── QuestionResult
+        ├── totalScore
+        └── AssessmentResult
 ```
 
-A new Quiz Revision never changes the definition or result of an existing Attempt.
+A new Quiz Revision never changes the definition, evaluation, or historical result of an existing QuizAttempt.

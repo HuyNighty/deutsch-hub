@@ -4,23 +4,30 @@
 
 This document records the domain decisions established for the Learning Context in DeutschHub V3.
 
-The decisions are derived from the current domain model, application flows, persistence structure, and the target domain model defined in the preceding analysis.
+The decisions are derived from the current domain model, application flows, persistence structure, and the target domain model defined during the domain analysis.
 
 The purpose of this document is to:
 
 - record confirmed domain decisions;
 - distinguish domain concepts with different business responsibilities;
+- establish confirmed Aggregate boundaries where sufficient evidence exists;
 - identify concepts that should not be merged;
 - explicitly preserve unresolved decisions;
-- provide a stable domain baseline for subsequent Aggregate Boundary and architecture analysis.
+- provide a stable domain baseline for subsequent architecture and implementation analysis.
 
-This document does not define the final database schema, API design, package structure, or implementation details.
+This document does not define:
+
+- REST endpoints;
+- final database schema;
+- package structure;
+- infrastructure implementation;
+- application service structure.
 
 Where the available domain evidence is insufficient, the decision is intentionally left open rather than inferred.
 
 ---
 
-## 2. Decision Principles
+# 2. Decision Principles
 
 The following principles are used when evaluating the target domain model:
 
@@ -30,7 +37,9 @@ The following principles are used when evaluating the target domain model:
 4. Learning Evidence must be distinguished from Learner State.
 5. Course-scoped Progress must not be treated as the complete Learner State.
 6. Current implementation structure is evidence for domain analysis, but it does not automatically determine the target model.
-7. Concepts without sufficient domain evidence remain explicitly open.
+7. Historical domain facts must not be rewritten merely because newer definitions or states exist.
+8. Concepts without sufficient domain evidence remain explicitly open.
+9. A new Aggregate or abstraction should not be introduced solely because a similar pattern exists elsewhere in the system.
 
 ---
 
@@ -94,26 +103,21 @@ Enrollment has:
 * drop and expiration behavior;
 * course-scoped Progress.
 
-The current lifecycle includes transitions such as:
+The current lifecycle includes states such as:
 
 ```text
 ENROLLED
-    ↓
 IN_PROGRESS
-    ↓
 COMPLETED
-```
-
-with alternative states such as:
-
-```text
 DROPPED
 EXPIRED
 ```
 
 **Conclusion:**
 
-Enrollment represents participation in a specific Course and is not treated as the complete representation of Learner State.
+Enrollment represents participation in a specific Course.
+
+It is not treated as the complete representation of Learner State.
 
 Therefore:
 
@@ -154,7 +158,7 @@ studyMinutes >= 0
 
 Progress is retained as a Value Object.
 
-It must not be interpreted as the complete representation of Learner State.
+It represents advancement within a learning scope and must not be interpreted as the complete Learner State.
 
 Therefore:
 
@@ -208,9 +212,11 @@ while the `Progress` Value Object requires a positive total lesson count.
 
 **Conclusion:**
 
-UserProgress should not be used as the target Learner State Aggregate.
+UserProgress is not used as the target Learner State Aggregate.
 
-This decision does not by itself determine whether the current implementation should immediately be removed or refactored. Implementation changes belong to a later stage.
+This decision does not by itself determine whether the current implementation should immediately be removed or refactored.
+
+Implementation changes belong to a later stage.
 
 ---
 
@@ -258,9 +264,147 @@ Course Progress
 
 ---
 
-## 3.6 Quiz and QuizAttempt Remain Distinct
+# 4. Quiz Domain Decisions
 
-**Decision:** Quiz and QuizAttempt represent different domain responsibilities.
+## 4.1 Quiz Is an Aggregate Root
+
+**Decision:** Quiz is an Aggregate Root responsible for the stable identity, ownership, governance, and Revision lifecycle of an assessment.
+
+**Evidence:**
+
+```text
+src/main/java/com/deutschhub/domain/learning/model/aggregate/Quiz.java
+```
+
+The target Quiz model establishes a distinction between:
+
+```text
+Quiz
+    = stable assessment identity and governance
+
+QuizRevision
+    = concrete assessment definition
+```
+
+Quiz-level concerns include:
+
+* identity;
+* ownership;
+* author;
+* visibility;
+* availability;
+* Quiz lifecycle;
+* Revision management.
+
+**Conclusion:**
+
+Quiz remains an Aggregate Root.
+
+The Quiz Aggregate owns its QuizRevisions.
+
+---
+
+## 4.2 QuizRevision Is an Entity Inside the Quiz Aggregate
+
+**Decision:** QuizRevision is an Entity inside the Quiz Aggregate and represents one concrete version of an assessment definition.
+
+The target structure is:
+
+```text
+Quiz
+ └── QuizRevision
+      └── Question
+           └── Answer
+```
+
+A QuizRevision contains the definition that is used when a learner performs an assessment, including:
+
+* title;
+* description;
+* difficulty;
+* time limit;
+* passing percentage;
+* maximum attempts;
+* completion policy;
+* Questions;
+* Answer configuration.
+
+The maximum score is derived from the Questions:
+
+```text
+maxScore
+=
+sum(Question.score)
+```
+
+A Published Revision is immutable.
+
+When a new Revision is published, it becomes a new historical definition rather than modifying the previous Published Revision.
+
+**Conclusion:**
+
+QuizRevision is not an independent Aggregate Root.
+
+It remains inside the Quiz Aggregate.
+
+---
+
+## 4.3 Question Is an Entity Inside QuizRevision
+
+**Decision:** Question is an Entity inside QuizRevision.
+
+A Question does not have an independent Aggregate boundary.
+
+Its identity and lifecycle are meaningful within the Revision that owns it.
+
+The supported Question Types are:
+
+```text
+SINGLE_CHOICE
+MULTIPLE_CHOICE
+TRUE_FALSE
+```
+
+Question Type determines the structural and evaluation rules of the Question.
+
+A Draft Question may temporarily be incomplete.
+
+Publication requires the Question to satisfy the rules associated with its Question Type.
+
+**Conclusion:**
+
+Question remains an Entity nested within QuizRevision.
+
+---
+
+## 4.4 Answer Is an Entity Inside Question
+
+**Decision:** Answer is an Entity inside Question.
+
+The target model uses:
+
+```text
+Question
+    └── Answer
+```
+
+An Answer has stable identity and presentation order within its Question.
+
+The `isCorrect` property belongs to Answer.
+
+The Question enforces the collection rules required by its Question Type.
+
+For a Published Revision, Answer ordering is part of the historical assessment definition.
+
+**Conclusion:**
+
+Answer is not an Aggregate Root and is not managed independently from its Question.
+
+---
+
+## 4.5 Quiz and QuizAttempt Remain Separate Aggregate Roots
+
+**Decision:** Quiz and QuizAttempt represent different domain responsibilities and remain separate Aggregate Roots.
 
 **Evidence:**
 
@@ -273,19 +417,76 @@ The distinction is:
 
 ```text
 Quiz
-    = assessment definition
+    = assessment definition and governance
 
 QuizAttempt
     = learner-specific assessment execution
 ```
 
-QuizAttempt has learner-specific identity and assessment state.
+The Quiz Aggregate owns the assessment definition.
+
+The QuizAttempt Aggregate owns the lifecycle and state of one learner's execution.
 
 **Conclusion:**
 
-Quiz and QuizAttempt remain separate concepts.
+```text
+Quiz Aggregate
+    ≠
+QuizAttempt Aggregate
+```
 
-QuizAttempt can serve as Learning Evidence.
+QuizAttempt must not be nested inside the Quiz Aggregate.
+
+---
+
+## 4.6 QuizAttempt Is Bound to an Exact QuizRevision
+
+**Decision:** Every QuizAttempt is permanently bound to the exact Published QuizRevision used when the Attempt starts.
+
+Conceptually:
+
+```text
+Quiz
+ ├── Revision A
+ │     └── Historical
+ │
+ └── Revision B
+       └── Published
+
+Attempt 1
+    └── Revision A
+
+Attempt 2
+    └── Revision B
+```
+
+Publishing a newer Revision does not migrate existing Attempts.
+
+An `IN_PROGRESS` Attempt continues against its original Revision.
+
+This preserves the exact assessment definition used for the learner's execution and evaluation.
+
+**Conclusion:**
+
+QuizAttempt references a specific QuizRevision rather than merely referencing the current Quiz definition.
+
+---
+
+## 4.7 QuizAttempt Represents Assessment Execution and Evidence
+
+**Decision:** QuizAttempt represents a learner-specific assessment execution and preserves assessment evidence.
+
+A QuizAttempt contains learner-specific information such as:
+
+* User identity;
+* bound QuizRevision;
+* lifecycle state;
+* current responses;
+* final evaluation;
+* score;
+* assessment result.
+
+QuizAttempt may therefore serve as Learning Evidence.
 
 However:
 
@@ -293,11 +494,57 @@ However:
 QuizAttempt ≠ Competency
 ```
 
-An assessment score does not automatically determine mastery without an explicit business rule.
+and:
+
+```text
+Assessment Result ≠ Learner State
+```
+
+An assessment result does not automatically establish mastery or competency without an explicit business rule.
+
+**Conclusion:**
+
+QuizAttempt is an Aggregate Root that preserves an assessment execution and its historical outcome.
 
 ---
 
-## 3.7 Learning Evidence and Learner State Are Distinct
+## 4.8 QuestionResult Is Assessment Evidence
+
+**Decision:** QuestionResult represents historical evaluation evidence for one Question within a QuizAttempt.
+
+A QuestionResult records facts such as:
+
+* Question identity;
+* selected Answer identities;
+* response status;
+* correctness when applicable;
+* earned score.
+
+For every Question in the bound Published Revision, evaluation produces exactly one QuestionResult.
+
+For an unanswered Question:
+
+```text
+responseStatus = UNANSWERED
+isCorrect = null
+earnedScore = 0
+```
+
+QuestionResult records the result of evaluating the learner's response against the bound Revision.
+
+It does not rewrite the historical Question or Answer definition.
+
+**Conclusion:**
+
+QuestionResult is assessment evidence associated with the QuizAttempt.
+
+It is not an independent Aggregate Root.
+
+---
+
+# 5. Learning Evidence and Learner State
+
+## 5.1 Learning Evidence and Learner State Are Distinct
 
 **Decision:** Learning Evidence and Learner State must remain separate domain concepts.
 
@@ -311,29 +558,19 @@ Learning Evidence
 Learner State
 ```
 
-Learning Evidence represents an observable outcome or record produced by an activity.
+Learning Evidence represents an observable outcome or historical record produced by a learning activity.
 
 Learner State represents the current state the system knows about the learner.
 
-For example:
+Examples of Learning Evidence include:
 
 ```text
+LessonCompletion
 QuizAttempt
-    ↓
-Assessment Evidence
+QuestionResult
 ```
 
-may contribute to:
-
-```text
-Competency
-```
-
-but the two concepts are not equivalent.
-
-**Conclusion:**
-
-Evidence may contribute to state, but evidence is not itself the complete learner state.
+Evidence may contribute to Learner State, but evidence is not itself the complete Learner State.
 
 Therefore:
 
@@ -343,11 +580,11 @@ Evidence ≠ Learner State
 
 ---
 
-## 3.8 Course Progress Is Not the Complete Learner State
+## 5.2 Course Progress Is Not the Complete Learner State
 
 **Decision:** Course-scoped Progress must not be treated as the complete Learner State.
 
-The current model provides Progress through Enrollment:
+The current model provides:
 
 ```text
 Enrollment
@@ -377,11 +614,11 @@ Enrollment.Progress
 Learner State
 ```
 
-Course completion and learner capability must remain conceptually distinct.
+Course completion and learner capability remain conceptually distinct.
 
 ---
 
-## 3.9 Competency Is Distinct from Progress and Evidence
+## 5.3 Competency Is Distinct from Progress and Evidence
 
 **Decision:** Competency is a separate target domain concept representing demonstrated learner capability or mastery.
 
@@ -414,15 +651,11 @@ does not imply:
 Learner Competency = 80%
 ```
 
-**Conclusion:**
-
-Competency must not be derived from Progress or a single Evidence record without explicit domain rules.
-
-Its exact Aggregate boundary remains open.
+Competency must not be derived from Progress or from a single Evidence record without explicit domain rules.
 
 ---
 
-## 3.10 Course Level, Learner Current Level, and Certification Level Are Distinct
+## 5.4 Course Level, Learner Current Level, and Certification Level Are Distinct
 
 **Decision:** Course Level, Learner Current Level, and Certification Level represent different concepts.
 
@@ -445,8 +678,6 @@ However, the current implementation does not establish a complete learner-level 
 
 **Conclusion:**
 
-The following must remain distinct:
-
 ```text
 Course Level
     ≠ Learner Current Level
@@ -455,7 +686,7 @@ Course Level
 
 ---
 
-## 3.11 Course Completion Does Not Automatically Determine Learner Level
+## 5.5 Course Completion Does Not Automatically Determine Learner Level
 
 **Decision:** Course completion or Course Progress must not automatically determine Learner Current Level.
 
@@ -473,11 +704,11 @@ The current code does not establish such a rule.
 
 **Conclusion:**
 
-Learner Current Level must be treated as an independent learner-state concept until a valid domain rule defines how it is determined.
+Learner Current Level remains an independent learner-state concept until a valid domain rule defines how it is determined.
 
 ---
 
-## 3.12 Learner State Is a Business Responsibility, Not Automatically an Aggregate Root
+## 5.6 Learner State Is a Business Responsibility, Not Automatically an Aggregate Root
 
 **Decision:** Learner State is treated as a business responsibility rather than a single Aggregate Root.
 
@@ -511,7 +742,9 @@ Aggregate boundaries will be determined later based on:
 
 ---
 
-## 3.13 LessonItem Is Not the Generic Learning Activity
+# 6. Learning Activity and Learning Direction
+
+## 6.1 LessonItem Is Not the Generic Learning Activity
 
 **Decision:** LessonItem must not automatically be treated as the generic Learning Activity abstraction.
 
@@ -545,7 +778,7 @@ Learning Activity remains a target domain concept whose exact classification is 
 
 ---
 
-## 3.14 Learning Direction Is Distinct from Learner State
+## 6.2 Learning Direction Is Distinct from Learner State
 
 **Decision:** Learning Direction consumes learner state and other learning inputs to determine or recommend what the learner should do next.
 
@@ -579,11 +812,11 @@ Learner State ≠ Learning Direction
 
 ---
 
-# 4. Open Domain Decisions
+# 7. Open Domain Decisions
 
 The following decisions remain intentionally open.
 
-## 4.1 Competency Aggregate Boundary
+## 7.1 Competency Aggregate Boundary
 
 It remains open whether Competency should be:
 
@@ -596,7 +829,7 @@ Current evidence is sufficient to establish Competency as a distinct concept, bu
 
 ---
 
-## 4.2 Current Level Aggregate Boundary
+## 7.2 Current Level Aggregate Boundary
 
 The target model establishes Learner Current Level as a learner-state concept.
 
@@ -604,7 +837,7 @@ Its exact identity, lifecycle, and Aggregate boundary remain open.
 
 ---
 
-## 4.3 Learning Activity Structure
+## 7.3 Learning Activity Structure
 
 The target model establishes Learning Activity as a distinct responsibility from learning content.
 
@@ -626,11 +859,21 @@ The current code does not provide enough evidence to determine whether these sho
 * entities;
 * aggregates;
 * activity types;
-* or capabilities over existing concepts.
+* capabilities over existing concepts.
 
 ---
 
-## 4.4 Learning Plan
+## 7.4 Learning Activity Versioning
+
+It remains open whether Learning Activities require explicit versioning.
+
+Versioning should only be introduced if the business requires historical activity definitions to remain stable when an activity is reused or modified.
+
+The existence of versioning in another domain concept does not by itself require Learning Activity versioning.
+
+---
+
+## 7.5 Learning Plan
 
 Learning Plans are identified as a potential Learning Direction concept.
 
@@ -645,7 +888,7 @@ This depends on future business rules and lifecycle requirements.
 
 ---
 
-## 4.5 Recommendations
+## 7.6 Recommendations
 
 Recommendations are identified as part of Learning Direction.
 
@@ -660,7 +903,7 @@ No persistence or lifecycle requirement is currently sufficient to establish an 
 
 ---
 
-## 4.6 Review Due
+## 7.7 Review Due
 
 Review Due is a recognized Learning Direction capability.
 
@@ -670,7 +913,7 @@ The current code does not provide sufficient evidence for a target Aggregate or 
 
 ---
 
-## 4.7 Vocabulary, Grammar, and Skills
+## 7.8 Vocabulary, Grammar, and Skills
 
 Vocabulary, Grammar, and language skills are recognized as relevant parts of the target Learning domain.
 
@@ -680,7 +923,7 @@ They should not automatically become independent Bounded Contexts, Aggregates, o
 
 ---
 
-## 4.8 XP, Streak, Achievements, and Statistics
+## 7.9 XP, Streak, Achievements, and Statistics
 
 These concepts were identified during Learning discovery.
 
@@ -692,13 +935,13 @@ They may represent:
 * derived state;
 * historical records;
 * gamification concepts;
-* read-model/statistical information.
+* statistical or read-model information.
 
 No final Aggregate decision is made at this stage.
 
 ---
 
-## 4.9 Evidence-to-Competency Rules
+## 7.10 Evidence-to-Competency Rules
 
 The target model establishes:
 
@@ -732,7 +975,7 @@ Such rules require explicit business validation.
 
 ---
 
-# 5. Decision Summary
+# 8. Decision Summary
 
 The current target baseline is:
 
@@ -750,22 +993,36 @@ LessonCompletion
     → Entity / Learning Evidence
 
 Quiz
-    → Assessment concept
+    → Aggregate Root
+       └── QuizRevision
+             → Entity
+             └── Question
+                   → Entity
+                   └── Answer
+                         → Entity
 
 QuizAttempt
-    → Aggregate Root / Learning Evidence
+    → Separate Aggregate Root
+       → Assessment Execution / Evidence
+
+QuestionResult
+    → Assessment Evidence
 
 Competency
-    → Entity candidate
+    → Target domain concept
+      → Aggregate boundary open
 
 Current Level
     → Learner State concept
+      → Aggregate boundary open
 
 Learner State
-    → Business responsibility, not a single Aggregate Root
+    → Business responsibility
+      → Not a single Aggregate Root
 
 Learning Activity
     → Domain concept
+      → Structure open
 
 Learning Evidence
     → Conceptual domain category
@@ -792,25 +1049,71 @@ Course Level ≠ Learner Current Level
 Learner Current Level ≠ Certification Level
 
 Learning Direction ≠ Learner State
+
+Quiz ≠ QuizAttempt
+
+QuizRevision ≠ QuizAttempt
+
+Question ≠ QuestionResult
+
+Answer ≠ UserAnswer
+
+Assessment Result ≠ Competency
 ```
 
 ---
 
-# 6. Boundary for Further Design
+# 9. Boundary for Further Design
 
-This document intentionally stops before defining final Aggregate Boundaries.
+The established decisions provide the domain baseline for further Aggregate Boundary and architecture analysis.
 
-The next design stage should determine Aggregate boundaries using the established decisions and the following criteria:
+Confirmed Aggregate boundaries are:
+
+```text
+Course Aggregate
+    └── Section
+         └── Lesson
+              └── LessonItem
+```
+
+```text
+Enrollment Aggregate
+    └── Progress
+```
+
+```text
+Quiz Aggregate
+    └── QuizRevision
+         └── Question
+              └── Answer
+```
+
+```text
+QuizAttempt Aggregate
+```
+
+```text
+LessonCompletion
+    → independent Learning Evidence
+```
+
+No generic `LearnerState` Aggregate is introduced.
+
+No generic `LearningActivity` Aggregate is introduced.
+
+No Competency Aggregate is introduced until sufficient business evidence exists.
+
+The next design stage should use these decisions to evaluate the target module boundaries and architecture.
+
+Aggregate boundaries should continue to be determined using:
 
 * identity;
 * lifecycle;
 * invariants;
 * transactional consistency;
 * business ownership;
-* dependency between domain concepts.
+* domain dependencies.
 
-The resulting Aggregate Boundaries should then provide the basis for the target architecture and implementation structure.
+The target model should remain independent of the current package structure until the corresponding business boundaries have been established.
 
-The target model should remain independent of the current package structure until those business boundaries have been established.
-
-
+````

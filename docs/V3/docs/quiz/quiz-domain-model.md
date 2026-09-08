@@ -2,20 +2,26 @@
 
 ## 1. Purpose
 
-This document defines the target domain model and aggregate boundaries for the Quiz domain within the Learning context.
+This document defines the target domain model and aggregate boundaries for the Quiz domain within the Learning Context.
 
-The model is based on the current DeutschHub implementation and the business decisions established during domain discovery.
+The model is based on:
+
+- the current DeutschHub implementation;
+- the target Learning domain model;
+- the Quiz business decisions established during domain discovery.
 
 The target model separates:
 
-- Quiz identity and governance from Quiz revision content.
-- Current Quiz definitions from historical Quiz definitions.
-- Assessment definition from learner-specific assessment execution.
-- Attempt lifecycle from assessment result.
-- Learner answers from assessment evidence.
-- Quiz placement within a Lesson from the Quiz aggregate itself.
+- Quiz identity and governance from Quiz Revision content;
+- current assessment definitions from historical assessment definitions;
+- assessment definition from learner-specific assessment execution;
+- Attempt lifecycle from Assessment Result;
+- learner answers from assessment evidence;
+- Quiz placement within a Lesson from the Quiz Aggregate itself.
 
-This document describes the domain structure and relationships. Detailed business rules and business actions are defined separately in:
+This document describes the target domain structure and relationships.
+
+Detailed business rules and business actions are defined separately in:
 
 - `quiz-business-rules.md`
 - `quiz-business-actions.md`
@@ -24,11 +30,11 @@ This document describes the domain structure and relationships. Detailed busines
 
 ## 2. Domain Position
 
-Quiz belongs to the Learning domain.
+Quiz belongs to the Learning Context.
 
-A Quiz is an assessment concept that may be placed inside a Lesson through a `LessonItem`.
+A Quiz is an assessment domain concept that may be placed within a Lesson through a `LessonItem`.
 
-The `LessonItem` does not contain the Quiz aggregate. It references the Quiz by identifier.
+The `LessonItem` references the Quiz by identity rather than containing the Quiz Aggregate.
 
 ```text
 Course
@@ -38,19 +44,24 @@ Course
             └── quizId → Quiz
 ````
 
-This keeps learning structure and assessment definition as separate domain concepts.
+This keeps Learning Structure and Assessment Definition as separate domain concepts.
 
-The Quiz aggregate does not own Course, Section, Lesson, or LessonItem.
+The Quiz Aggregate does not own:
+
+* Course;
+* Section;
+* Lesson;
+* LessonItem.
 
 ---
 
-## 3. Quiz Aggregate
+# 3. Quiz Aggregate
 
-### 3.1 Aggregate Root
+## 3.1 Aggregate Root
 
-`Quiz` is an independent Aggregate Root.
+`Quiz` is an Aggregate Root.
 
-The Quiz aggregate owns the identity and governance of a Quiz and its versioned assessment definitions.
+The Quiz Aggregate owns the stable identity, ownership, governance, and Revision lifecycle of an assessment.
 
 Target conceptual structure:
 
@@ -59,63 +70,121 @@ Quiz Aggregate
 └── Quiz
     └── QuizRevision
         └── Question
-            └── AnswerQuestion
+            └── Answer
 ```
 
-A Quiz is not contained inside `Course`, `Lesson`, or `LessonItem`.
+`QuizRevision` is an Entity inside the Quiz Aggregate.
 
-### 3.2 Quiz Responsibilities
+`Question` is an Entity inside a QuizRevision.
 
-The Quiz aggregate is responsible for concepts that belong to the Quiz itself, including:
+`Answer` is an Entity inside a Question.
 
-* Quiz identity;
-* visibility;
-* availability;
-* revision lifecycle;
-* access-related configuration;
-* the relationship between the Quiz and its revisions.
-
-The Quiz aggregate is not responsible for learner-specific execution.
-
-Learner-specific execution belongs to `QuizAttempt`.
+The Quiz Aggregate is therefore the consistency boundary for the assessment definition and its revisions.
 
 ---
 
-## 4. Quiz Revision
+## 3.2 Quiz Responsibilities
 
-### 4.1 Purpose
+The Quiz Aggregate is responsible for concepts that belong to the Quiz itself, including:
 
-A `QuizRevision` represents a specific version of a Quiz definition.
+* Quiz identity;
+* ownership;
+* governance;
+* visibility;
+* availability;
+* Revision lifecycle;
+* the relationship between the Quiz and its Revisions.
 
-A revision contains the assessment definition that is used when a QuizAttempt is started.
+The Quiz Aggregate does not own learner-specific execution.
 
-A published revision is immutable.
+Learner-specific execution belongs to `QuizAttempt`.
 
-Any modification to a published Quiz definition must be performed through a new Draft Revision and explicitly published as a new definition.
+Conceptually:
 
-### 4.2 Revision Lifecycle
+```text
+Quiz
+├── Identity
+├── Ownership
+├── Governance
+├── Visibility
+├── Availability
+└── Revision Lifecycle
+     └── QuizRevision
+          ├── Definition
+          ├── Questions
+          │    └── Answers
+          └── Assessment Rules
+```
+
+---
+
+# 4. Quiz Revision
+
+## 4.1 Purpose
+
+`QuizRevision` represents a concrete version of a Quiz assessment definition.
+
+A Revision contains the assessment definition used when a QuizAttempt is started.
+
+Revision-specific concepts include:
+
+* title;
+* description;
+* difficulty;
+* time limit;
+* maximum score;
+* passing percentage;
+* maximum attempts;
+* completion policy;
+* Questions;
+* Answers.
+
+A Published Revision is immutable.
+
+A Historical Revision is immutable.
+
+Any modification to an already Published assessment definition is performed through a new Draft Revision.
+
+---
+
+## 4.2 Revision Lifecycle
+
+The target Revision lifecycle is:
+
+```text
+DRAFT
+   ↓
+IN_REVIEW
+   ↓
+PUBLISHED
+   ↓
+HISTORICAL
+```
 
 A Quiz may have:
 
 * at most one Draft Revision;
+* at most one Revision in review;
 * at most one Published Revision;
-* zero or more historical revisions.
+* zero or more Historical Revisions.
 
-A newly created Quiz starts with a Draft Revision.
+The exact persistence representation of Revision lifecycle states is outside the scope of this document.
+
+Conceptually:
 
 ```text
 New Quiz
 └── Draft Revision
 ```
 
-After the first publication:
+After publication:
 
 ```text
 Quiz
 └── Published Revision
 ```
 
-After editing a published Quiz:
+While a new definition is being prepared:
 
 ```text
 Quiz
@@ -123,85 +192,228 @@ Quiz
 └── Draft Revision
 ```
 
-After publishing the new Draft Revision:
+During review:
+
+```text
+Quiz
+├── Published Revision
+└── Revision in Review
+```
+
+After the new Revision is published:
 
 ```text
 Quiz
 ├── New Published Revision
-└── Previous Published Revision → historical
+└── Previous Published Revision → Historical
 ```
 
-Historical revisions are retained because existing QuizAttempts must remain associated with the exact assessment definition used when they started.
-
-The exact representation and lifecycle status of historical revisions remains an implementation detail to be determined later.
-
-### 4.3 Draft and Published Revisions
-
-A Draft Revision may be incomplete.
-
-A Draft Revision may be created and edited before publication.
-
-Submission for review requires the required business information to be present, including a valid title.
-
-A Published Revision represents an assessment definition that may be used to start new QuizAttempts.
-
-A published revision must not be modified in place.
+Historical Revisions are retained because existing QuizAttempts remain bound to the exact Revision used when they started.
 
 ---
 
-## 5. Quiz Governance
+## 4.3 Draft Revision
 
-Quiz governance is separate from revision content.
+A Draft Revision is mutable.
 
-### 5.1 Visibility
+It may be incomplete while being edited.
 
-Visibility determines who may discover or access the Quiz at a high level.
+A Draft Revision may contain:
 
-Current supported visibility concepts are:
+* incomplete Questions;
+* incomplete Answers;
+* temporary assessment configuration.
+
+Completeness and publishability are validated before the Revision can become Published.
+
+A Draft Revision may be submitted for review when the required review conditions are satisfied.
+
+The detailed validation rules are defined in `quiz-business-rules.md`.
+
+---
+
+## 4.4 Published Revision
+
+A Published Revision represents a concrete assessment definition that may be used for new QuizAttempts when the Quiz is otherwise available and the learner is eligible.
+
+A Published Revision is immutable.
+
+It defines the exact assessment configuration used by an Attempt, including:
+
+```text
+Questions
+Answers
+Question scores
+Maximum score
+Passing percentage
+Time limit
+Maximum attempts
+Completion policy
+```
+
+A newer Revision does not modify an existing Published or Historical Revision.
+
+---
+
+## 4.5 Historical Revision
+
+When a newer Revision becomes Published, the previous Published Revision becomes Historical.
+
+Historical Revisions are retained.
+
+They preserve the assessment definition against which existing Attempts were executed.
+
+```text
+Quiz
+├── Revision A → HISTORICAL
+└── Revision B → PUBLISHED
+```
+
+Historical Revisions are not edited or republished in place.
+
+---
+
+# 5. Quiz Governance
+
+Quiz governance is separate from Revision content.
+
+## 5.1 Ownership
+
+Quiz ownership contains two distinct concepts:
+
+```text
+createdBy
+author
+```
+
+`createdBy` represents the historical creator of the Quiz and is immutable.
+
+`author` represents the current responsible author and may be changed through the appropriate business operation.
+
+Changing the current author does not create a new Revision.
+
+The exact authorization policy is defined separately from the domain structure.
+
+---
+
+## 5.2 Visibility
+
+Visibility determines the high-level access mode of the Quiz.
+
+The supported visibility concepts are:
 
 ```text
 PRIVATE
-COURSE_ONLY
 PUBLIC
+COURSE_ONLY
 ```
+
+Visibility is a property of the Quiz rather than an individual Revision.
 
 Conceptually:
 
 ```text
 Quiz
-├── visibility
-└── availability
+├── Visibility
+└── Availability
 ```
 
-Visibility is a property of the Quiz, not of an individual Revision.
+Visibility is distinct from:
 
-The exact access rules associated with each visibility mode are business rules and are defined separately.
+* Access Requirements;
+* Availability;
+* Learning Prerequisites;
+* Current Level.
 
-In particular:
+For example:
 
-* `PRIVATE` is not available to ordinary learners.
-* `PUBLIC` may proceed to eligibility checks.
-* `COURSE_ONLY` requires valid Course learning access.
+```text
+PRIVATE
+→ ordinary learners cannot access the Quiz
 
-The Quiz remains an independent aggregate and does not regain direct ownership of Course or Lesson.
+PUBLIC
+→ learner may access the Quiz, subject to eligibility
 
-### 5.2 Availability
+COURSE_ONLY
+→ valid Course learning access is required
+```
 
-Quiz availability determines whether the Quiz can currently accept new Attempts.
-
-Availability is distinct from:
-
-* visibility;
-* Revision lifecycle;
-* Attempt lifecycle.
-
-Deactivating a Quiz prevents creation of new Attempts but does not automatically terminate existing `IN_PROGRESS` Attempts.
+The Quiz Aggregate does not directly own Course access state.
 
 ---
 
-## 6. Quiz Revision Content
+## 5.3 Availability
 
-A Quiz Revision contains the configuration and questions required to define an assessment.
+Availability determines whether the Quiz can currently accept new Attempts.
+
+Availability is distinct from:
+
+* Quiz lifecycle;
+* Revision lifecycle;
+* Visibility;
+* Attempt lifecycle.
+
+The target availability concept supports:
+
+```text
+ACTIVE
+INACTIVE
+```
+
+Deactivating a Quiz prevents creation of new Attempts but does not automatically terminate existing `IN_PROGRESS` Attempts.
+
+Availability therefore controls whether a new Attempt may be started rather than whether an existing Attempt may continue.
+
+---
+
+## 5.4 Quiz Lifecycle
+
+The Quiz lifecycle is:
+
+```text
+ACTIVE
+   ↓
+ARCHIVED
+   ↓
+DELETED
+```
+
+The lifecycle is separate from Revision lifecycle and Availability.
+
+Conceptually:
+
+```text
+Quiz Lifecycle
+    ACTIVE
+      ↓
+   ARCHIVED
+      ↓
+    DELETED
+
+Revision Lifecycle
+    DRAFT
+      ↓
+  IN_REVIEW
+      ↓
+  PUBLISHED
+      ↓
+  HISTORICAL
+
+Availability
+    ACTIVE / INACTIVE
+```
+
+Archiving a Quiz prevents new Attempts but does not terminate existing `IN_PROGRESS` Attempts.
+
+Deleting a Quiz is a soft-delete operation.
+
+Deletion preserves Historical Revisions and terminal QuizAttempts.
+
+---
+
+# 6. Quiz Revision Content
+
+A QuizRevision contains the concrete assessment definition.
 
 Conceptually:
 
@@ -209,90 +421,128 @@ Conceptually:
 QuizRevision
 ├── title
 ├── description
+├── difficulty
 ├── timeLimit
 ├── maxScore
-├── passingScore?
-├── maxAttempts
+├── passingPercentage?
+├── maxAttempts?
 ├── completionPolicy
-├── difficulty
 └── questions
     └── Question
-        └── AnswerQuestion
+        └── Answer
 ```
 
-### 6.1 Time Limit
+---
+
+## 6.1 Time Limit
 
 `timeLimit` defines the maximum real-world duration of an Attempt.
 
-The timer starts when the Attempt starts and continues to run regardless of:
+It is optional:
 
-* temporary network disconnection;
+```text
+timeLimit = null
+→ unlimited duration
+```
+
+When configured, it must be positive.
+
+The Attempt expiration point is determined from the Attempt start time and the time limit of the exact Published Revision used by that Attempt.
+
+The timer continues to run regardless of:
+
 * browser closure;
-* leaving the Quiz temporarily.
+* temporary network disconnection;
+* leaving the Quiz;
+* temporary interruption.
 
 An `IN_PROGRESS` Attempt may be resumed, but elapsed time is not paused.
 
-The server-side time is the source of truth.
+Server-side time is authoritative.
 
 If the deadline has been reached when the server processes an operation, the Attempt is considered expired.
 
-### 6.2 Maximum Score
+---
 
-`maxScore` defines the maximum score of the Revision.
+## 6.2 Maximum Score
 
-The maximum score is determined by the sum of Question scores.
-
-Before publication:
+`maxScore` is derived from the Question scores in the Revision.
 
 ```text
-sum(Question.score) = QuizRevision.maxScore
+maxScore
+=
+sum(Question.score)
 ```
 
-The maximum score of the Revision is preserved for historical assessment calculations.
+It is not an independent author-entered source of truth.
 
-### 6.3 Passing Score
+A Draft Revision may temporarily contain no Questions and therefore have a maximum score of zero.
 
-`passingScore` is optional.
+A Published Revision must contain at least one valid Question and therefore has a positive maximum score.
 
-A Quiz may define a passing score when pass/fail evaluation is required.
+The maximum score is preserved through the exact Revision associated with an Attempt.
 
-When no passing score exists:
+---
+
+## 6.3 Passing Percentage
+
+`passingPercentage` is optional.
 
 ```text
-AssessmentResult = none
+passingPercentage = null
+→ no PASSED / FAILED Assessment Result
 ```
 
-The Attempt may still produce a numeric score.
-
-When a passing score exists:
+When configured:
 
 ```text
-totalScore >= passingScore → PASSED
-totalScore < passingScore  → FAILED
+0 < passingPercentage ≤ 100
 ```
 
-The passing score belongs to the Quiz Revision so that historical Attempts continue to use the assessment rule that was effective when they started.
-
-### 6.4 Maximum Attempts
-
-`maxAttempts` defines the maximum number of Attempts that may be created for a User under the applicable Published Revision.
-
-The quota is associated with:
+The Assessment Result is determined from the actual score percentage:
 
 ```text
-User × Published Quiz Revision
+scorePercentage
+=
+(totalScore / maxScore) × 100
 ```
 
-The quota is consumed immediately when a new Attempt is successfully created.
+Then:
 
-Terminal status does not determine whether quota is consumed.
+```text
+scorePercentage >= passingPercentage
+→ PASSED
+
+scorePercentage < passingPercentage
+→ FAILED
+```
+
+Passing is therefore percentage-based rather than based on a fixed stored passing score.
+
+The exact calculation and comparison rule are defined in `quiz-business-rules.md`.
+
+---
+
+## 6.4 Maximum Attempts
+
+`maxAttempts` defines the maximum number of Attempts that may be created by a User for a Published QuizRevision.
+
+The quota is scoped to:
+
+```text
+User × Published QuizRevision
+```
+
+When `maxAttempts` is `null`, the number of Attempts is unlimited.
+
+A quota is consumed immediately when a new Attempt is successfully created.
 
 Therefore:
 
 ```text
 Create Attempt
       ↓
-quota consumed
+Quota consumed
       ↓
 IN_PROGRESS
       ↓
@@ -301,7 +551,9 @@ SUBMITTED / EXPIRED / CANCELLED
 
 A cancelled Attempt does not return consumed quota.
 
-### 6.5 Completion Policy
+---
+
+## 6.5 Completion Policy
 
 `completionPolicy` defines the rule for manual submission.
 
@@ -312,29 +564,29 @@ REQUIRED_ALL
 OPTIONAL
 ```
 
-#### REQUIRED_ALL
+### REQUIRED_ALL
 
 All Questions must have an answer before manual submission is accepted.
 
-A learner may leave Questions unanswered temporarily while the Attempt remains `IN_PROGRESS`.
+A learner may temporarily leave Questions unanswered while the Attempt remains `IN_PROGRESS`.
 
 If the time limit expires, unanswered Questions remain unanswered and receive zero score.
 
-The Attempt becomes `EXPIRED`.
+The Attempt becomes `EXPIRED` and is evaluated.
 
-#### OPTIONAL
+### OPTIONAL
 
 Manual submission is allowed even when some Questions remain unanswered.
 
 Unanswered Questions receive zero score.
 
-Completion Policy belongs to the Revision because it is part of the assessment definition used by the Attempt.
+Completion Policy is part of the Revision because it is an assessment rule used by the Attempt.
 
 ---
 
-## 7. Question Entity
+# 7. Question Entity
 
-`Question` is an entity within a Quiz Revision.
+`Question` is an Entity within a QuizRevision.
 
 Target relationship:
 
@@ -346,13 +598,13 @@ Quiz
 
 A Question contains:
 
-* Question identifier;
-* Question content;
+* Question identity;
+* learner-facing prompt;
 * score;
-* question type;
-* answer options.
+* Question type;
+* ordered Answers.
 
-Supported Question types are currently:
+Supported Question types are:
 
 ```text
 SINGLE_CHOICE
@@ -360,53 +612,133 @@ MULTIPLE_CHOICE
 TRUE_FALSE
 ```
 
-Text-based Question types are not part of the current target model.
-
-### 7.1 Question Constraints
-
-The current domain implementation establishes the following constraints:
-
-* A Question must have at least two answers.
-* A Question may have at most six answers.
-* At least one answer must be correct.
-* Single-choice Questions may have at most one correct answer.
-* True/False Questions must contain exactly two answers.
-* True/False Questions must contain exactly one correct answer.
-* Question score must be greater than zero.
-* Question content must not be blank.
-* Answer content must not be blank.
-* Duplicate answer content is not allowed within a Question.
-
-These constraints form part of the Quiz definition and therefore belong to the Revision containing the Question.
+No additional Question types are introduced by the current target model.
 
 ---
 
-## 8. AnswerQuestion Entity
+## 7.1 Question Lifecycle and Mutability
 
-`AnswerQuestion` is an entity owned by a Question.
+A Draft Question is mutable.
+
+A Draft Question may temporarily be incomplete.
+
+For example, during editing it may temporarily have:
+
+```text
+0 Answers
+0 correct Answers
+```
+
+These temporary states do not make the Draft invalid as an editable object.
+
+Before a Revision becomes Published, each Question must satisfy the required structural and evaluation invariants.
+
+Published and Historical Questions are immutable because their definition contributes to the historical meaning of the Revision.
+
+---
+
+## 7.2 Question Constraints
+
+For a publishable Question, the target model requires:
+
+* Question score is greater than zero.
+* Answer content is required.
+* Duplicate Answer content is not allowed within the same Question.
+* Answer order is unique and contiguous, starting from 1.
+* `SINGLE_CHOICE` has exactly one correct Answer.
+* `MULTIPLE_CHOICE` has at least one correct Answer.
+* `TRUE_FALSE` has exactly two Answers.
+* `TRUE_FALSE` has exactly one correct Answer.
+
+A Question may change type while its Revision is Draft.
+
+Changing the Question type does not automatically modify its existing Answers or correctness configuration.
+
+The Question must satisfy the invariants of its final type before publication.
+
+The exact content length, formatting, normalization, and case-sensitivity rules remain separate business-rule concerns where not yet explicitly defined.
+
+---
+
+# 8. Answer Entity
+
+`Answer` is an Entity owned by a Question.
+
+Target relationship:
 
 ```text
 Quiz
 └── QuizRevision
     └── Question
-        └── AnswerQuestion
+        └── Answer
 ```
 
-An answer contains:
+An Answer contains conceptually:
 
-* answer identifier;
-* answer content;
-* correctness state.
-
-The correctness of an answer is part of the Quiz Revision's assessment definition.
+* Answer identity;
+* Answer content;
+* correctness state;
+* presentation order.
 
 ---
 
-## 9. QuizAttempt Aggregate
+## 8.1 Answer Identity
+
+Answer identity is stable within the domain.
+
+Presentation labels such as:
+
+```text
+A
+B
+C
+D
+```
+
+are presentation concerns rather than Answer identity.
+
+An Answer remains the same domain entity when its presentation position changes.
+
+---
+
+## 8.2 Answer Order
+
+Answer order is domain data.
+
+Within a Question:
+
+```text
+1
+2
+3
+4
+```
+
+must remain:
+
+* unique;
+* contiguous;
+* ordered from 1.
+
+Adding, removing, or reordering Answers may cause the order values to be normalized while the Revision remains Draft.
+
+---
+
+## 8.3 Correctness
+
+`isCorrect` belongs to the Answer.
+
+The Question enforces the collection-level correctness invariants according to its Question type.
+
+No separate `CorrectAnswerConfiguration` abstraction is introduced in the target model.
+
+---
+
+# 9. QuizAttempt Aggregate
 
 `QuizAttempt` is a separate Aggregate Root from `Quiz`.
 
-It represents one learner-specific execution of a Quiz using one exact Published Revision.
+It represents one learner-specific execution of one exact Published QuizRevision.
 
 Target conceptual structure:
 
@@ -427,62 +759,57 @@ QuizAttempt Aggregate
     └── submittedAt / endedAt
 ```
 
-The Attempt is not contained inside the Quiz aggregate.
+The Attempt is not contained inside the Quiz Aggregate.
 
-The Attempt owns learner-specific execution state and assessment evidence.
+The Attempt owns learner-specific execution state and the assessment evidence produced from that execution.
 
 ---
 
-## 10. Attempt-to-Revision Relationship
+# 10. Attempt-to-Revision Relationship
 
-When a User starts a QuizAttempt, the Attempt must be associated with the exact Published Quiz Revision used at the time of start.
+When a User starts a QuizAttempt, the Attempt is bound to the exact Published QuizRevision used at the time of start.
 
-```text
-Published Revision 1
-        │
-        ▼
-   QuizAttempt 1
-```
-
-If a new revision is subsequently published:
+Conceptually:
 
 ```text
 Quiz
-├── Revision 1 → historical
-└── Revision 2 → current Published Revision
+├── Revision A → HISTORICAL
+└── Revision B → PUBLISHED
 
-QuizAttempt 1
-└── revisionId → Revision 1
+Attempt 1
+└── revisionId → Revision A
+
+Attempt 2
+└── revisionId → Revision B
 ```
 
-The existing Attempt does not switch to Revision 2.
+An Attempt does not dynamically follow the latest Published Revision.
 
-Its:
+The Attempt therefore evaluates against the Revision that was effective when the Attempt started.
+
+This includes:
 
 * Questions;
-* Answer definitions;
+* Answers;
 * Question scores;
-* Maximum score;
-* Passing score;
-* Completion policy;
-* Attempt policy;
-* Other assessment rules
+* maximum score;
+* passing percentage;
+* completion policy;
+* attempt policy;
+* time limit;
+* other Revision-specific assessment rules.
 
-remain determined by the Revision from which the Attempt started.
+Publishing a newer Revision does not alter an existing Attempt.
 
-This guarantees assessment consistency and preserves historical assessment integrity.
-
-An Attempt may continue and submit even if a newer Revision is published while it is `IN_PROGRESS`.
-
-The User may be informed that the Quiz definition has changed.
+An `IN_PROGRESS` Attempt may continue and submit against its original Revision.
 
 ---
 
-## 11. QuizAttempt Lifecycle
+# 11. QuizAttempt Lifecycle
 
-The Attempt lifecycle is represented separately from its assessment result.
+The Attempt lifecycle is represented separately from Assessment Result.
 
-### 11.1 Attempt Status
+## 11.1 Attempt Status
 
 ```text
 IN_PROGRESS
@@ -491,7 +818,9 @@ EXPIRED
 CANCELLED
 ```
 
-### 11.2 IN_PROGRESS
+---
+
+## 11.2 IN_PROGRESS
 
 The User is currently working on the Attempt.
 
@@ -499,24 +828,30 @@ An `IN_PROGRESS` Attempt may be resumed after:
 
 * leaving the Quiz;
 * closing the browser;
-* losing network connectivity.
+* losing network connectivity;
+* other temporary interruptions.
 
 These events do not automatically terminate the Attempt.
 
 Only one `IN_PROGRESS` Attempt is allowed for the same User and Quiz at a time.
 
-### 11.3 SUBMITTED
+---
+
+## 11.3 SUBMITTED
 
 The User has completed and submitted the Attempt.
 
 When submission is accepted:
 
 * the Attempt becomes `SUBMITTED`;
-* Question Results are determined;
+* all Questions are evaluated;
+* QuestionResults are produced;
 * `totalScore` is calculated;
-* `AssessmentResult` is determined when `passingScore` exists.
+* Assessment Result is determined when `passingPercentage` is configured.
 
-### 11.4 EXPIRED
+---
+
+## 11.4 EXPIRED
 
 The Attempt has reached its time limit.
 
@@ -524,25 +859,34 @@ Expiration is based on real elapsed time from the Attempt's start.
 
 An expired Attempt is terminal and cannot be resumed.
 
-Unanswered Questions receive zero score.
+All Questions are evaluated.
 
-If the Revision has a passing score:
+Unanswered Questions receive:
 
 ```text
-totalScore >= passingScore → PASSED
-totalScore < passingScore  → FAILED
+isCorrect = null
+earnedScore = 0
 ```
 
-Therefore an expired Attempt may produce a `FAILED` Assessment Result.
+If the Revision has a passing percentage, the final Assessment Result is determined from the calculated score percentage.
 
-If no passing score exists:
+Therefore:
 
 ```text
 AttemptStatus = EXPIRED
-AssessmentResult = none
 ```
 
-### 11.5 CANCELLED
+does not inherently mean:
+
+```text
+AssessmentResult = FAILED
+```
+
+An expired Attempt may pass if its score satisfies the passing percentage.
+
+---
+
+## 11.5 CANCELLED
 
 The User may intentionally cancel their own `IN_PROGRESS` Attempt.
 
@@ -551,34 +895,35 @@ Cancellation is terminal.
 A cancelled Attempt:
 
 * cannot be resumed;
-* does not produce a final assessment result;
-* does not become a submitted or expired assessment;
-* does not return previously consumed attempt quota.
+* cannot be submitted;
+* does not produce QuestionResults;
+* does not produce an Assessment Result;
+* does not return consumed attempt quota.
 
-Administrative or Instructor intervention is outside the current scope.
-
-Accidental browser closure or temporary network loss does not automatically cause cancellation.
+Browser closure or temporary network loss does not automatically cause cancellation.
 
 ---
 
-## 12. UserAnswer Entity
+# 12. UserAnswer Entity
 
 `UserAnswer` belongs to a QuizAttempt.
 
 It represents the current response of the User to one Question.
+
+Conceptually:
 
 ```text
 QuizAttempt
 └── UserAnswer
 ```
 
-A UserAnswer contains conceptually:
+A UserAnswer contains:
 
-* Question identifier;
-* selected answer identifiers;
+* Question identity;
+* selected Answer identities;
 * current response state.
 
-For the current target model:
+The target model allows:
 
 ```text
 One current UserAnswer
@@ -590,17 +935,33 @@ A User may change an answer while the Attempt is `IN_PROGRESS`.
 
 A User may clear an answer and return the Question to an unanswered state.
 
-Skipping a Question is a navigation action and is not represented as a separate persisted `SKIPPED` answer state.
+Clearing the current answer means:
 
-There is no answer history in the current target model.
+```text
+selectedAnswerIds = empty
+```
+
+Skipping a Question is a navigation action.
+
+It is not represented as:
+
+```text
+QuestionStatus.SKIPPED
+```
+
+and does not create a special persisted skipped-answer state.
+
+There is no answer history in the target model.
 
 Answers from one Attempt are not carried over into another Attempt.
 
+Correctness is not evaluated while the Attempt remains `IN_PROGRESS`.
+
 ---
 
-## 13. Question Result
+# 13. Question Result
 
-`QuestionResult` represents the assessment evidence produced for one Question when an Attempt ends with an assessment outcome.
+`QuestionResult` represents the historical assessment evidence produced for one Question when an Attempt reaches an assessment-ending state.
 
 Target structure:
 
@@ -608,19 +969,24 @@ Target structure:
 QuizAttempt
 └── QuestionResult
     ├── questionId
+    ├── selectedAnswerIds
     ├── responseStatus
     ├── isCorrect
     └── earnedScore
 ```
 
-### 13.1 Response Status
+A QuestionResult is produced for every Question in the bound Published Revision, including unanswered Questions.
+
+---
+
+## 13.1 Response Status
+
+The target response statuses are:
 
 ```text
 ANSWERED
 UNANSWERED
 ```
-
-The result is created for every Question in the Revision, including unanswered Questions.
 
 Conceptually:
 
@@ -637,11 +1003,12 @@ Answered + incorrect
 
 Unanswered
 → UNANSWERED
+→ selectedAnswerIds = empty
 → isCorrect = null
 → earnedScore = 0
 ```
 
-`QuestionResult` is assessment evidence.
+`QuestionResult` is historical assessment evidence.
 
 It is not:
 
@@ -649,35 +1016,34 @@ It is not:
 * Learner Current Level;
 * Learning Progress.
 
-Detailed interpretation of results for learner analytics belongs to later Learner State capabilities.
-
 ---
 
-## 14. Scoring
+# 14. Scoring
 
-Each Question has a fixed score.
+Each Question has a fixed positive score.
 
 The target scoring model is:
 
 ```text
 SINGLE_CHOICE
-→ correct = full score
+→ correct = full Question score
 → incorrect = 0
 
 TRUE_FALSE
-→ correct = full score
+→ correct = full Question score
 → incorrect = 0
 
 MULTIPLE_CHOICE
-→ exact selected set matches correct set = full score
+→ exact selected set matches correct set = full Question score
 → otherwise = 0
 ```
 
-There is no partial credit.
+There is:
 
-There is no negative marking.
+* no partial credit;
+* no negative marking.
 
-For an ended Attempt:
+For an evaluated Attempt:
 
 ```text
 totalScore
@@ -685,34 +1051,45 @@ totalScore
 sum(QuestionResult.earnedScore)
 ```
 
-`totalScore` is a historical fact of that Attempt and does not change after the Attempt has ended.
-
-The target model does not store a separate score percentage as an independent fact.
-
-Percentage may be derived from:
+Each Question therefore contributes either:
 
 ```text
-totalScore / QuizRevision.maxScore
+0
+```
+
+or:
+
+```text
+Question.score
+```
+
+The target model does not persist a separate score percentage as an independent historical fact.
+
+Score percentage is derived from:
+
+```text
+(totalScore / QuizRevision.maxScore) × 100
 ```
 
 using the exact Revision associated with the Attempt.
 
 ---
 
-## 15. Assessment Result
+# 15. Assessment Result
 
-Assessment Result is a separate concept from Attempt Status.
+Assessment Result is distinct from Attempt Status.
 
 ```text
-AttemptStatus
+Attempt Status
 ├── IN_PROGRESS
 ├── SUBMITTED
 ├── EXPIRED
 └── CANCELLED
 
-AssessmentResult
+Assessment Result
 ├── PASSED
-└── FAILED
+├── FAILED
+└── NONE
 ```
 
 `AttemptStatus` answers:
@@ -721,9 +1098,13 @@ AssessmentResult
 
 `AssessmentResult` answers:
 
-> Did the completed assessment satisfy its passing requirement?
+> Did the evaluated assessment satisfy its passing requirement?
 
-Assessment Result is determined only when the Attempt reaches an assessment-ending state:
+---
+
+## 15.1 Result Determination
+
+Assessment Result is determined exactly once when an Attempt reaches an assessment-ending state:
 
 ```text
 SUBMITTED
@@ -731,42 +1112,57 @@ or
 EXPIRED
 ```
 
-For a Revision with a passing score:
+When `passingPercentage` is configured:
 
 ```text
-totalScore >= passingScore → PASSED
-totalScore < passingScore  → FAILED
+scorePercentage >= passingPercentage
+→ PASSED
+
+scorePercentage < passingPercentage
+→ FAILED
 ```
 
-For a Revision without a passing score:
+When `passingPercentage` is `null`:
 
 ```text
-AssessmentResult = none
+AssessmentResult = NONE
 ```
 
 A `CANCELLED` Attempt does not produce an Assessment Result.
 
-Assessment Result must not be interpreted as:
+The Assessment Result is historical and immutable.
 
-* Competency;
-* Learner Current Level;
-* Learning Progress.
+It is not recalculated against a later QuizRevision.
 
 ---
 
-## 16. Best Score
+## 15.2 Assessment Result Is Not Learner State
+
+Assessment Result must not be interpreted directly as:
+
+```text
+Competency
+Current Level
+Learning Progress
+```
+
+It is the outcome of one specific assessment execution against one specific Published Revision.
+
+---
+
+# 16. Best Score
 
 Best Score is a derived concept across historical Attempts.
 
 It is not a field owned by an individual QuizAttempt.
 
-For a User and a Published Quiz Revision:
+For a User and a Published QuizRevision:
 
 ```text
 Best Score
 =
 MAX(totalScore)
-across eligible historical Attempts
+across eligible evaluated Attempts
 ```
 
 Conceptually:
@@ -786,20 +1182,22 @@ Published Revision
 
 A later lower-scoring Attempt does not overwrite the previous higher score.
 
+Cancelled Attempts are not evaluated Attempts and therefore do not contribute to Best Score.
+
 All historical Attempts remain preserved.
 
-The exact query/read-model mechanism for obtaining Best Score is an application or persistence concern rather than an additional field on `QuizAttempt`.
+The exact query or read-model mechanism for obtaining Best Score is outside this domain model.
 
 ---
 
-## 17. Attempt Limits and Retry
+# 17. Attempt Limits and Retry
 
-A Quiz Revision may allow multiple Attempts according to its `maxAttempts` policy.
+A QuizRevision may define a maximum number of Attempts through `maxAttempts`.
 
 The quota applies to:
 
 ```text
-User × Published Quiz Revision
+User × Published QuizRevision
 ```
 
 A new Attempt consumes one quota immediately after successful creation.
@@ -831,26 +1229,30 @@ Retry creates a new QuizAttempt.
 
 A previous Attempt is never reopened or converted into a new Attempt.
 
-A User may have multiple historical Attempts for the same Quiz Revision, but only one Attempt may be `IN_PROGRESS` for the same User and Quiz at a time.
+A User may have multiple historical Attempts for the same Revision, but only one `IN_PROGRESS` Attempt is allowed for the same User and Quiz at a time.
 
-Whether a User may retry after `PASSED` or `FAILED` is governed by the applicable Attempt Policy and remaining quota.
+Whether a User may retry after a particular Assessment Result is governed by the applicable attempt policy and remaining quota.
 
 ---
 
-## 18. Attempt Creation Eligibility
+# 18. Attempt Creation Eligibility
 
-Creating a QuizAttempt is not only an object-construction operation.
+Creating a QuizAttempt is a business operation rather than simple object construction.
 
-Conceptually, a User may create an Attempt only when all required eligibility conditions are satisfied:
+Conceptually:
 
 ```text
 Quiz accessible
       ↓
+Access Requirements satisfied
+      ↓
+Quiz ACTIVE
+      ↓
+Quiz Availability allows Start
+      ↓
 Published Revision available
       ↓
-Quiz active
-      ↓
-Prerequisite / unlock satisfied
+Learning Prerequisites satisfied
       ↓
 No existing IN_PROGRESS Attempt
       ↓
@@ -861,15 +1263,30 @@ Create Attempt
 Consume quota
 ```
 
-The exact prerequisite or unlock conditions have not yet been defined.
+The following concepts are intentionally distinct:
 
-No separate prerequisite domain model is introduced here until those business conditions are established.
+```text
+Visibility
+Access Requirements
+Availability
+Learning Prerequisites
+Current Level
+Attempt Quota
+```
+
+Current Level is a soft recommendation or warning rather than a hard prerequisite.
+
+A learner who receives a Current Level warning may continue, but only continuing creates the Attempt and consumes quota.
+
+The exact prerequisite ownership and evaluation mechanism remain outside this domain model.
 
 ---
 
-## 19. Resume Behavior
+# 19. Resume Behavior
 
 An `IN_PROGRESS` Attempt is persistent and may be resumed.
+
+Conceptually:
 
 ```text
 Start
@@ -885,19 +1302,26 @@ resume
 continue
 ```
 
-The time limit continues to run during the interruption.
+Resuming an existing Attempt:
 
-Browser closure, leaving the page, or temporary network loss does not pause the timer.
+* does not create a new Attempt;
+* does not consume another quota;
+* does not re-run Start Attempt eligibility;
+* does not switch the Attempt to another Revision.
+
+The time limit continues to run during the interruption.
 
 If the deadline has passed, the Attempt becomes `EXPIRED` and cannot be resumed.
 
+The current Question being displayed is UI navigation state and is not a required domain state of the Attempt.
+
 ---
 
-## 20. Quiz Revision and Active Attempts
+# 20. Quiz Revision and Active Attempts
 
-A new Quiz Revision may be published while a User has an `IN_PROGRESS` Attempt.
+A new QuizRevision may be published while a User has an `IN_PROGRESS` Attempt.
 
-The existing Attempt remains associated with the original Revision.
+The existing Attempt remains associated with its original Revision.
 
 ```text
 Revision 1
@@ -909,21 +1333,87 @@ Attempt 1 → IN_PROGRESS
 Attempt 1 → still bound to Revision 1
 ```
 
-The new Revision affects future Attempts, not the already-created Attempt.
+The new Revision affects future Attempts, not an already-created Attempt.
 
-The User may be informed that the Quiz has been updated.
+The User may be informed that the Quiz definition has changed.
 
-If the Quiz is used as a prerequisite for progressing to a new learning stage, the business may require the User to satisfy the prerequisite using the applicable current Revision.
-
-The exact mechanism for determining learning-stage eligibility is outside the Quiz aggregate and remains to be defined.
+Historical assessment evidence remains associated with the Revision under which the Attempt was executed.
 
 ---
 
-## 21. Relationship to Learning Structure
+# 21. Completion Requirement Relationship
+
+A Quiz may be used as a Practice, Diagnostic, or Completion Requirement.
+
+A Quiz is not inherently mandatory simply because it is part of the Learning Context.
+
+A Completion Requirement may be associated with:
+
+```text
+Lesson
+or
+Section
+```
+
+A Completion Requirement references a specific Published QuizRevision.
+
+The requirement is satisfied by at least one valid `PASSED` Attempt for that Revision.
+
+Conceptually:
+
+```text
+Completion Requirement
+        ↓
+Published QuizRevision
+        ↓
+PASSED QuizAttempt
+        ↓
+Requirement satisfied
+```
+
+The latest Attempt does not need to be the passing Attempt.
+
+A previously satisfied Completion Requirement is a historical completion fact.
+
+Publishing a later QuizRevision does not automatically revoke or rewrite an already achieved completion.
+
+Completion Requirements and Learning Prerequisites are separate domain concepts.
+
+---
+
+# 22. Learning Completion Impact
+
+A QuizRevision may declare whether changes to its assessment definition affect learning completion.
+
+The target concepts are:
+
+```text
+NO_IMPACT
+AFFECTS_COMPLETION
+```
+
+The decision is explicitly made by the Content Author or Manager according to the applicable business operation.
+
+`NO_IMPACT` means the Revision does not alter the validity of existing or future completion evaluation.
+
+`AFFECTS_COMPLETION` means the Revision may affect completion evaluation for learners who have not yet completed the associated requirement.
+
+A new Revision does not:
+
+* delete historical evidence;
+* rewrite historical Attempts;
+* reset the entire Course;
+* automatically invalidate an already achieved completion.
+
+Historical completion remains a historical fact.
+
+---
+
+# 23. Relationship to Learning Structure
 
 Quiz placement is handled by `LessonItem`.
 
-Current domain relationship:
+The domain relationship is:
 
 ```text
 Course
@@ -933,19 +1423,22 @@ Course
             └── quizId → Quiz
 ```
 
-`LessonItem` is responsible for the Quiz's position within Lesson structure.
+`LessonItem` is responsible for the Quiz's placement within Lesson structure.
 
-The Quiz aggregate is responsible for:
+The Quiz Aggregate is responsible for:
 
 * Quiz identity;
+* ownership;
+* governance;
 * visibility;
 * availability;
+* Quiz lifecycle;
 * Revision lifecycle;
 * assessment definitions;
 * Questions;
 * Answers.
 
-The QuizAttempt aggregate is responsible for:
+The QuizAttempt Aggregate is responsible for:
 
 * learner-specific execution;
 * User Answers;
@@ -954,26 +1447,23 @@ The QuizAttempt aggregate is responsible for:
 * score;
 * Assessment Result.
 
-This avoids placing the Quiz aggregate inside the Course or Lesson aggregate.
+This keeps Learning Structure separate from Assessment Definition and Assessment Execution.
 
 ---
 
-## 22. Aggregate Boundary Summary
+# 24. Aggregate Boundary Summary
 
-| Concept          | Boundary              | Responsibility                                          |
-| ---------------- | --------------------- | ------------------------------------------------------- |
-| Course           | Course Aggregate      | Learning structure                                      |
-| Lesson           | Course Aggregate      | Lesson structure                                        |
-| LessonItem       | Course Aggregate      | Placement of learning content, including Quiz reference |
-| Quiz             | Quiz Aggregate        | Quiz identity, governance, and revision lifecycle       |
-| QuizRevision     | Quiz Aggregate        | Versioned assessment definition                         |
-| Question         | Quiz Aggregate        | Question definition                                     |
-| AnswerQuestion   | Quiz Aggregate        | Answer definition                                       |
-| QuizAttempt      | QuizAttempt Aggregate | Learner-specific assessment execution                   |
-| UserAnswer       | QuizAttempt Aggregate | Current learner response                                |
-| QuestionResult   | QuizAttempt Aggregate | Per-question assessment evidence                        |
-| AssessmentResult | QuizAttempt Aggregate | Pass/fail assessment outcome                            |
-| Best Score       | Derived               | Highest historical score for User × Published Revision  |
+| Concept          | Boundary              | Responsibility                                                  |
+| ---------------- | --------------------- | --------------------------------------------------------------- |
+| Quiz             | Quiz Aggregate        | Identity, ownership, governance, lifecycle                      |
+| QuizRevision     | Quiz Aggregate        | Concrete versioned assessment definition                        |
+| Question         | Quiz Aggregate        | Question definition and invariants                              |
+| Answer           | Quiz Aggregate        | Answer definition and correctness                               |
+| QuizAttempt      | QuizAttempt Aggregate | Learner-specific assessment execution                           |
+| UserAnswer       | QuizAttempt Aggregate | Current learner response                                        |
+| QuestionResult   | QuizAttempt Aggregate | Per-question assessment evidence                                |
+| AssessmentResult | QuizAttempt Aggregate | Assessment outcome                                              |
+| Best Score       | Derived               | Highest eligible historical score for User × Published Revision |
 
 The important distinction is:
 
@@ -981,64 +1471,90 @@ The important distinction is:
 Aggregate ≠ Module ≠ Bounded Context ≠ Database Table
 ```
 
-The Quiz and QuizAttempt aggregates are separate because their lifecycles and consistency boundaries are different.
+The Quiz and QuizAttempt Aggregates are separate because their identities, lifecycles, responsibilities, and consistency boundaries are different.
 
 ---
 
-## 23. Domain Invariants
+# 25. Domain Invariants
 
-The following invariants define the core target model:
+The following invariants summarize the target model:
 
 1. A Quiz is an independent Aggregate Root.
 2. A Quiz is placed in a Lesson through a `LessonItem` reference.
-3. Quiz visibility is separate from Quiz availability.
-4. Quiz visibility is not part of an individual Revision.
-5. A published Quiz Revision cannot be modified in place.
-6. Modifications to a published Quiz definition create a new Draft Revision.
-7. At most one Draft Revision exists for a Quiz.
-8. At most one Published Revision exists for a Quiz.
-9. Historical revisions are retained for existing Attempts.
-10. A new Quiz starts with a Draft Revision.
-11. An Attempt must start from a Published Revision.
-12. An Attempt remains bound to the exact Revision used at start.
-13. A new Revision does not change an existing Attempt.
-14. Only one Attempt may be `IN_PROGRESS` for a User and Quiz at a time.
-15. An `IN_PROGRESS` Attempt may be resumed.
-16. The Attempt time limit continues to run in real time.
-17. Reaching the deadline terminates the Attempt as `EXPIRED`.
-18. An expired Attempt cannot be resumed.
-19. A User may intentionally cancel their own `IN_PROGRESS` Attempt.
-20. A cancelled Attempt is terminal.
-21. A cancelled Attempt does not return consumed quota.
-22. Creating an Attempt consumes one attempt quota immediately after successful creation.
-23. Retry creates a new Attempt.
-24. `PASSED` and `FAILED` are Assessment Results, not Attempt Statuses.
-25. `passingScore` is optional.
-26. A Revision without `passingScore` has no pass/fail Assessment Result.
-27. Assessment Result is determined only when an Attempt is submitted or expired.
-28. A cancelled Attempt does not produce an Assessment Result.
-29. Score is calculated according to the exact Revision associated with the Attempt.
-30. `totalScore` equals the sum of QuestionResult earned scores.
-31. Question scoring uses full-score or zero-score evaluation.
-32. Multiple-choice Questions require an exact selected-answer set for full credit.
-33. There is no partial credit.
-34. There is no negative marking.
-35. Every Question produces a QuestionResult when an Attempt reaches an assessment-ending state.
-36. An unanswered Question receives zero earned score.
-37. User Answers may be changed while an Attempt is `IN_PROGRESS`.
-38. Clearing an answer returns the Question to an unanswered state.
-39. Skipping is navigation behavior and is not a persisted answer state.
-40. Answers from one Attempt are not carried over into another Attempt.
-41. Best Score is derived across historical Attempts and is not stored as an individual Attempt field.
-42. Assessment Result must not be treated as Competency or Learner Current Level.
+3. A Quiz owns its QuizRevisions.
+4. A QuizRevision is not an independent Aggregate Root.
+5. Questions belong to a QuizRevision.
+6. Answers belong to a Question.
+7. Quiz visibility is separate from Quiz availability.
+8. Quiz visibility is separate from Access Requirements.
+9. Quiz availability is separate from Quiz lifecycle.
+10. Quiz lifecycle and Revision lifecycle are independent.
+11. A Published Revision cannot be modified in place.
+12. A Historical Revision cannot be modified.
+13. Modifying a Published assessment definition requires a new Draft Revision.
+14. At most one Draft Revision exists for a Quiz.
+15. At most one Revision is in review for a Quiz.
+16. At most one Published Revision exists for a Quiz.
+17. Historical Revisions are retained.
+18. `maxScore` is derived from the sum of Question scores.
+19. `passingPercentage` is optional.
+20. `passingPercentage`, when configured, is greater than 0 and at most 100.
+21. A Revision without `passingPercentage` produces Assessment Result `NONE`.
+22. A Question has a positive score before publication.
+23. A publishable `SINGLE_CHOICE` Question has exactly one correct Answer.
+24. A publishable `MULTIPLE_CHOICE` Question has at least one correct Answer.
+25. A publishable `TRUE_FALSE` Question has exactly two Answers and exactly one correct Answer.
+26. Published and Historical Questions are immutable.
+27. Published and Historical Answers are immutable.
+28. Answer order is unique and contiguous within a Question.
+29. Duplicate Answer content is not allowed within a Question.
+30. An Attempt is bound to one exact Published QuizRevision.
+31. An Attempt does not switch to a newer Revision after it starts.
+32. Only one Attempt may be `IN_PROGRESS` for a User and Quiz at a time.
+33. `maxAttempts` applies to User × Published QuizRevision.
+34. Creating a new Attempt consumes quota immediately after successful creation.
+35. A cancelled Attempt does not return consumed quota.
+36. Retry creates a new Attempt.
+37. An `IN_PROGRESS` Attempt may be resumed.
+38. Resuming an Attempt does not consume another quota.
+39. Attempt time continues to run during temporary interruption.
+40. Server time is authoritative for expiration.
+41. Expiration produces a terminal `EXPIRED` Attempt.
+42. An expired Attempt is evaluated.
+43. A cancelled Attempt is terminal.
+44. A cancelled Attempt does not produce QuestionResults.
+45. A cancelled Attempt does not produce an Assessment Result.
+46. Manual submission with `REQUIRED_ALL` requires every Question to be answered.
+47. Manual submission with `OPTIONAL` allows unanswered Questions.
+48. Unanswered Questions receive zero earned score.
+49. Every Question produces exactly one QuestionResult when an Attempt is evaluated.
+50. An unanswered Question has `isCorrect = null`.
+51. Multiple-choice full credit requires an exact selected-answer set.
+52. There is no partial credit.
+53. There is no negative marking.
+54. `totalScore` equals the sum of QuestionResult earned scores.
+55. Assessment Result is determined exactly once for evaluated Attempts.
+56. Assessment Result is based on the exact Revision associated with the Attempt.
+57. Assessment Result is not an Attempt Status.
+58. Best Score is derived across eligible historical Attempts.
+59. Best Score is not an individual Attempt field.
+60. Assessment Result is not Competency, Current Level, or Learning Progress.
+61. A Completion Requirement may reference a specific Published QuizRevision.
+62. A Completion Requirement is satisfied by at least one valid PASSED Attempt for that Revision.
+63. An already achieved completion is not automatically revoked by a later QuizRevision.
+64. `NO_IMPACT` and `AFFECTS_COMPLETION` describe the completion impact of a Revision change.
+65. Historical Attempts and historical evidence are preserved across later Revision publication.
+66. QuizAttempt remains a separate Aggregate Root from Quiz.
+67. Learning Structure does not own the Quiz Aggregate.
+68. LessonItem references Quiz identity rather than containing the Quiz Aggregate.
 
 ---
 
-## 24. Current Implementation vs Target Model
+# 26. Current Implementation vs Target Model
 
-The current implementation provides part of this model but does not yet implement the complete revision-based design.
+The current implementation provides part of this model but does not yet implement the complete Revision-based design.
 
-### 24.1 Confirmed Current Implementation
+## 26.1 Confirmed Current Implementation
 
 The current source contains:
 
@@ -1055,7 +1571,7 @@ The current source contains:
 * Quiz placement through `LessonItem.quizId`:
   `src/main/java/com/deutschhub/domain/learning/model/entity/LessonItem.java`
 
-The current `Quiz` implementation already contains concepts corresponding to:
+The current `Quiz` implementation contains concepts corresponding to:
 
 ```text
 Quiz
@@ -1067,7 +1583,7 @@ Quiz
 └── visibility
 ```
 
-The current `QuizAttempt` implementation contains:
+The current `QuizAttempt` implementation contains concepts corresponding to:
 
 ```text
 QuizAttempt
@@ -1108,9 +1624,11 @@ in:
 src/main/java/com/deutschhub/domain/learning/model/enums/QuestionType.java
 ```
 
-### 24.2 Target Concepts Not Yet Present
+---
 
-The current source does not yet contain a `QuizRevision` entity/model.
+## 26.2 Target Concepts Not Yet Present
+
+The current source does not yet contain a `QuizRevision` domain model.
 
 The current `Quiz` implementation stores Questions directly:
 
@@ -1125,26 +1643,28 @@ rather than the target:
 Quiz
 └── QuizRevision
     └── Question
+        └── Answer
 ```
 
-The current `QuizAttempt` does not yet store an explicit reference to a Quiz Revision.
+The current `QuizAttempt` does not yet explicitly bind to a QuizRevision.
 
-The current source also does not yet contain:
+The current source also does not yet contain the complete target concepts for:
 
 * `QuestionResult`;
-* a separate `AssessmentResult` concept;
+* `AssessmentResult`;
 * `CompletionPolicy`;
-* the target attempt-eligibility workflow;
-* the target immediate quota-consumption model;
-* a persisted Best Score concept.
+* Revision review lifecycle;
+* target Attempt eligibility workflow;
+* target immediate quota-consumption model;
+* Best Score as a derived historical concept.
 
 Therefore, these are target domain decisions rather than descriptions of the current implementation.
 
 ---
 
-## 25. Known Current-Model Inconsistencies
+# 27. Known Current-Model Inconsistencies
 
-The current source contains an implementation inconsistency that should be addressed when the Quiz model is evolved:
+The current source contains an implementation inconsistency that should be addressed when the Quiz model is evolved.
 
 `Quiz.createDraft(UUID courseId, UUID createdBy)` passes `courseId` into the constructor field named `lessonId`.
 
@@ -1154,10 +1674,33 @@ Location:
 src/main/java/com/deutschhub/domain/learning/model/aggregate/Quiz.java
 ```
 
-This conflicts with the agreed business relationship that Quiz is associated with a Lesson through `LessonItem`.
+This conflicts with the agreed domain relationship that Quiz is referenced from a Lesson through `LessonItem`.
 
-The target model therefore does not treat Quiz as directly owned by Lesson or Course.
+The target model therefore does not treat Quiz as directly owned by Course or Lesson.
 
-The current implementation also does not yet implement the target Revision-based model described in this document.
+The current implementation also does not yet implement the target Revision-based model.
 
-Other implementation details are intentionally left for the later implementation/design stage rather than being solved in this domain model document.
+The current implementation uses `passingScore`, while the target model uses `passingPercentage`.
+
+The current implementation also treats the Quiz lifecycle through the existing `QuizStatus` model, while the target model separates:
+
+```text
+Quiz lifecycle
+    ACTIVE
+    ARCHIVED
+    DELETED
+
+Revision lifecycle
+    DRAFT
+    IN_REVIEW
+    PUBLISHED
+    HISTORICAL
+
+Availability
+    ACTIVE / INACTIVE
+```
+
+These differences are implementation gaps against the target domain model and should be addressed during the later implementation stage.
+
+Other implementation details are intentionally left for the implementation/design stage rather than being solved in this domain model document.
+
