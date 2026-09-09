@@ -506,6 +506,23 @@ An assessment result does not automatically establish mastery or competency with
 
 QuizAttempt is an Aggregate Root that preserves an assessment execution and its historical outcome.
 
+### Competency and Current Level
+
+- Competency represents a learner's demonstrated capability within a defined learning domain.
+- Competency is determined through Level Assessment evidence rather than ordinary learning or practice activities.
+- Skill dimensions such as Vocabulary, Grammar, Reading, Listening, Speaking, and Writing are assessment dimensions used to evaluate Competency; they are not modeled as separate Competencies by default.
+- Course quizzes, external quizzes, practice activities, and other Learning Activities support skill development but do not directly establish Competency or Current Level.
+- A Level Assessment evaluates the learner across its defined skill dimensions and produces an Assessment Result.
+- A passed Level Assessment provides sufficient evidence to establish the corresponding proficiency level.
+- A learner may retake the same Level Assessment multiple times.
+- Any valid passed attempt is sufficient to establish the corresponding level; the system does not require the highest score or the latest attempt.
+- A failed Level Assessment does not automatically reduce an already established Competency or Current Level.
+- Current Level represents the learner's current proficiency classification for the relevant learning domain.
+- Competency and Current Level are distinct concepts: Competency represents demonstrated capability, while Current Level represents the proficiency classification assigned to that capability.
+- A passed higher-level assessment may update the learner's Current Level to the corresponding higher level.
+- Current Level is not automatically downgraded when the learner fails an assessment for a higher level.
+- Competency and Current Level are based on assessment evidence available to the system and do not represent formal external certification.
+
 ---
 
 ## 4.8 QuestionResult Is Assessment Evidence
@@ -1116,4 +1133,3 @@ Aggregate boundaries should continue to be determined using:
 
 The target model should remain independent of the current package structure until the corresponding business boundaries have been established.
 
-````
