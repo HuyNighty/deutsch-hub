@@ -10,7 +10,8 @@ The boundaries are derived from:
 - current application behavior;
 - existing domain invariants;
 - the target domain model;
-- the domain decisions established in the previous analysis.
+- established domain decisions;
+- and subsequent business analysis of Assessment, Learning Evidence, Competency, and Current Level.
 
 The purpose is to determine which domain concepts should share a consistency boundary and which concepts should remain independent.
 
@@ -22,13 +23,20 @@ This document does not define:
 - API structure;
 - implementation details.
 
-Aggregate boundaries are determined by business consistency, identity, lifecycle, invariants, and ownership rather than by the current package structure.
+Aggregate boundaries are determined by:
+
+- business consistency;
+- identity;
+- lifecycle;
+- invariants;
+- ownership;
+- and transactional consistency requirements.
+
+They are not determined merely by the current package structure or by conceptual relationships between objects.
 
 ---
 
 # 2. Aggregate Boundary Principles
-
-The following principles are used when defining the target boundaries.
 
 ## 2.1 Aggregates Are Consistency Boundaries
 
@@ -42,6 +50,8 @@ Related concepts
 Same Aggregate
 ````
 
+Two concepts may be strongly related while still belonging to different Aggregates.
+
 ---
 
 ## 2.2 Aggregate Root Owns the Boundary
@@ -54,7 +64,7 @@ External application logic should interact with the Aggregate through its Root r
 
 ## 2.3 Relationship Does Not Imply Ownership
 
-Two concepts may be strongly related while remaining in separate Aggregates.
+Two concepts may participate in the same business flow while remaining in separate Aggregate boundaries.
 
 For example:
 
@@ -66,7 +76,7 @@ contributes to
 Enrollment.Progress
 ```
 
-does not require:
+does not imply:
 
 ```text
 Enrollment
@@ -75,7 +85,7 @@ Enrollment
 
 ---
 
-## 2.4 Application Transaction Does Not Define Aggregate Boundary
+## 2.4 Application Use Case Does Not Define Aggregate Boundary
 
 Multiple Aggregates may participate in one application use case.
 
@@ -87,7 +97,19 @@ One application use case
 One Aggregate
 ```
 
-The current `CompleteLessonService` demonstrates this distinction because lesson completion and enrollment progress are updated within the same use case while remaining separate domain concepts.
+The current `CompleteLessonService` demonstrates this distinction because lesson completion and enrollment progress participate in the same business flow while remaining separate domain concepts.
+
+---
+
+## 2.5 Domain Concept Does Not Automatically Require an Aggregate
+
+The existence of a domain concept does not automatically imply that it must become:
+
+* an Aggregate Root;
+* an Entity with an independent repository;
+* or an independent persistence boundary.
+
+The boundary must be justified by concrete business consistency requirements.
 
 ---
 
@@ -95,7 +117,7 @@ The current `CompleteLessonService` demonstrates this distinction because lesson
 
 ## 3.1 Boundary
 
-**Status:** Confirmed
+**Status: Confirmed**
 
 ```text
 Course Aggregate
@@ -105,7 +127,7 @@ Course Aggregate
     │         └── LessonItem
 ```
 
-The existing root is:
+The Aggregate Root is:
 
 ```text
 src/main/java/com/deutschhub/domain/learning/model/aggregate/Course.java
@@ -119,23 +141,65 @@ src/main/java/com/deutschhub/domain/learning/model/entity/Lesson.java
 src/main/java/com/deutschhub/domain/learning/model/entity/LessonItem.java
 ```
 
-Course owns structural behavior for managing its sections, lessons, and lesson items.
+The Course Aggregate owns the consistency of the Course structure.
 
-Application services such as:
+---
+
+## 3.2 Course Boundary Decision
+
+The following structure remains inside the Course Aggregate:
+
+```text
+Course
+└── Section
+    └── Lesson
+        └── LessonItem
+```
+
+No split of the Course hierarchy is introduced at this stage.
+
+The current application services that manipulate Course structure operate through Course, including:
 
 ```text
 src/main/java/com/deutschhub/application/learning/service/AddSectionToCourseService.java
+
 src/main/java/com/deutschhub/application/learning/service/AddLessonToSectionService.java
+
 src/main/java/com/deutschhub/application/learning/service/AddLessonItemService.java
 ```
 
-operate through Course.
+---
 
-## 3.2 Boundary Decision
+## 3.3 Course Level
 
-The existing Course Aggregate is retained.
+Course Level is a property of the learning content represented by the Course.
 
-No additional split of the Course hierarchy is introduced at this stage.
+The existing CEFR representation is:
+
+```text
+src/main/java/com/deutschhub/domain/learning/model/valueobject/CEFRLevel.java
+```
+
+The existence of `CEFRLevel` does not create a separate Aggregate boundary.
+
+Course Level remains inside the Course domain model.
+
+It must not be confused with:
+
+```text
+Learner Current Level
+Certification Level
+```
+
+Therefore:
+
+```text
+Course Level
+    ≠
+Learner Current Level
+    ≠
+Certification Level
+```
 
 ---
 
@@ -143,38 +207,27 @@ No additional split of the Course hierarchy is introduced at this stage.
 
 ## 4.1 Boundary
 
-**Status:** Confirmed
+**Status: Confirmed**
 
 ```text
 Enrollment Aggregate
-├── Enrollment
-└── Progress
+└── Enrollment
+    └── Progress
 ```
 
-The root is:
+The Aggregate Root is:
 
 ```text
 src/main/java/com/deutschhub/domain/learning/model/aggregate/Enrollment.java
 ```
 
-Progress is:
+Progress is represented by:
 
 ```text
 src/main/java/com/deutschhub/domain/learning/model/valueobject/Progress.java
 ```
 
-Enrollment owns participation-related lifecycle and Progress.
-
-The relationship is:
-
-```text
-Enrollment
-    └── Progress
-```
-
-because changes to Progress can affect Enrollment state.
-
-For example, updating progress can contribute to an Enrollment transition toward completion.
+---
 
 ## 4.2 Boundary Decision
 
@@ -182,13 +235,39 @@ Enrollment remains an independent Aggregate Root.
 
 Progress remains inside the Enrollment consistency boundary as a Value Object.
 
+```text
+Enrollment
+    └── Progress
+```
+
+Enrollment is responsible for participation-related state and Course-scoped progress.
+
+---
+
+## 4.3 Enrollment and Course
+
+Enrollment represents a learner's participation in a Course.
+
+Conceptually:
+
+```text
+Course
+    ↑
+    │
+Enrollment
+```
+
+Course and Enrollment are separate Aggregate Roots.
+
+A Course may therefore be referenced by Enrollment without making Enrollment an internal entity of the Course Aggregate.
+
 ---
 
 # 5. LessonCompletion Boundary
 
 ## 5.1 Boundary
 
-**Status:** Confirmed / Preferred
+**Status: Confirmed / Preferred**
 
 ```text
 Learning Evidence
@@ -201,15 +280,15 @@ The current implementation is:
 src/main/java/com/deutschhub/domain/learning/model/entity/LessonCompletion.java
 ```
 
-LessonCompletion contains its own identity and represents an observable learning outcome associated with an enrollment and lesson.
+LessonCompletion represents an observable historical completion event associated with a learner's enrollment and lesson.
 
-It is therefore treated as an independent Evidence Entity rather than an internal entity of Enrollment.
+It therefore remains independent from the Enrollment Aggregate.
 
 ---
 
 ## 5.2 Why LessonCompletion Is Not Inside Enrollment
 
-The current application flow in:
+The application flow in:
 
 ```text
 src/main/java/com/deutschhub/application/learning/service/CompleteLessonService.java
@@ -229,25 +308,18 @@ Update Enrollment.Progress
 Persist Enrollment
 ```
 
-This means the use case involves both concepts.
+The same use case involving both concepts does not make them one Aggregate.
 
-However, the fact that they participate in the same application use case does not establish that they belong to the same Aggregate.
-
-Enrollment is responsible for:
+Their responsibilities remain distinct:
 
 ```text
-participation lifecycle
-        +
-course-scoped progress
+Enrollment
+    → participation lifecycle
+    → Course-scoped Progress
+
+LessonCompletion
+    → historical learning evidence
 ```
-
-LessonCompletion is responsible for:
-
-```text
-recording an observable completion outcome
-```
-
-These responsibilities are sufficiently distinct to justify separate boundaries.
 
 ---
 
@@ -267,7 +339,7 @@ LessonCompletion
 Enrollment.Progress
 ```
 
-The relationship is therefore conceptual/application-level rather than Aggregate ownership.
+This is a business relationship rather than Aggregate ownership.
 
 ---
 
@@ -275,7 +347,7 @@ The relationship is therefore conceptual/application-level rather than Aggregate
 
 ## 6.1 Boundary
 
-**Status:** Confirmed
+**Status: Confirmed**
 
 ```text
 Quiz Aggregate
@@ -300,55 +372,48 @@ Quiz
         └── Answer
 ```
 
-`Quiz` represents the stable identity, ownership, governance, and lifecycle of an assessment.
-
-`QuizRevision` represents a concrete version of the assessment definition.
-
-`Question` and `Answer` belong to a specific `QuizRevision` and are part of that revision's consistency boundary.
-
 ---
 
-## 6.2 Quiz Aggregate Responsibilities
+## 6.2 Quiz Responsibilities
 
-The Quiz Aggregate is responsible for the consistency of the assessment definition.
+The Quiz Aggregate owns the consistency of the assessment definition represented by the Quiz.
 
 Conceptually:
 
 ```text
 Quiz
-├── Identity
-├── Ownership
-├── Governance
-├── Visibility
-├── Availability
-└── Revision Lifecycle
+├── stable identity
+├── ownership
+├── governance
+└── Revision lifecycle
      └── QuizRevision
-          ├── Definition
-          ├── Questions
-          │    └── Answers
-          ├── Scoring Configuration
-          └── Assessment Rules
+          ├── definition
+          ├── questions
+          │    └── answers
+          └── assessment configuration
 ```
 
-The Aggregate therefore protects invariants involving:
+The Aggregate protects invariants involving:
 
 ```text
 Quiz
     +
-current / draft Revision
+QuizRevision
     +
 Questions
     +
 Answers
     +
-Revision-specific assessment configuration
+Revision-specific configuration
 ```
-
-The exact application services and persistence representation are outside the scope of this document.
 
 ---
 
-## 6.3 QuizRevision Boundary
+# 7. QuizRevision Boundary
+
+## 7.1 Boundary
+
+**Status: Confirmed**
 
 `QuizRevision` is an Entity inside the Quiz Aggregate.
 
@@ -359,9 +424,13 @@ Quiz Aggregate
 └── QuizRevision
 ```
 
-A Revision represents a concrete assessment definition that can become published and subsequently remain historically stable.
+A Revision represents a concrete version of the Quiz definition.
 
-Revision-specific data includes concepts such as:
+---
+
+## 7.2 Revision Contents
+
+A QuizRevision may contain concepts such as:
 
 ```text
 Title
@@ -375,25 +444,13 @@ Questions
 Answers
 ```
 
-`maxScore` is derived from the scores of the Questions in the Revision rather than being an independent author-entered source of truth.
+`maxScore` is derived from Question scores rather than becoming an independent source of truth.
 
 ---
 
-## 6.4 Revision Lifecycle
+## 7.3 Revision Lifecycle
 
-The Quiz lifecycle and QuizRevision lifecycle are separate.
-
-Quiz lifecycle:
-
-```text
-ACTIVE
-   ↓
-ARCHIVED
-   ↓
-DELETED
-```
-
-QuizRevision lifecycle:
+The established Revision lifecycle is:
 
 ```text
 DRAFT
@@ -405,6 +462,8 @@ PUBLISHED
 HISTORICAL
 ```
 
+A published Revision remains historically stable.
+
 Publishing a new Revision does not mutate the previously published Revision.
 
 Conceptually:
@@ -415,15 +474,11 @@ Quiz
 └── Revision B → PUBLISHED
 ```
 
-Published and Historical Revisions remain immutable.
-
-The Quiz Aggregate therefore contains multiple historical Revision definitions while maintaining the stable identity of the Quiz itself.
-
 ---
 
-## 6.5 Revision Independence
+## 7.4 Revision Independence
 
-Each Revision owns its own Question and Answer instances.
+Each Revision owns its own Questions and Answers.
 
 For example:
 
@@ -442,7 +497,7 @@ Quiz
      └── Question B2
 ```
 
-A new Revision may be created from an existing Revision, but the resulting Questions and Answers are independent domain instances.
+Questions belonging to different Revisions are independent domain instances.
 
 Therefore:
 
@@ -452,68 +507,45 @@ Question A1
 Question B1
 ```
 
-even when Revision B was created from Revision A.
-
-This prevents later changes to a Draft Revision from altering the definition of an already published or historical Revision.
+even if Revision B was created from Revision A.
 
 ---
 
-## 6.6 Why QuizRevision Is Inside Quiz
+# 8. QuizAttempt Aggregate
 
-`QuizRevision` remains inside the Quiz Aggregate because Revision lifecycle and Quiz governance are part of the same assessment-definition consistency boundary.
+## 8.1 Boundary
 
-The Quiz Aggregate must be able to enforce rules such as:
-
-```text
-A Quiz must have a valid Revision before publication.
-
-A Revision must contain valid Questions before publication.
-
-A Question must satisfy its Answer invariants before publication.
-
-A Published Revision must remain immutable.
-
-A Historical Revision must remain immutable.
-
-A new Revision must belong to the same Quiz identity.
-```
-
-These rules concern the integrity of the assessment definition owned by the Quiz.
-
-Therefore:
+**Status: Confirmed**
 
 ```text
-QuizRevision
-    ∈
-Quiz Aggregate
+QuizAttempt Aggregate
+└── QuizAttempt
+    ├── UserAnswer(s)
+    └── QuestionResult(s)
 ```
 
-rather than:
+The Aggregate Root is:
 
 ```text
-QuizRevision
-    =
-Independent Aggregate Root
+src/main/java/com/deutschhub/domain/learning/model/aggregate/QuizAttempt.java
 ```
+
+QuizAttempt represents one learner-specific execution of a Published QuizRevision.
 
 ---
 
-## 6.7 Quiz and QuizAttempt Are Separate
+## 8.2 Quiz and QuizAttempt Are Separate
 
-The Quiz Aggregate represents the assessment definition:
+The Quiz Aggregate represents:
 
 ```text
-Quiz
-└── QuizRevision
-    └── Question
-        └── Answer
+Assessment Definition
 ```
 
-The QuizAttempt Aggregate represents the learner's execution:
+The QuizAttempt Aggregate represents:
 
 ```text
-QuizAttempt
-└── UserAnswer(s)
+Assessment Execution
 ```
 
 Therefore:
@@ -533,13 +565,13 @@ Quiz
 └── Attempt C
 ```
 
-but these Attempts are not internal entities of the Quiz Aggregate.
+but those Attempts are not internal entities of the Quiz Aggregate.
 
 ---
 
-## 6.8 Revision Binding of QuizAttempt
+## 8.3 Revision Binding
 
-Each `QuizAttempt` must be bound to the exact Published `QuizRevision` used when the Attempt was started.
+Each QuizAttempt binds to the exact Published QuizRevision used when the Attempt starts.
 
 Conceptually:
 
@@ -561,271 +593,538 @@ Attempt 1 → Revision A
 Attempt 2 → Revision B
 ```
 
-An existing Attempt therefore remains evaluated against the Revision it originally started with.
-
-Publishing a newer Revision does not alter the definition used by an existing Attempt.
-
-This preserves the historical meaning of the assessment execution.
+Publishing Revision B does not change the Revision used by Attempt 1.
 
 ---
 
-## 6.9 Aggregate Boundary Summary
+## 8.4 Attempt and Evidence
 
-The target Quiz Aggregate is therefore:
+QuizAttempt may serve as Learning Evidence.
 
-```text
-┌──────────────────────────────────┐
-│ Quiz Aggregate                   │
-│                                  │
-│ Quiz                             │
-│ └── QuizRevision                 │
-│      └── Question                │
-│           └── Answer             │
-└──────────────────────────────────┘
-```
-
-While assessment execution remains separate:
-
-```text
-┌──────────────────────────────────┐
-│ QuizAttempt Aggregate            │
-│                                  │
-│ QuizAttempt                      │
-│ └── UserAnswer(s)                │
-└──────────────────────────────────┘
-```
-
-The distinction is:
-
-```text
-Quiz Aggregate
-    → Assessment Definition
-
-QuizAttempt Aggregate
-    → Assessment Execution
-    → Learning Evidence
-```
-
----
-
-## 6.10 Boundary Decision
-
-The target boundary is:
-
-```text
-Quiz Aggregate
-└── Quiz
-    └── QuizRevision
-        └── Question
-            └── Answer
-```
-
-with:
-
-```text
-QuizAttempt
-    → Separate Aggregate Root
-```
-
-`QuizRevision` is intentionally not introduced as a separate Aggregate Root.
-
-The Quiz Aggregate owns the consistency of the assessment definition, while QuizAttempt independently owns the lifecycle and state of an individual learner execution.
-
----
-
-# 7. QuizAttempt Aggregate
-
-## 7.1 Boundary
-
-**Status:** Confirmed
-
-```text
-QuizAttempt Aggregate
-└── QuizAttempt
-    └── UserAnswer(s)
-```
-
-The Aggregate Root is:
-
-```text
-src/main/java/com/deutschhub/domain/learning/model/aggregate/QuizAttempt.java
-```
-
-QuizAttempt represents one learner-specific execution of a Published QuizRevision.
-
-It has its own identity, lifecycle, answers, and evaluation state.
-
-Conceptually:
-
-```text
-Quiz
-    ↓
-Assessment Definition
-
-QuizRevision
-    ↓
-Concrete Assessment Definition
-
-QuizAttempt
-    ↓
-Assessment Execution
-    ↓
-Learning Evidence
-```
-
-## 7.2 Revision Binding
-
-Each QuizAttempt is bound to the exact Published `QuizRevision` used when the Attempt was created.
-
-Conceptually:
-
-```text
-QuizAttempt
-    └── QuizRevision identity
-```
-
-The Attempt does not dynamically follow the latest Published Revision.
-
-For example:
-
-```text
-Quiz
-├── Revision A → HISTORICAL
-└── Revision B → PUBLISHED
-
-Attempt 1 → Revision A
-Attempt 2 → Revision B
-```
-
-An existing Attempt therefore continues to use the Revision under which it was started.
-
-## 7.3 Why QuizAttempt Is Separate from Quiz
-
-A Quiz may have many learner Attempts:
-
-```text
-Quiz
- ├── Attempt A
- ├── Attempt B
- └── Attempt C
-```
-
-The Attempts represent independent learner executions and have their own lifecycle.
-
-Therefore, making all Attempts internal to the Quiz Aggregate would unnecessarily expand the consistency boundary.
-
-## 7.4 Boundary Decision
-
-QuizAttempt remains a separate Aggregate Root.
-
-QuizAttempt may additionally serve as Learning Evidence.
-
-These are two different classifications:
+This is a classification separate from Aggregate ownership:
 
 ```text
 Aggregate Root
     → defines consistency ownership
 
 Learning Evidence
-    → describes business meaning
+    → defines business meaning
 ```
-
----
-
-# 8. Competency Boundary
-
-## 8.1 Status
-
-**Open**
-
-No explicit Competency implementation was found in the current Learning domain.
-
-The target model establishes Competency as a distinct domain concept, but current evidence does not establish:
-
-* its lifecycle;
-* its invariants;
-* its transactional requirements;
-* its ownership;
-* its final consistency boundary.
-
-Therefore, no Aggregate Root is introduced yet.
-
-```text
-Competency
-    → Entity candidate
-    → Aggregate boundary OPEN
-```
-
----
-
-## 8.2 Boundary Principle
-
-Competency must remain distinct from:
-
-```text
-Progress
-Evidence
-Course Completion
-```
-
-The target model does not assume:
-
-```text
-Quiz Score
-    ↓
-Competency update
-```
-
-without explicit business rules.
-
-The final boundary should be determined once the business rules governing competency changes are established.
-
----
-
-# 9. Learner Current Level Boundary
-
-## 9.1 Status
-
-**Open**
-
-The target model distinguishes:
-
-```text
-Course Level
-Learner Current Level
-Certification Level
-```
-
-The existing CEFR level representation provides evidence for a value/classification concept, but the current Learning domain does not establish a complete learner-level Current Level lifecycle.
 
 Therefore:
 
 ```text
-Learner Current Level
-    → Learner State concept
-    → Aggregate boundary OPEN
+QuizAttempt
+    = Aggregate Root
+
+QuizAttempt
+    = may serve as Learning Evidence
 ```
 
-No independent Current Level Aggregate is introduced at this stage.
+without requiring:
+
+```text
+Learning Evidence
+    = Aggregate
+```
 
 ---
 
-# 10. Learner State Boundary
+# 9. Assessment Domain Boundary
 
-## 10.1 Status
+## 9.1 Business Boundary
 
-**No Single Aggregate Boundary**
+**Status: Confirmed Domain Concept / Aggregate Boundary OPEN**
 
-Learner State is treated as a business responsibility rather than a single Aggregate.
+Assessment is broader than Quiz.
 
-It represents the broader state of a learner that may be derived from or informed by multiple learning sources.
-
-Potential areas include:
+The target conceptual structure is:
 
 ```text
-Course-scoped Progress
+Assessment
+    │
+    ├── Component
+    │      └── Task(s)
+    │
+    ├── Completion Policy
+    │
+    ├── Time Limit
+    │
+    └── Attempt Rules
+```
+
+Assessment may evaluate one or more Skill Dimensions, such as:
+
+```text
+Listening
+Speaking
+Reading
+Writing
+Grammar
+Vocabulary
+```
+
+An Assessment does not have to evaluate every dimension.
+
+---
+
+## 9.2 Assessment Component
+
+A Component belongs to one Skill Dimension.
+
+```text
+Assessment
+├── Listening Component
+│    ├── Task 1
+│    └── Task 2
+│
+├── Reading Component
+│    ├── Task 1
+│    └── Task 2
+│
+└── Speaking Component
+     └── Task 1
+```
+
+One Component may contain multiple Tasks.
+
+The Component boundary itself is not established as an independent Aggregate.
+
+---
+
+## 9.3 Assessment Task
+
+A Task is an executable part of an Assessment Component.
+
+Different Tasks may use different Evaluation Mechanisms.
+
+The exact representation of Evaluation Mechanism remains OPEN.
+
+Therefore:
+
+```text
+Assessment
+    ≠
+Quiz
+```
+
+and:
+
+```text
+Assessment
+    ≠
+Assessment Component
+```
+
+and:
+
+```text
+Assessment Task
+    ≠
+Aggregate Root
+```
+
+unless later business requirements establish otherwise.
+
+---
+
+## 9.4 Assessment Attempt
+
+Each execution of an Assessment by a User is a separate Assessment Attempt.
+
+The target business rule is:
+
+```text
+One User
++
+One Assessment
+    ↓
+At most one active Assessment Attempt
+```
+
+An Attempt may be resumed after:
+
+* closing the browser;
+* losing connection;
+* changing device;
+* pausing the execution.
+
+These events do not automatically create a new Attempt.
+
+---
+
+## 9.5 Assessment Attempt Boundary
+
+**Status: OPEN**
+
+The business concept of Assessment Attempt is confirmed.
+
+However, the final Aggregate boundary is not yet fixed.
+
+The existing QuizAttempt Aggregate provides a concrete precedent for assessment execution, but the broader Assessment model must not automatically inherit every Quiz-specific rule.
+
+Therefore, this document does not yet assert:
+
+```text
+Assessment
+└── AssessmentAttempt
+```
+
+as a finalized Aggregate boundary.
+
+---
+
+## 9.6 Assessment Result
+
+Assessment Result is the historical official result of one Assessment Attempt.
+
+Conceptually:
+
+```text
+Assessment Attempt
+    ↓
+Component Result(s)
+    ↓
+Assessment Result
+```
+
+The result belongs historically to the Attempt that produced it.
+
+A later Attempt does not modify a previous Assessment Result.
+
+Assessment Result is therefore a historical result concept rather than an independent Aggregate Root.
+
+---
+
+## 9.7 Component Result
+
+Component Result represents the evaluated result of an Assessment Component.
+
+Conceptually:
+
+```text
+Assessment Attempt
+    └── Component Result(s)
+```
+
+It is historical evidence associated with that Attempt.
+
+It does not automatically become an independent Aggregate.
+
+---
+
+## 9.8 Assessment Revision
+
+An Assessment Attempt must remain bound to a stable Assessment definition/version from start to completion.
+
+The exact Assessment Revision model and lifecycle remain OPEN.
+
+Therefore:
+
+```text
+Assessment Revision
+    → required concept for execution stability
+
+Assessment Revision Aggregate boundary
+    → OPEN
+```
+
+---
+
+## 9.9 Assessment and Quiz
+
+Quiz remains an existing assessment-related domain concept.
+
+The target model establishes:
+
+```text
+Assessment
+    > broader concept
+```
+
+than:
+
+```text
+Quiz
+```
+
+However, the exact structural relationship between:
+
+```text
+Assessment
+Quiz
+Task
+Evaluation Mechanism
+```
+
+is not fully closed.
+
+Therefore this document does not assert:
+
+```text
+Quiz = Assessment
+```
+
+or:
+
+```text
+Quiz = Assessment Task
+```
+
+or:
+
+```text
+Quiz = Evaluation Mechanism
+```
+
+The confirmed relationship is only that Quiz may participate in broader assessment behavior.
+
+---
+
+# 10. Competency Boundary
+
+## 10.1 Business Meaning
+
+Competency represents a learner's demonstrated capability within a defined learning domain.
+
+For the current DeutschHub scope, the relevant competency scope is German Language.
+
+The conceptual identity is:
+
+```text
+User
++
+Competency Scope
+```
+
+For a given User and Competency Scope:
+
+```text
+At most one Competency
+```
+
+exists.
+
+---
+
+## 10.2 Competency Is a Learner-State Concept
+
+Competency belongs to the Learner State responsibility.
+
+It is distinct from:
+
+```text
+Progress
+Learning Evidence
+Assessment Result
+Course Completion
+```
+
+Therefore:
+
+```text
+Competency
+    ≠
+Progress
+```
+
+and:
+
+```text
+Competency
+    ≠
+Assessment Result
+```
+
+---
+
+## 10.3 Competency Lifecycle
+
+The confirmed business lifecycle is:
+
+```text
+UNASSESSED
+    ↓
+ASSESSED
+```
+
+An initially unassessed Competency has:
+
+```text
+Current Level = UNKNOWN
+```
+
+A valid passed Level Assessment establishes the corresponding Current Level.
+
+A higher valid passed Level Assessment may update the Current Level upward.
+
+A lower-level passed Assessment does not lower an already established level.
+
+A failed Assessment does not automatically downgrade the Competency.
+
+---
+
+## 10.4 Competency Aggregate Boundary
+
+**Status: OPEN / DEFERRED**
+
+Competency has:
+
+* identity;
+* lifecycle;
+* invariants;
+* and learner-state meaning.
+
+However, the final Aggregate boundary is intentionally deferred.
+
+The current business analysis does not yet require Competency to be an independent Aggregate Root.
+
+Therefore:
+
+```text
+Competency
+    → confirmed learner-state domain concept
+    → Aggregate boundary OPEN / DEFERRED
+```
+
+No independent Competency Aggregate is introduced at this stage.
+
+---
+
+# 11. Current Level Boundary
+
+## 11.1 Business Meaning
+
+Current Level represents the current CEFR proficiency classification established by DeutschHub for a learner's Competency based on valid passed Level Assessment evidence.
+
+Conceptually:
+
+```text
+Competency
+    └── Current Level
+```
+
+---
+
+## 11.2 Current Level Is Not an Aggregate
+
+Current Level has no independent identity.
+
+It does not require:
+
+```text
+CurrentLevelId
+```
+
+or an independent repository.
+
+It is a value/state belonging to Competency.
+
+Therefore:
+
+```text
+Current Level
+    ≠
+Independent Aggregate Root
+```
+
+and:
+
+```text
+Current Level
+    ≠
+Independent Entity
+```
+
+---
+
+## 11.3 CEFR Representation
+
+The existing:
+
+```text
+src/main/java/com/deutschhub/domain/learning/model/valueobject/CEFRLevel.java
+```
+
+provides the CEFR classification:
+
+```text
+A1
+A2
+B1
+B2
+C1
+C2
+```
+
+This existing Value Object is a representation baseline.
+
+However:
+
+```text
+CEFRLevel
+    ≠
+Learner Current Level business concept
+```
+
+`CEFRLevel` represents the classification value.
+
+Current Level represents that value as the learner's currently established proficiency state.
+
+---
+
+## 11.4 Current Level Establishment
+
+A valid passed Level Assessment may establish a Current Level directly.
+
+Sequential progression is not required.
+
+For example:
+
+```text
+UNKNOWN
+   ↓
+B2
+```
+
+is valid when supported by a valid passed Level Assessment.
+
+The system does not require:
+
+```text
+A1 → A2 → B1 → B2
+```
+
+before B2 can be established.
+
+---
+
+## 11.5 Current Level Must Not Decrease Automatically
+
+Current Level does not decrease merely because:
+
+* a learner fails a later Assessment;
+* a learner passes a lower-level Assessment;
+* a new Assessment Revision is published.
+
+An explicit reset or revocation mechanism is not part of the current V3 boundary model.
+
+---
+
+# 12. Learner State Boundary
+
+## 12.1 Status
+
+**Confirmed Business Responsibility / No Single Aggregate**
+
+Learner State is a business responsibility rather than one Aggregate Root.
+
+It may contain or expose concepts such as:
+
+```text
 Competency
 Current Level
+Course Progress
 Learning History
 XP
 Streak
@@ -833,94 +1132,86 @@ Achievements
 Statistics
 ```
 
-These concepts do not currently have enough evidence to establish a shared consistency boundary.
+These concepts do not automatically share one consistency boundary.
 
-Therefore, the target model does not introduce:
+---
+
+## 12.2 Course Progress Is Not Inside Learner State Aggregate
+
+Course-scoped Progress remains inside:
+
+```text
+Enrollment Aggregate
+└── Progress
+```
+
+Learner State may use or derive information from Course Progress without owning it.
+
+Therefore:
+
+```text
+Enrollment.Progress
+    ≠
+Learner State Aggregate
+```
+
+---
+
+## 12.3 Learner State Boundary Decision
+
+No generic:
 
 ```text
 LearnerState Aggregate
 ```
 
-as a replacement for the current `UserProgress`.
+is introduced.
 
-Importantly, Course-scoped `Progress` remains owned by the Enrollment Aggregate:
-
-```text
-Enrollment
-└── Progress
-```
-
-Learner State may consume or derive information from such course-scoped state, but this does not make `Progress` an internal entity of a Learner State Aggregate.
+The exact boundaries of future learner-state concepts are determined individually according to their own business invariants and consistency requirements.
 
 ---
 
-## 10.2 Boundary Principle
+# 13. Learning Activity Boundary
 
-The following distinction must remain explicit:
+## 13.1 Status
+
+**OPEN / DEFERRED**
+
+Learning Activity is a domain concept representing a learner-facing learning action.
+
+Potential examples include:
 
 ```text
-Enrollment.Progress
-    → Course-scoped learning progress
-
-Learner State
-    → Broader learner-level condition
+Practice
+Review
+Assessment
+Listening
+Speaking
+Reading
+Writing
 ```
+
+The current implementation does not establish a generic Learning Activity Aggregate.
 
 Therefore:
 
 ```text
-Progress
-    ≠
-Complete Learner State
-```
-
-The final representation of Learner State remains open until its business rules, sources of truth, and update semantics are established.
-
----
-
-# 11. Learning Activity Boundary
-
-## 11.1 Status
-
-**Open**
-
-Learning Activity is a target domain concept representing an action or interaction performed by the learner.
-
-Examples may include:
-
-* Practice;
-* Review;
-* Assessment;
-* Listening;
-* Speaking;
-* Reading;
-* Writing.
-
-However, the current implementation does not establish a generic Activity lifecycle or invariant model.
-
-Therefore:
-
-```text
-LearningActivity
+Learning Activity
     → Domain Concept
-    → Aggregate boundary OPEN
+    → Aggregate Boundary OPEN / DEFERRED
 ```
-
-No generic `LearningActivity` Aggregate Root is introduced.
 
 ---
 
-## 11.2 LessonItem Is Not Automatically an Activity Aggregate
+## 13.2 LessonItem Is Not Automatically Learning Activity
 
-The current implementation:
+The current implementation contains:
 
 ```text
 src/main/java/com/deutschhub/domain/learning/model/entity/LessonItem.java
 ```
 
-represents content within a Lesson.
-
-Its supported types include:
+with types such as:
 
 ```text
 TEXT
@@ -928,25 +1219,27 @@ MEDIA
 QUIZ
 ```
 
-Therefore:
+LessonItem belongs to the Course Aggregate.
+
+This does not establish:
 
 ```text
 LessonItem
-    ≠
-Generic Learning Activity
+    =
+Learning Activity
 ```
 
-The target Activity boundary should be determined only after the business semantics of specific activities are established.
+The exact relationship remains open.
 
 ---
 
-# 12. Learning Direction Boundaries
+# 14. Learning Direction Boundary
 
-## 12.1 Status
+## 14.1 Status
 
-**Open**
+**OPEN / DEFERRED**
 
-Learning Direction is a business responsibility concerned with determining or recommending what a learner should do next.
+Learning Direction represents the responsibility for determining what the learner should do next.
 
 Potential concepts include:
 
@@ -958,185 +1251,116 @@ Learning Goal
 Exam Preparation
 ```
 
-These concepts may have different lifecycles and consistency requirements.
+The exact Aggregate boundaries of these concepts are not established.
 
-Therefore, the target model does not introduce:
+---
+
+## 14.2 Boundary Decision
+
+No generic:
 
 ```text
 LearningDirection Aggregate
 ```
 
-as a generic Aggregate Root.
+is introduced.
+
+Each future concept should be evaluated according to its own:
+
+* identity;
+* lifecycle;
+* invariants;
+* ownership;
+* consistency requirements.
 
 ---
 
-## 12.2 Specific Direction Concepts
+# 15. UserProgress
 
-The final boundaries for:
+## 15.1 Current Implementation
+
+The current implementation contains:
 
 ```text
-Learning Plan
-Recommendation
-Review Due
-Learning Goal
-Exam Preparation
+src/main/java/com/deutschhub/domain/learning/model/aggregate/UserProgress.java
 ```
 
-remain open.
+Its responsibilities overlap with Course-scoped Progress already represented by:
 
-They should be evaluated individually once their business rules are established.
+```text
+Enrollment
+└── Progress
+```
 
 ---
 
-# 13. Target Aggregate Overview
+## 15.2 Target Boundary Decision
 
-The currently established boundaries are:
+`UserProgress` is not retained as the target representation of Learner State.
 
-```text
-┌──────────────────────────────────┐
-│ Course Aggregate                 │
-│                                  │
-│ Course                           │
-│ └── Section                      │
-│      └── Lesson                  │
-│           └── LessonItem         │
-└──────────────────────────────────┘
-
-
-┌──────────────────────────────────┐
-│ Enrollment Aggregate             │
-│                                  │
-│ Enrollment                       │
-│ └── Progress                     │
-└──────────────────────────────────┘
-
-
-┌──────────────────────────────────┐
-│ Quiz Aggregate                   │
-│                                  │
-│ Quiz                             │
-│ └── QuizRevision                 │
-│      └── Question                │
-│           └── Answer             │
-└──────────────────────────────────┘
-
-
-┌──────────────────────────────────┐
-│ QuizAttempt Aggregate            │
-│                                  │
-│ QuizAttempt                      │
-│ └── UserAnswer(s)                │
-└──────────────────────────────────┘
-
-
-┌──────────────────────────────────┐
-│ Learning Evidence                │
-│                                  │
-│ LessonCompletion                 │
-└──────────────────────────────────┘
-```
-
-Additional target concepts remain outside a finalized Aggregate boundary:
+The target responsibilities are separated as follows:
 
 ```text
+Enrollment
+└── Progress
+    → Course-scoped advancement
+
+LessonCompletion
+    → Learning Evidence
+
+QuizAttempt
+    → Assessment execution
+    → may serve as Learning Evidence
+
+Assessment Result
+    → Historical Assessment Result
+
 Competency
+    → Learner capability
+
 Current Level
-Learning Activity
-Learning Plan
-Recommendation
-Review Due
-Learning Goal
+    → Established CEFR proficiency state
+```
+
+Therefore:
+
+```text
+UserProgress
+    ≠
+Target Learner State Aggregate
 ```
 
 ---
 
-# 14. Aggregate Relationships
+# 16. Aggregate Reference Rules
 
-The target model describes business relationships between Aggregates and domain concepts without implying direct Aggregate ownership.
+## 16.1 Aggregate-to-Aggregate Relationships
 
-A simplified conceptual view is:
-
-```text
-Course Aggregate
-        │
-        │ provides learning structure
-        ↓
-Learning Flow
-        │
-        ├──────────────→ Learning Activity
-        │
-        └──────────────→ Learning Activity
-                              │
-                              ↓
-                       Learning Evidence
-                              │
-                    ┌─────────┴─────────┐
-                    ↓                   ↓
-             LessonCompletion      QuizAttempt
-                    │                   │
-                    │                   │
-                    ↓                   ↓
-              Enrollment          Assessment Result
-                    │
-                    ↓
-                 Progress
-```
-
-This diagram represents business relationships and evidence flow.
-
-It does not imply:
-
-```text
-Course
-    └── LearningActivity
-```
-
-or:
-
-```text
-Course
-    └── LearningEvidence
-```
-
-as Aggregate ownership.
-
-A Learning Activity may exist independently of a Course, Section, or Lesson.
-
-Similarly, Learning Evidence may remain an independent domain record or Aggregate depending on its own business boundary.
-
-The exact relationships between Learning Activity, Learning Evidence, Learner State, and Learning Direction remain subject to their respective domain decisions.
-
----
-
-# 15. Aggregate Reference Rules
-
-The following rules apply to the target model.
-
-## 15.1 Aggregates Should Reference Other Aggregates by Identity
-
-An Aggregate should not require another Aggregate to be loaded as an internal object merely because the two concepts are related.
+Aggregates may reference other Aggregates through identity without becoming part of the same boundary.
 
 For example:
 
 ```text
 Enrollment
-    → Course ID
+    → Course identity
 ```
 
-is conceptually different from:
+does not imply:
 
 ```text
 Enrollment
-    → complete Course Aggregate
+    → Course Aggregate
 ```
 
-The exact implementation representation remains outside this document.
+as an internal object.
+
+The exact implementation representation is outside this document.
 
 ---
 
-## 15.2 Evidence Does Not Become Internal State Automatically
+## 16.2 Historical Evidence Does Not Become Aggregate State Automatically
 
-A Learning Evidence record may contribute to an Aggregate's state without becoming an internal entity of that Aggregate.
+Evidence may contribute to Aggregate state without becoming an internal entity.
 
 For example:
 
@@ -1155,108 +1379,318 @@ Enrollment
 
 ---
 
-## 15.3 Aggregate Boundaries Should Protect Business Invariants
+## 16.3 Aggregate Boundaries Protect Invariants
 
-The boundary should be expanded only when multiple concepts must be changed and validated together to preserve a business invariant.
+A boundary should be expanded only when multiple concepts must be changed and validated together to preserve a business invariant.
 
 Otherwise, concepts should remain independent.
 
 ---
 
-# 16. Confirmed vs. Open Boundaries
+# 17. Target Aggregate Overview
 
-| Concept            | Target Boundary             | Status                |
-| ------------------ | --------------------------- | --------------------- |
-| Course             | Course Aggregate            | Confirmed             |
-| Section            | Inside Course               | Confirmed             |
-| Lesson             | Inside Course               | Confirmed             |
-| LessonItem         | Inside Course               | Confirmed             |
-| Enrollment         | Enrollment Aggregate        | Confirmed             |
-| Progress           | Inside Enrollment           | Confirmed             |
-| LessonCompletion   | Independent Evidence Entity | Confirmed / Preferred |
-| Quiz               | Quiz Aggregate              | Confirmed             |
-| QuizRevision       | Inside Quiz Aggregate       | Confirmed             |
-| Question           | Inside QuizRevision         | Confirmed             |
-| Answer             | Inside Question             | Confirmed             |
-| QuizAttempt        | Independent Aggregate       | Confirmed             |
-| Competency         | TBD                         | Open                  |
-| Current Level      | TBD                         | Open                  |
-| Learning Activity  | TBD                         | Open                  |
-| Learning Plan      | TBD                         | Open                  |
-| Recommendation     | TBD                         | Open                  |
-| Review Due         | TBD                         | Open                  |
-| Learning Goal      | TBD                         | Open                  |
-| Learner State      | No single Aggregate         | Confirmed decision    |
-| Learning Direction | No generic Aggregate        | Confirmed decision    |
+The currently established Aggregate boundaries are:
+
+```text
+┌──────────────────────────────────┐
+│ Course Aggregate                 │
+│                                  │
+│ Course                           │
+│ └── Section                      │
+│      └── Lesson                  │
+│           └── LessonItem         │
+└──────────────────────────────────┘
+```
+
+```text
+┌──────────────────────────────────┐
+│ Enrollment Aggregate             │
+│                                  │
+│ Enrollment                       │
+│ └── Progress                     │
+└──────────────────────────────────┘
+```
+
+```text
+┌──────────────────────────────────┐
+│ Quiz Aggregate                   │
+│                                  │
+│ Quiz                             │
+│ └── QuizRevision                 │
+│      └── Question                │
+│           └── Answer             │
+└──────────────────────────────────┘
+```
+
+```text
+┌──────────────────────────────────┐
+│ QuizAttempt Aggregate            │
+│                                  │
+│ QuizAttempt                      │
+│ ├── UserAnswer(s)                │
+│ └── QuestionResult(s)            │
+└──────────────────────────────────┘
+```
+
+The following are confirmed domain concepts but do not currently have finalized independent Aggregate boundaries:
+
+```text
+Assessment
+Assessment Component
+Assessment Task
+Assessment Attempt
+Assessment Result
+Competency
+Learning Activity
+Learning Direction
+```
+
+Current Level is not an independent Aggregate or Entity.
+
+It is a state/value belonging to Competency.
 
 ---
 
-# 17. Boundaries Intentionally Not Introduced
+# 18. Aggregate Classification
+
+| Concept              | Target Boundary                  | Status                             |
+| -------------------- | -------------------------------- | ---------------------------------- |
+| Course               | Course Aggregate Root            | Confirmed                          |
+| Section              | Inside Course Aggregate          | Confirmed                          |
+| Lesson               | Inside Course Aggregate          | Confirmed                          |
+| LessonItem           | Inside Course Aggregate          | Confirmed                          |
+| Enrollment           | Enrollment Aggregate Root        | Confirmed                          |
+| Progress             | Inside Enrollment Aggregate      | Confirmed                          |
+| LessonCompletion     | Independent Evidence Entity      | Confirmed / Preferred              |
+| Quiz                 | Quiz Aggregate Root              | Confirmed                          |
+| QuizRevision         | Inside Quiz Aggregate            | Confirmed                          |
+| Question             | Inside QuizRevision              | Confirmed                          |
+| Answer               | Inside Question                  | Confirmed                          |
+| QuizAttempt          | Independent Aggregate Root       | Confirmed                          |
+| UserAnswer           | Inside QuizAttempt               | Confirmed                          |
+| QuestionResult       | Inside QuizAttempt               | Confirmed concept                  |
+| Assessment           | Domain Concept                   | Aggregate boundary OPEN            |
+| Assessment Component | Domain Concept                   | Aggregate boundary OPEN            |
+| Assessment Task      | Domain Concept                   | Aggregate boundary OPEN            |
+| Assessment Attempt   | Domain Concept                   | Aggregate boundary OPEN            |
+| Component Result     | Historical Assessment Evidence   | Aggregate boundary OPEN            |
+| Assessment Result    | Historical Assessment Result     | Aggregate boundary OPEN            |
+| Competency           | Learner State Domain Concept     | Aggregate boundary OPEN / DEFERRED |
+| Current Level        | State/Value of Competency        | Not an independent Aggregate       |
+| Learner State        | Business Responsibility          | No single Aggregate                |
+| Learning Activity    | Domain Concept                   | OPEN / DEFERRED                    |
+| Learning Direction   | Business Responsibility          | OPEN / DEFERRED                    |
+| Learning Plan        | Learning Direction Concept       | Deferred                           |
+| Recommendation       | Learning Direction Concept       | Deferred                           |
+| Review Due           | Learning Direction Concept       | Deferred                           |
+| Learning Goal        | Learning Direction Concept       | Deferred                           |
+| UserProgress         | Not retained as target Aggregate | Confirmed direction                |
+
+---
+
+# 19. Boundaries Intentionally Not Introduced
 
 The following Aggregate Roots are intentionally not introduced:
 
 ```text
-LearnerState
-LearningDirection
-LearningActivity
+Assessment
+AssessmentAttempt
 Competency
 CurrentLevel
+LearnerState
+LearningActivity
+LearningDirection
+LearningPlan
+Recommendation
+ReviewDue
+LearningGoal
 ```
 
 The absence of an Aggregate Root does not mean that the concept is not part of the domain.
 
-It means that the available evidence is not sufficient to establish an independent consistency boundary.
+It means that the current evidence is not sufficient to establish an independent consistency boundary.
 
 ---
 
-# 18. Final Boundary Principles
+# 20. Important Boundary Distinctions
 
-The target Learning model follows these principles:
+The following distinctions are fundamental to the target model.
 
 ```text
 Course
-    → owns Course Structure
-
+    ≠
 Enrollment
-    → owns participation lifecycle and Course-scoped Progress
-
-LessonCompletion
-    → records Learning Evidence independently
-
-Quiz
-    → owns assessment identity, governance, and Revision lifecycle
-
-QuizRevision
-    → owns a concrete assessment definition
-
-QuizAttempt
-    → owns learner-specific assessment execution
 ```
-
-Learner State and Learning Direction remain broader business responsibilities without assuming a single Aggregate boundary.
-
-The most important boundary decisions are:
 
 ```text
-Enrollment ≠ LessonCompletion
-
-Enrollment ≠ Learner State
-
-Progress ∈ Enrollment
-
-LessonCompletion ∉ Enrollment
-
-Quiz ≠ QuizAttempt
-
-QuizRevision ∈ Quiz Aggregate
-
-Evidence ≠ Learner State
-
-Course Structure ≠ Learning Activity
+Enrollment
+    ≠
+LessonCompletion
 ```
 
-These boundaries provide the domain foundation for subsequent architecture decisions.
+```text
+Progress
+    ≠
+Learning Evidence
+```
 
-The next stage should determine how these business boundaries should be reflected in the target architecture and code organization without allowing the current package structure to dictate the domain model.
+```text
+Progress
+    ≠
+Competency
+```
+
+```text
+Learning Evidence
+    ≠
+Learner State
+```
+
+```text
+Assessment Result
+    ≠
+Competency
+```
+
+```text
+Assessment Score
+    ≠
+Current Level
+```
+
+```text
+Competency
+    ≠
+Current Level
+```
+
+```text
+Current Level
+    ∈
+Competency
+```
+
+```text
+Course Level
+    ≠
+Learner Current Level
+    ≠
+Certification Level
+```
+
+```text
+Quiz
+    ≠
+QuizAttempt
+```
+
+```text
+QuizRevision
+    ∈
+Quiz Aggregate
+```
+
+```text
+QuizAttempt
+    ∈
+separate Aggregate
+```
+
+```text
+LessonItem
+    ≠
+Generic Learning Activity
+```
+
+```text
+Historical Evidence
+    ≠
+Current Learner State
+```
+
+---
+
+# 21. Final Target Aggregate Model
+
+The current target Aggregate model is:
+
+```text
+Learning Context
+│
+├── Course Aggregate
+│   └── Course
+│       └── Section
+│           └── Lesson
+│               └── LessonItem
+│
+├── Enrollment Aggregate
+│   └── Enrollment
+│       └── Progress
+│
+├── Learning Evidence
+│   └── LessonCompletion
+│
+├── Quiz Aggregate
+│   └── Quiz
+│       └── QuizRevision
+│           └── Question
+│               └── Answer
+│
+├── QuizAttempt Aggregate
+│   ├── QuizAttempt
+│   ├── UserAnswer(s)
+│   └── QuestionResult(s)
+│
+├── Assessment
+│   ├── Component
+│   │   └── Task(s)
+│   ├── Completion Policy
+│   ├── Time Limit
+│   ├── Attempt
+│   ├── Component Result
+│   └── Assessment Result
+│       └── Aggregate boundary OPEN
+│
+├── Learner State
+│   └── Competency
+│       └── Current Level
+│
+└── Learning Direction
+    └── Aggregate boundaries deferred
+```
+
+The model intentionally distinguishes between:
+
+```text
+Established Aggregate Boundaries
+```
+
+and:
+
+```text
+Confirmed Domain Concepts
+whose Aggregate boundaries remain OPEN
+```
+
+The currently established Aggregate Roots are:
+
+```text
+Course
+Enrollment
+Quiz
+QuizAttempt
+```
+
+LessonCompletion remains an independent Learning Evidence Entity.
+
+Competency is a confirmed Learner State concept, but its Aggregate boundary is deferred.
+
+Current Level is a state/value belonging to Competency and is not an independent Aggregate.
+
+Assessment is a confirmed broader domain concept, but its Aggregate boundaries remain OPEN until concrete consistency requirements justify a decision.
+
+Learning Activity and Learning Direction remain OPEN / DEFERRED.
+
+These boundaries provide the current domain foundation for subsequent Module Boundary, Application, and implementation decisions without allowing the existing package structure to dictate the target domain model.
 
 ````

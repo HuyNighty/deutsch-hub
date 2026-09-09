@@ -2,1047 +2,384 @@
 
 ## 1. Purpose
 
-This document defines the implementation strategy for evolving DeutschHub V3 from its current architecture and domain model toward the target architecture established in the preceding design documents.
+This document defines how the current DeutschHub backend is evolved toward the V3 target model.
 
-The implementation plan is intentionally incremental.
+The implementation strategy is intentionally incremental.
 
-The target architecture does not require an immediate rewrite of the existing system. Existing components that already satisfy the target architectural direction should be preserved.
+The goal is not to rewrite the existing backend at once.
 
-Implementation work should be driven by:
+Instead, implementation proceeds through small, verifiable slices that:
 
-- established domain decisions;
-- identified architectural problems;
-- concrete business requirements;
-- dependency and consistency boundaries;
-- the target module boundaries.
+- preserve working behavior where possible;
+- fix concrete problems before introducing structural changes;
+- implement established domain decisions;
+- avoid prematurely implementing unresolved concepts;
+- keep changes reviewable and reversible;
+- synchronize target documents only when accumulated changes justify it.
 
-The implementation plan therefore distinguishes between:
+The implementation plan therefore acts as the bridge between:
 
 ```text
-Preserve
-Fix
-Refine
-Build
+Domain Decisions
+        ↓
+Target Model
+        ↓
+Implementation
 ````
-
-rather than treating all existing code as requiring replacement.
 
 ---
 
 # 2. Implementation Principles
 
-## 2.1 Design Before Structural Change
+## 2.1. Incremental Evolution
 
-Implementation must follow the domain and architectural decisions already established in:
+The existing backend is treated as a working baseline and source of implementation evidence.
 
-* `target-learning-boundaries.md`
-* `target-domain-model.md`
-* `domain-decisions.md`
-* `target-aggregate-boundaries.md`
-* `target-architecture.md`
-* `target-module-boundaries.md`
+It is not treated as the final source of truth for the V3 domain model.
 
-Code structure must not be changed merely to anticipate unresolved domain decisions.
-
----
-
-## 2.2 Preserve Working Architecture
-
-The current system already provides:
-
-* Modular Monolith structure;
-* Domain/Application/Infrastructure separation;
-* Input Ports;
-* Output Ports;
-* Persistence Adapters;
-* Domain behavior within several Aggregates;
-* separated JPA persistence models.
-
-These foundations should be preserved unless a concrete problem requires change.
-
----
-
-## 2.3 Fix Concrete Problems First
-
-Known architectural inconsistencies should be resolved before introducing new domain capabilities.
-
-Examples include:
+The implementation should therefore follow:
 
 ```text
-Domain → Spring dependency
-UserProgress duplication
-unclear business responsibility in selected Application Services
+Current Code
+     ↓
+Understand
+     ↓
+Preserve what is valid
+     ↓
+Fix concrete problems
+     ↓
+Implement established target decisions
 ```
 
-This prevents new features from being built on top of known inconsistencies.
+A complete rewrite is not the default strategy.
 
 ---
 
-## 2.4 Do Not Introduce Unresolved Domain Models Prematurely
+## 2.2. Small Implementation Slices
 
-The following concepts are part of the target domain direction but do not yet have final internal models:
+Implementation should be divided into small slices.
 
-```text
-Competency
-Current Level
-Learning Activity
-Vocabulary State
-Grammar State
-Skill State
-Learning Plan
-Recommendation
-Review Due
-Learning Goal
-Exam Preparation
-```
+A slice should normally have:
 
-They should not be implemented as arbitrary Aggregates or entities simply because their names have already been identified.
-
-Their implementation should follow explicit domain rules.
-
----
-
-## 2.5 One Boundary at a Time
-
-Implementation should proceed in small architectural increments.
-
-Each increment should leave the system in a coherent state.
-
-The preferred flow is:
-
-```text
-Analyze
-   ↓
-Decide
-   ↓
-Implement
-   ↓
-Verify
-   ↓
-Commit
-   ↓
-Continue
-```
-
-A phase should not depend on undocumented assumptions from a future phase.
-
----
-
-# 3. Implementation Classification
-
-Each existing or future component should be classified into one of four categories.
-
-## 3.1 Preserve
-
-The implementation already satisfies the target architecture sufficiently.
+* one clear objective;
+* a limited set of affected files;
+* an identifiable business or architectural reason;
+* a clear verification method;
+* a separate commit when appropriate.
 
 Examples:
 
 ```text
-Course Aggregate
-Enrollment Aggregate
-Progress Value Object
-Repository Ports
-Jpa Repository Adapters
+Fix Course lesson ordering
 ```
 
-These should not be rewritten without a concrete reason.
+```text
+Protect published Course from modification
+```
+
+```text
+Stabilize Enrollment progress update
+```
+
+```text
+Implement Quiz Attempt creation
+```
+
+A slice should not combine unrelated refactoring merely because the affected code is nearby.
 
 ---
 
-## 3.2 Fix
+## 2.3. Domain Decision Before Domain Code
 
-The implementation contains a concrete problem that violates an established architectural or domain rule.
-
-Current examples include:
+Before implementing a new business concept, the following must be sufficiently understood:
 
 ```text
-MediaTypeResolver
-UserProgress
+Business meaning
+       ↓
+Responsibility
+       ↓
+Invariants
+       ↓
+Boundary
+       ↓
+Implementation
 ```
 
-Fixes should remain focused on the identified problem.
+The implementation should not invent business rules simply because the code needs an answer.
+
+If a decision is required to implement the slice and has not been established, that decision becomes an implementation blocker and must return to domain analysis.
 
 ---
 
-## 3.3 Refine
+## 2.4. Current Code Is Evidence, Not Target Truth
 
-The implementation is valid but its responsibility or boundary should become clearer as the target model evolves.
+Existing code may contain:
 
-Examples may include:
+* valid behavior;
+* incomplete behavior;
+* legacy concepts;
+* duplicated responsibilities;
+* implementation shortcuts;
+* domain assumptions that are no longer correct.
 
-```text
-CompleteLessonService
-Learning module organization
-Evidence handling
-```
-
-Refinement must be based on an established target responsibility rather than stylistic preference.
-
----
-
-## 3.4 Build
-
-The capability does not yet have a complete implementation and must be introduced as a new capability.
-
-Examples include:
+Therefore:
 
 ```text
-Learner State
-Competency
-Current Level
-Learning Activities
-Learning Direction
-```
-
-Build work should occur only after the relevant domain decisions are sufficiently established.
-
----
-
-# 4. Phase 0 — Establish the Architectural Baseline
-
-## Objective
-
-Ensure that implementation begins from a known and documented architectural baseline.
-
-The baseline consists of:
-
-```text
-Current architecture
-Current Learning boundaries
-Target domain model
-Aggregate boundaries
-Target architecture
-Target module boundaries
-```
-
-No production-code restructuring is required in this phase.
-
-## Output
-
-A stable implementation reference consisting of the completed design documents.
-
-## Completion Criteria
-
-The following are understood before implementation begins:
-
-* current architectural boundaries;
-* target architectural direction;
-* established Aggregate boundaries;
-* established business module boundaries;
-* unresolved domain decisions;
-* known architectural problems.
-
----
-
-# 5. Phase 1 — Protect Architectural Boundaries
-
-## Objective
-
-Resolve concrete violations of the target dependency rules without changing business behavior unnecessarily.
-
-The first confirmed issue is framework leakage into the Domain.
-
-Current location:
-
-```text
-src/main/java/com/deutschhub/domain/media/service/MediaTypeResolver.java
-```
-
-The current implementation uses Spring's component mechanism inside the Domain.
-
-The target rule is:
-
-```text
-Domain
-    ✕ Spring
-    ✕ JPA
-    ✕ Infrastructure
-```
-
-## Scope
-
-The implementation should:
-
-1. identify the actual reason `MediaTypeResolver` requires framework registration;
-2. determine whether it is a pure domain service;
-3. remove the unnecessary framework dependency if confirmed;
-4. preserve its existing domain behavior;
-5. verify that no infrastructure dependency is introduced as a replacement.
-
-The implementation should not introduce a new abstraction unless the concrete dependency requires one.
-
-## Completion Criteria
-
-The Domain no longer depends on Spring for this capability.
-
-The existing media-type resolution behavior remains unchanged.
-
----
-
-# 6. Phase 2 — Stabilize Existing Learning Domain
-
-## Objective
-
-Ensure that existing Learning Aggregates and Value Objects conform to the domain decisions already established.
-
-The primary established model is:
-
-```text
-Course
-└── Section
-    └── Lesson
-        └── LessonItem
-```
-
-and:
-
-```text
-Enrollment
-└── Progress
-```
-
-Existing Aggregates such as `Course`, `Enrollment`, `Quiz`, and `QuizAttempt` should be preserved.
-
-## Scope
-
-The implementation should verify:
-
-* Aggregate Root ownership;
-* domain invariants;
-* lifecycle transitions;
-* Value Object invariants;
-* persistence mapping;
-* application orchestration.
-
-No Aggregate should be split or merged without a documented consistency requirement.
-
----
-
-## 6.1 UserProgress
-
-The current:
-
-```text
-src/main/java/com/deutschhub/domain/learning/model/aggregate/UserProgress.java
-```
-
-should be treated as a known model inconsistency.
-
-The target architecture does not define `UserProgress` as the canonical Learner State model.
-
-Before changing it, implementation must determine:
-
-* which current use cases depend on it;
-* whether it is persisted;
-* whether it is referenced by application code;
-* whether it has active API exposure;
-* whether its data is duplicated by Enrollment and Progress.
-
-Only after this usage is understood should the implementation determine whether it should be removed, replaced, or temporarily retained.
-
-The target decision is:
-
-```text
-UserProgress
-    ✕
-canonical Learner State
-```
-
-The implementation mechanism remains dependent on actual usage.
-
----
-
-## 6.2 Existing Invariant Inconsistency
-
-The current `UserProgress` implementation contains an inconsistency involving:
-
-```text
-Progress.createInitial(0)
-```
-
-while `Progress` requires a positive total lesson count.
-
-This should be resolved as part of stabilizing the existing model if `UserProgress` remains active during implementation.
-
-The fix must preserve the invariant established by `Progress`.
-
----
-
-# 7. Phase 3 — Clarify Learning Evidence
-
-## Objective
-
-Stabilize Learning Evidence as a distinct responsibility.
-
-The target evidence concepts include:
-
-```text
-LessonCompletion
-QuizAttempt
-```
-
-with the distinction:
-
-```text
-LessonCompletion
-    = lesson completion evidence
-
-QuizAttempt
-    = assessment attempt / assessment evidence
-```
-
-## Scope
-
-The implementation should ensure that:
-
-* evidence is not confused with progress;
-* evidence does not become a child entity solely because another Aggregate consumes it;
-* existing persistence behavior remains consistent;
-* application services can coordinate evidence and Aggregate updates without collapsing their boundaries.
-
----
-
-## 7.1 LessonCompletion
-
-The established boundary is:
-
-```text
-LessonCompletion
-    = independent Evidence Entity
-```
-
-The implementation should preserve this boundary.
-
-The current use case may continue to coordinate:
-
-```text
-LessonCompletion
-        +
-Enrollment.Progress
-```
-
-within one application transaction.
-
-A transaction spanning multiple domain boundaries does not require merging those boundaries.
-
----
-
-## 7.2 Evidence-to-State Rules
-
-The implementation should not yet introduce a generic mechanism for:
-
-```text
-Evidence
-    ↓
-Learner State
-```
-
-until the rules determining how evidence changes learner state have been explicitly defined.
-
-This prevents premature event processing, generic evidence pipelines, or state-calculation abstractions.
-
----
-
-# 8. Phase 4 — Establish Learner State
-
-## Objective
-
-Introduce learner-centered state only after its domain semantics are sufficiently defined.
-
-The target responsibility is:
-
-```text
-Learner State
-```
-
-Potential concepts include:
-
-```text
-Competency
-Current Level
-Vocabulary State
-Grammar State
-Skill State
-XP
-Streak
-Achievement
-Statistics
-```
-
-Not all concepts are required to be implemented at the same time.
-
----
-
-## 8.1 Competency
-
-Competency should be introduced only after defining:
-
-* what constitutes a competency;
-* how competency is identified;
-* how competency changes;
-* what evidence contributes to it;
-* whether competency requires an Aggregate boundary.
-
-The implementation must not infer competency directly from:
-
-```text
-course completion
-```
-
-or:
-
-```text
-raw assessment score
-```
-
-without explicit domain rules.
-
----
-
-## 8.2 Current Level
-
-Current Level should be introduced only after defining:
-
-* what determines a learner's level;
-* what evidence contributes to level;
-* whether level changes are automatic or explicit;
-* how CEFR classification is used;
-* how current level differs from Course Level and Certification Level.
-
-The target distinction remains:
-
-```text
-Course Level
+Current Code
     ≠
-Learner Current Level
-    ≠
-Certification Level
+Target Domain Model
 ```
+
+The target model is used when a deliberate V3 decision differs from the legacy implementation.
+
+However, legacy code should not be changed merely because the target model looks different.
+
+A concrete implementation reason is required.
 
 ---
 
-## 8.3 Derived Versus Persisted State
+# 3. Implementation Readiness
 
-For each learner-state concept, implementation should determine whether it is:
+A domain area is ready for implementation when:
+
+* its business responsibility is understood;
+* required business rules are known;
+* required Aggregate boundaries are sufficiently established;
+* required application behavior is understood;
+* unresolved decisions do not block the intended slice;
+* persistence requirements are sufficiently clear;
+* verification can be defined.
+
+Not every OPEN decision must be closed before implementation.
+
+The relevant distinction is:
 
 ```text
-Persisted domain state
+OPEN BUT REQUIRED
+        →
+must be decided before implementation
+
+OPEN BUT DEFERRED
+        →
+does not block the current slice
 ```
 
-or:
+---
+
+# 4. Implementation Workflow
+
+Every implementation slice follows this workflow:
 
 ```text
-Derived state
+1. Select Slice
+       ↓
+2. Read Existing Code
+       ↓
+3. Identify Concrete Problem / Requirement
+       ↓
+4. Check Relevant Domain Decision
+       ↓
+5. Define Minimal Code Impact
+       ↓
+6. Implement
+       ↓
+7. Verify
+       ↓
+8. Review Boundary / Dependencies
+       ↓
+9. Commit
 ```
 
-This decision should be based on business requirements and consistency needs.
-
-The existence of a database table is not itself sufficient justification for a domain Aggregate.
+The workflow does not require updating every target document after every slice.
 
 ---
 
-# 9. Phase 5 — Establish Learning Activities
+# 5. Documentation Workflow
 
-## Objective
+## 5.1. Domain Documents
 
-Introduce Learning Activities as a distinct business responsibility from Learning Structure.
-
-The target distinction is:
-
-```text
-LessonItem
-    ≠
-Learning Activity
-```
-
-A Learning Activity represents a learner interaction.
-
-Potential activity categories include:
-
-```text
-Practice
-Review
-Listening
-Speaking
-Reading
-Writing
-Assessment interaction
-```
-
----
-
-## Scope
-
-Before implementation, each activity type should be analyzed for:
-
-* lifecycle;
-* required state;
-* learner interaction;
-* persistence needs;
-* evidence produced;
-* relationship to learning content;
-* consistency requirements.
-
-Only then should the appropriate Entity, Aggregate, or other domain representation be selected.
-
----
-
-## Generic Activity Model
-
-A generic `LearningActivity` Aggregate should not be introduced unless multiple activity types demonstrably share:
-
-* meaningful common behavior;
-* lifecycle;
-* invariants;
-* consistency requirements.
-
-Different activities may require different models.
-
----
-
-# 10. Phase 6 — Establish Learning Direction
-
-## Objective
-
-Introduce mechanisms that determine or recommend what the learner should do next.
-
-The target responsibility includes potential capabilities such as:
-
-```text
-Daily Learning
-Learning Plan
-Recommendation
-Review Due
-Learning Goal
-Exam Preparation
-Weakness-oriented Practice
-```
-
-The conceptual relationship is:
-
-```text
-Learner State
-      ↓
-Learning Direction
-      ↓
-Next Learning Activity
-```
-
----
-
-## Scope
-
-Each direction capability should first establish:
-
-* its business purpose;
-* required learner information;
-* decision rules;
-* persistence requirements;
-* relationship to activities;
-* relationship to goals;
-* whether the result is deterministic, configurable, or derived.
-
-No generic `LearningDirection` Aggregate should be introduced without concrete domain requirements.
-
----
-
-# 11. Phase 7 — Refine Module Organization
-
-## Objective
-
-Make established business boundaries visible in code organization when implementation evidence justifies doing so.
-
-The target business responsibilities are:
-
-```text
-Learning Structure
-Enrollment
-Learning Activities
-Learning Evidence
-Learner State
-Learning Direction
-```
-
-The exact package structure is intentionally not fixed by the target architecture documents.
-
----
-
-## Rules
-
-Module organization should:
-
-* make business responsibility visible;
-* preserve Hexagonal dependency rules;
-* avoid unnecessary duplication;
-* avoid creating packages without meaningful responsibility;
-* avoid reorganizing stable code merely for aesthetic consistency.
-
-Business-oriented organization should be introduced incrementally.
-
-For example, existing Course and Enrollment structures may remain stable if their current organization already provides sufficient clarity.
-
----
-
-# 12. Phase 8 — Strengthen Application and Domain Responsibilities
-
-## Objective
-
-Review Application Services after the relevant domain boundaries have been established.
-
-The target responsibility distinction is:
-
-```text
-Application
-    = use-case orchestration
-
-Domain
-    = business rules and invariants
-```
-
-The review should focus on concrete cases rather than performing a blanket migration of logic.
-
----
-
-## 12.1 CompleteLessonService
-
-The current:
-
-```text
-src/main/java/com/deutschhub/application/learning/service/CompleteLessonService.java
-```
-
-coordinates:
-
-```text
-Enrollment
-Course
-LessonCompletion
-Progress
-```
-
-This orchestration is valid.
-
-However, business calculations such as study-time constraints should be reviewed against the final domain model.
-
-The implementation should ask:
-
-```text
-Is this rule specific to the use case?
-
-or
-
-Is this a business invariant of a domain concept?
-```
-
-Only the second category should necessarily move into the Domain.
-
----
-
-## 12.2 No Blanket Service Refactoring
-
-Application Services should not be rewritten merely to make them smaller.
-
-A service can legitimately coordinate:
-
-* multiple Aggregates;
-* repositories;
-* Evidence;
-* transactions;
-* external operations.
-
-The target architecture does not require every operation to be moved into a Domain method.
-
----
-
-# 13. Phase 9 — Verification
-
-Each implementation phase must be verified before moving to the next phase.
-
-Verification should include, where applicable:
-
-```text
-Compile
-    ↓
-Unit Tests
-    ↓
-Integration Tests
-    ↓
-Architecture Checks
-    ↓
-Manual Verification
-```
-
-The exact verification mechanism depends on the capability being changed.
-
----
-
-## 13.1 Domain Verification
-
-Verify:
-
-* invariants;
-* lifecycle transitions;
-* invalid state rejection;
-* Aggregate behavior;
-* Value Object behavior.
-
----
-
-## 13.2 Application Verification
-
-Verify:
-
-* use-case orchestration;
-* transaction behavior;
-* correct port usage;
-* error handling;
-* coordination across boundaries.
-
----
-
-## 13.3 Infrastructure Verification
-
-Verify:
-
-* persistence mapping;
-* adapter behavior;
-* repository queries;
-* serialization;
-* external integration behavior.
-
----
-
-# 14. Phase 10 — Commit Boundaries
-
-Implementation should use small, meaningful commits.
-
-A commit should ideally represent one coherent architectural or business change.
+Domain-specific documents are the primary working documents during analysis.
 
 Examples:
 
 ```text
-fix(domain): remove framework dependency from media resolver
-
-fix(learning): stabilize progress invariant
-
-refactor(learning): clarify evidence boundary
-
-feat(learning): introduce competency state
-
-feat(learning): add learning activity model
+course/
+enrollment/
+quiz/
+assessment/
+learner-state/
 ```
 
-Commit naming should describe the actual change rather than the entire architectural vision.
+When a local domain decision changes, the relevant domain document should be updated first.
 
 ---
 
-# 15. Implementation Order
+## 5.2. Target Documents
 
-The recommended implementation order is:
+The following are target-level synthesis documents:
 
 ```text
-Phase 0
-Architectural Baseline
-        ↓
-Phase 1
-Protect Architectural Boundaries
-        ↓
-Phase 2
-Stabilize Existing Learning Domain
-        ↓
-Phase 3
-Clarify Learning Evidence
-        ↓
-Phase 4
-Establish Learner State
-        ↓
-Phase 5
-Establish Learning Activities
-        ↓
-Phase 6
-Establish Learning Direction
-        ↓
-Phase 7
-Refine Module Organization
-        ↓
-Phase 8
-Refine Application / Domain Responsibilities
-        ↓
-Verification throughout
+target-domain-model.md
+target-aggregate-boundaries.md
+target-module-boundaries.md
+target-architecture.md
 ```
 
-This is a recommended dependency order, not a requirement that every phase must contain a large implementation.
+They should not be updated automatically after every local decision.
 
-A phase may remain small if the existing implementation already satisfies the target decision.
-
----
-
-# 16. What Must Not Happen
-
-The implementation must avoid the following patterns.
-
-## 16.1 Full Rewrite
-
-Do not replace the current architecture wholesale.
-
-The existing Hexagonal and Modular Monolith foundations are retained.
-
----
-
-## 16.2 Pattern-Driven Refactoring
-
-Do not introduce architectural mechanisms solely because they are commonly associated with DDD.
-
-Examples include:
-
-* generic domain events;
-* event buses;
-* repositories for every entity;
-* generic aggregate roots;
-* additional abstraction layers;
-* separate modules for every business concept.
-
-Each mechanism requires a concrete reason.
-
----
-
-## 16.3 Premature Aggregate Creation
-
-Do not create Aggregates for:
+Instead:
 
 ```text
-Competency
-Current Level
-Learning Activity
-Learning Plan
-Recommendation
-Review Due
-```
-
-until their consistency requirements are understood.
-
----
-
-## 16.4 Course-Centric Expansion
-
-Do not continue extending Course as the owner of concepts that belong to broader learner behavior.
-
-Course should remain responsible for Learning Structure.
-
-It should not become the owner of:
-
-```text
-Competency
-Current Level
-Learner State
-Learning Direction
+Local Decision
+      ↓
+Does it affect target architecture/boundaries?
+      ↓
+No ─────────────→ Keep target documents unchanged
+      │
+      Yes
+      ↓
+Record impact
+      ↓
+Synchronize at milestone
 ```
 
 ---
 
-## 16.5 UserProgress Expansion
+## 5.3. Target Synchronization
 
-Do not continue expanding `UserProgress` as a general-purpose learner state container.
+Target documents are synchronized at a **milestone boundary**, not after every small implementation decision.
 
-Its current overlap with Enrollment and Progress is a known domain-model problem.
+A milestone is reached when a coherent group of implementation slices is complete.
+
+For example:
+
+```text
+Course stabilization
+        ↓
+Verification
+        ↓
+Milestone
+        ↓
+Target synchronization
+```
+
+At the milestone, review:
+
+```text
+Target Domain Model
+Target Aggregate Boundaries
+Target Module Boundaries
+Target Architecture
+```
+
+Only documents affected by the accumulated decisions are updated.
 
 ---
 
-# 17. Implementation Decision Gate
+# 6. Target Synchronization Rules
 
-Before implementing a new domain concept, answer:
+## Rule 1
 
-### Business
-
-```text
-What business responsibility does this concept represent?
-```
-
-### Boundary
-
-```text
-Which module owns that responsibility?
-```
-
-### Consistency
-
-```text
-What must remain consistent together?
-```
-
-### Domain Model
-
-```text
-Does this require an Aggregate, Entity, Value Object,
-or another domain representation?
-```
-
-### Application
-
-```text
-Which use cases coordinate it?
-```
-
-### Infrastructure
-
-```text
-Does it require persistence or an external adapter?
-```
-
-### Evidence
-
-```text
-What existing requirement or domain rule justifies this design?
-```
-
-If these questions cannot be answered sufficiently, the implementation should remain open rather than guessing.
+A new domain concept does not automatically require target-document changes.
 
 ---
 
-# 18. Definition of Done for Architectural Changes
+## Rule 2
 
-An architectural change is considered complete when:
-
-* the relevant domain decision is documented;
-* the implementation follows the established boundary;
-* dependency direction remains valid;
-* business invariants remain inside appropriate domain concepts;
-* Application Services remain orchestration-focused;
-* Infrastructure remains outside the core;
-* tests or verification cover the affected behavior;
-* no unrelated structural changes were introduced.
+A local business rule does not automatically require architecture changes.
 
 ---
 
-# 19. Target State
+## Rule 3
 
-The implementation should gradually move the system toward:
+A change in Aggregate boundary requires target Aggregate review.
+
+---
+
+## Rule 4
+
+A change in business responsibility requires target Module review.
+
+---
+
+## Rule 5
+
+A change in dependency direction, layer responsibility, or architectural style requires target Architecture review.
+
+---
+
+## Rule 6
+
+If no target-level impact exists, target documents remain unchanged.
+
+---
+
+## Rule 7
+
+Target documents should describe the stabilized target state, not every intermediate design discussion.
+
+---
+
+# 7. Implementation Classification
+
+Every existing code area should be classified before modification.
+
+Use four categories:
 
 ```text
-Modular Monolith
-        +
-DDD
-        +
-Hexagonal Architecture
-        +
-Business-oriented organization
+PRESERVE
+FIX
+REFINE
+BUILD
 ```
 
-with Learning organized around:
+---
+
+## 7.1. PRESERVE
+
+Use when the existing implementation already satisfies the target requirement.
+
+Example:
 
 ```text
-Learning
-│
-├── Learning Structure
-├── Enrollment
-├── Learning Activities
-├── Learning Evidence
-├── Learner State
-└── Learning Direction
+Course
 ```
 
-while preserving established Aggregate boundaries:
+may remain the Aggregate Root if its existing boundary and behavior satisfy the target model.
+
+No refactor is required merely to make the code look different.
+
+---
+
+## 7.2. FIX
+
+Use when a concrete defect or invariant violation exists.
+
+Examples identified during the current audit include:
+
+```text
+Lesson.changeOrderIndex
+```
+
+where validation exists but the new order is not correctly assigned.
+
+Another example is:
+
+```text
+Section.update
+```
+
+where validation currently checks the existing values rather than the incoming values.
+
+These are concrete implementation defects and can be fixed independently.
+
+---
+
+## 7.3. REFINE
+
+Use when the existing concept is valid but its implementation does not yet match the established target responsibility.
+
+Examples:
 
 ```text
 Course
@@ -1051,65 +388,1304 @@ Quiz
 QuizAttempt
 ```
 
-and the independent Evidence boundary:
+may require refinement as their V3 business rules become implemented.
 
-```text
-LessonCompletion
-```
-
-The final implementation does not need to realize every target capability simultaneously.
-
-The target architecture defines the direction; implementation should introduce each capability when its domain model and business requirements are sufficiently established.
+Refinement must remain scoped to the established responsibility.
 
 ---
 
-# 20. Summary
+## 7.4. BUILD
 
-The implementation strategy for DeutschHub V3 is incremental and evidence-driven.
+Use when the target capability does not currently exist.
 
-The current architecture provides a strong foundation and should not be replaced wholesale.
-
-Implementation should proceed by:
+Examples may include:
 
 ```text
-Protect
-    ↓
-Stabilize
-    ↓
-Clarify
-    ↓
-Build
-    ↓
-Refine
+Assessment
+Competency
+Learner State
 ```
 
-The most important implementation constraint is:
+but only when the corresponding business model is sufficiently defined for the intended implementation slice.
 
-> **Do not change architecture because a pattern suggests doing so. Change architecture when a concrete business or dependency problem requires it.**
+---
 
-The implementation plan therefore treats the target architecture as a set of constraints for future development rather than as a mandate for immediate large-scale refactoring.
+# 8. Phase 1 — Stabilize Existing Architectural Foundation
+
+## Objective
+
+Resolve concrete architectural problems that are independent of larger domain redesign.
+
+---
+
+## 8.1. Domain Framework Dependency
+
+Current source:
+
+```text
+src/main/java/com/deutschhub/domain/media/service/MediaTypeResolver.java
+```
+
+The Domain currently has a dependency on Spring through `@Component`.
+
+Target rule:
+
+```text
+Domain
+    ✕
+Spring
+```
+
+The implementation should remove the framework dependency from the Domain without introducing an unnecessary architectural abstraction.
+
+---
+
+## 8.2. Verification
+
+After the change:
+
+* Domain code should not require Spring for this behavior;
+* application behavior should remain unchanged;
+* tests should verify the resolver behavior.
+
+---
+
+# 9. Phase 2 — Stabilize Course
+
+## Objective
+
+Preserve the established Course Aggregate while fixing concrete implementation defects.
+
+Target boundary:
+
+```text
+Course
+ └── Section
+      └── Lesson
+           └── LessonItem
+```
+
+Current source locations:
+
+```text
+src/main/java/com/deutschhub/domain/learning/model/aggregate/Course.java
+
+src/main/java/com/deutschhub/domain/learning/model/entity/Section.java
+
+src/main/java/com/deutschhub/domain/learning/model/entity/Lesson.java
+
+src/main/java/com/deutschhub/domain/learning/model/entity/LessonItem.java
+```
+
+---
+
+## 9.1. Lesson Ordering
+
+Current issue:
+
+```text
+Lesson.changeOrderIndex(...)
+```
+
+validates the incoming order but does not correctly update the stored order.
+
+Classification:
+
+```text
+FIX
+```
+
+Scope:
+
+```text
+Lesson
+```
+
+Do not redesign the Course Aggregate because of this defect.
+
+---
+
+## 9.2. Section Update Validation
+
+Current issue:
+
+```text
+Section.update(...)
+```
+
+does not consistently validate the incoming values against the intended business constraints.
+
+Classification:
+
+```text
+FIX
+```
+
+Scope:
+
+```text
+Section
+```
+
+Again, this is a local domain correction.
+
+---
+
+## 9.3. Other Course Decisions
+
+The following remain subject to their established domain decisions:
+
+* Course publication;
+* Course modification after publication;
+* Course deletion;
+* LessonItem duration;
+* LessonItem type mutability;
+* authorization placement.
+
+Do not resolve deferred questions merely because the related code exists.
+
+---
+
+# 10. Phase 3 — Stabilize Enrollment and Progress
+
+## Objective
+
+Preserve:
+
+```text
+Enrollment
+    └── Progress
+```
+
+as the Course-scoped participation and progress model.
+
+Current sources:
+
+```text
+src/main/java/com/deutschhub/domain/learning/model/aggregate/Enrollment.java
+
+src/main/java/com/deutschhub/domain/learning/model/valueobject/Progress.java
+```
+
+---
+
+## 10.1. Enrollment
+
+The implementation should preserve Enrollment as an independent Aggregate Root.
+
+Responsibilities include:
+
+* learner participation;
+* enrollment lifecycle;
+* Course-scoped progress;
+* completion state.
+
+---
+
+## 10.2. Progress
+
+`Progress` remains a Value Object belonging to Enrollment.
+
+It should not be expanded into a generic learner state.
+
+---
+
+## 10.3. UserProgress
+
+Current source:
+
+```text
+src/main/java/com/deutschhub/domain/learning/model/aggregate/UserProgress.java
+```
+
+Current analysis indicates overlap with:
+
+```text
+Enrollment.Progress
+```
+
+Therefore:
+
+```text
+UserProgress
+    ≠
+canonical Learner State
+```
+
+Do not immediately delete or rewrite it.
+
+First identify all actual usages.
+
+Classify each usage:
+
+```text
+Active business behavior
+Persistence only
+Read model
+Legacy
+Unused
+```
+
+Then determine the smallest safe change.
+
+---
+
+# 11. Phase 4 — Stabilize Learning Evidence
+
+## Objective
+
+Make the existing evidence concepts consistent without creating a generic evidence framework prematurely.
+
+Established concepts include:
+
+```text
+LessonCompletion
+QuizAttempt
+QuestionResult
+AssessmentResult
+```
+
+---
+
+## 11.1. LessonCompletion
+
+Current source:
+
+```text
+src/main/java/com/deutschhub/domain/learning/model/entity/LessonCompletion.java
+```
+
+Target responsibility:
+
+```text
+LessonCompletion
+    =
+Lesson completion evidence
+```
+
+It remains separate from:
+
+```text
+Enrollment.Progress
+```
+
+A use case may update both within one application transaction.
+
+This does not require merging them into one Aggregate.
+
+---
+
+## 11.2. Assessment Evidence
+
+Assessment execution may produce historical evidence.
+
+For example:
+
+```text
+QuizAttempt
+      ↓
+QuestionResult
+      ↓
+Assessment Result
+```
+
+Evidence should not automatically update learner state unless an explicit business rule allows it.
+
+---
+
+## 11.3. Avoid Generic Evidence Infrastructure
+
+Do not introduce:
+
+```text
+GenericEvidenceRepository
+GenericEvidencePipeline
+GenericEvidenceEventBus
+```
+
+unless a concrete requirement requires such mechanisms.
+
+The first goal is to stabilize the actual evidence concepts already required by the product.
+
+---
+
+# 12. Phase 5 — Stabilize Quiz and QuizAttempt
+
+## Objective
+
+Implement the established Quiz model without expanding it into a generic Assessment framework prematurely.
+
+Established boundary:
+
+```text
+Quiz
+ └── QuizRevision
+      └── Question
+           └── Answer
+```
+
+Separate execution boundary:
+
+```text
+QuizAttempt
+```
+
+Current sources include:
+
+```text
+src/main/java/com/deutschhub/domain/learning/model/aggregate/Quiz.java
+
+src/main/java/com/deutschhub/domain/learning/model/aggregate/QuizAttempt.java
+
+src/main/java/com/deutschhub/domain/learning/model/entity/Question.java
+
+src/main/java/com/deutschhub/domain/learning/model/entity/AnswerQuestion.java
+
+src/main/java/com/deutschhub/domain/learning/model/entity/UserAnswer.java
+```
+
+---
+
+## 12.1. Quiz
+
+Implement the established Quiz lifecycle and revision rules.
+
+The Quiz Aggregate owns:
+
+```text
+Quiz
+ └── QuizRevision
+      └── Question
+           └── Answer
+```
+
+---
+
+## 12.2. QuizAttempt
+
+`QuizAttempt` remains a separate Aggregate Root.
+
+It binds to the exact published QuizRevision used for the attempt.
+
+This preserves historical integrity.
+
+Later Quiz revisions must not change the meaning of an existing attempt.
+
+---
+
+## 12.3. Attempt Rules
+
+The established Quiz-specific rules should be implemented only within Quiz.
+
+Examples include:
+
+* attempt limits;
+* one active attempt;
+* revision binding;
+* timeout;
+* submission;
+* expiration;
+* unanswered questions;
+* result creation.
+
+These rules should not automatically be generalized to all future Assessment types.
+
+---
+
+# 13. Phase 6 — Implement Assessment
+
+## Objective
+
+Introduce Assessment only to the extent required by established V3 requirements.
+
+Assessment is broader than Quiz.
+
+Conceptually:
+
+```text
+Assessment
+ ├── Component
+ │    └── Task(s)
+ ├── Completion Policy
+ ├── Time Limit
+ ├── Attempt Rules
+ └── Result
+```
+
+A Component belongs to one Skill Dimension.
+
+Possible dimensions include:
+
+```text
+Listening
+Speaking
+Reading
+Writing
+Grammar
+Vocabulary
+```
+
+An Assessment does not have to evaluate every dimension.
+
+---
+
+## 13.1. Assessment Scope
+
+The following are established:
+
+* Assessment is broader than Quiz;
+* Assessment may contain multiple Components;
+* each Component belongs to one Skill Dimension;
+* each Component may contain multiple Tasks;
+* Component Results may be produced;
+* Assessment Result is the official historical result;
+* each execution is a separate Assessment Attempt;
+* an active Attempt may be resumed;
+* Attempt binds a stable Assessment definition/version;
+* timeout ends the Attempt and evaluates according to the Assessment rules;
+* Assessment may have an attempt limit;
+* Level Assessment may establish learner level when passed.
+
+---
+
+## 13.2. Deferred Assessment Decisions
+
+The following remain open unless required by the implementation slice:
+
+```text
+Assessment Aggregate boundary
+Assessment Revision lifecycle
+Assessment ↔ Quiz structural relationship
+Evaluation Mechanism implementation
+Exact Component Result behavior for unanswered Components
+```
+
+If one of these becomes necessary to implement a concrete feature, it becomes:
+
+```text
+OPEN BUT REQUIRED
+```
+
+and must be decided before proceeding.
+
+Otherwise it remains:
+
+```text
+OPEN BUT DEFERRED
+```
+
+---
+
+# 14. Phase 7 — Implement Learner State
+
+## Objective
+
+Introduce learner-level state only after the business model is sufficiently defined.
+
+The target responsibility includes:
+
+```text
+Learner State
+├── Competency
+└── Current Level
+```
+
+Other learner-state concepts remain deferred unless required by V3 implementation scope.
+
+---
+
+## 14.1. Competency
+
+Competency represents demonstrated capability within a defined learning scope.
+
+Established rules include:
+
+```text
+User + Scope
+    →
+one Competency
+```
+
+and:
+
+```text
+UNASSESSED
+    ↓
+ASSESSED
+```
+
+A valid passed Level Assessment may establish or increase Current Level.
+
+A failed Assessment does not automatically downgrade an established level.
+
+The final Aggregate boundary remains deferred until implementation requires it.
+
+---
+
+## 14.2. Current Level
+
+Current Level is the CEFR proficiency classification established for a Competency.
+
+It is not:
+
+```text
+Course Level
+```
+
+and not:
+
+```text
+Certification Level
+```
+
+The existing:
+
+```text
+src/main/java/com/deutschhub/domain/learning/model/valueobject/CEFRLevel.java
+```
+
+provides the CEFR value baseline.
+
+Current Level does not require an independent identity or repository.
+
+---
+
+## 14.3. Evidence to Learner State
+
+Do not implement a generic:
+
+```text
+Evidence
+    ↓
+Learner State
+```
+
+pipeline.
+
+For the first implementation, only explicit business rules should update learner state.
+
+For example:
+
+```text
+Passed Level Assessment
+        ↓
+Assessment Result
+        ↓
+Competency
+        ↓
+Current Level
+```
+
+Ordinary Course completion or ordinary Quiz scores should not automatically establish Current Level.
+
+---
+
+# 15. Phase 8 — Learning Direction
+
+Learning Direction is recognized as a business responsibility but remains deferred unless required by the current V3 implementation scope.
+
+Potential concepts include:
+
+```text
+Learning Plan
+Recommendation
+Review Due
+Learning Goal
+Exam Preparation
+```
+
+No implementation should be created merely to complete the conceptual model.
+
+Implementation begins only when a concrete product requirement requires one of these capabilities.
+
+---
+
+# 16. Application Layer Implementation
+
+Application Services should coordinate use cases.
+
+The general pattern is:
+
+```text
+Input
+  ↓
+Application Service
+  ↓
+Load Aggregate(s)
+  ↓
+Invoke Domain Behavior
+  ↓
+Persist through Ports
+  ↓
+Return Result
+```
+
+Application Services may coordinate multiple Aggregates.
+
+For example:
+
+```text
+Complete Lesson
+```
+
+may coordinate:
+
+```text
+LessonCompletion
++
+Enrollment.Progress
+```
+
+without merging their boundaries.
+
+---
+
+## 16.1. Application Business Rules
+
+Application Services should not become the default location for domain invariants.
+
+Use the following distinction:
+
+```text
+Domain rule
+    →
+Domain model
+
+Use-case orchestration
+    →
+Application Service
+```
+
+When ownership is unclear, resolve the business responsibility before moving code.
+
+---
+
+# 17. Persistence Implementation
+
+Persistence should follow the established Ports & Adapters structure.
+
+The intended dependency is:
+
+```text
+Application
+    ↓
+Repository Port
+    ↑
+Infrastructure Adapter
+    ↓
+Database
+```
+
+Infrastructure-specific details should remain outside the Domain.
+
+---
+
+## 17.1. Repository Creation Rule
+
+Do not create repositories for every domain object automatically.
+
+A repository is justified when the object:
+
+* has independent lifecycle;
+* is an Aggregate Root;
+* or has a concrete application/persistence requirement.
+
+For example:
+
+```text
+Course
+Enrollment
+Quiz
+QuizAttempt
+```
+
+have clear Aggregate Root responsibilities.
+
+An internal Entity such as:
+
+```text
+Lesson
+Question
+Answer
+```
+
+does not automatically require its own repository.
+
+---
+
+# 18. Testing and Verification
+
+Every implementation slice must define how correctness will be verified.
+
+Verification should occur at the smallest useful level.
+
+Possible levels:
+
+```text
+Domain unit test
+Application test
+Integration test
+API test
+```
+
+The goal is not to maximize test quantity.
+
+The goal is to verify:
+
+* business invariants;
+* state transitions;
+* application behavior;
+* persistence behavior where necessary;
+* architectural dependency constraints.
+
+---
+
+## 18.1. Domain Verification
+
+Domain tests should focus on business rules.
+
+Examples:
+
+```text
+Published Course cannot be modified
+Invalid Lesson order is rejected
+Enrollment lifecycle is respected
+Invalid Progress is rejected
+Quiz revision lifecycle is respected
+QuizAttempt binds the correct revision
+Current Level cannot decrease
+```
+
+---
+
+## 18.2. Application Verification
+
+Application tests should verify orchestration.
+
+Examples:
+
+```text
+Complete Lesson
+Submit Quiz Attempt
+Start Assessment Attempt
+Submit Assessment
+Establish Competency
+```
+
+Only implement tests for use cases that actually exist.
+
+---
+
+# 19. Commit Strategy
+
+Each meaningful implementation slice should normally produce a focused commit.
+
+Examples:
+
+```text
+fix(course): correct lesson order update
+```
+
+```text
+fix(course): validate incoming section update values
+```
+
+```text
+refactor(architecture): remove spring dependency from domain resolver
+```
+
+```text
+feat(quiz): implement quiz attempt submission
+```
+
+The commit should describe the actual completed change.
+
+Avoid combining:
+
+```text
+unrelated fixes
+architecture cleanup
+new feature
+formatting
+```
+
+into one implementation slice.
+
+---
+
+# 20. Milestone Strategy
+
+A milestone is a coherent group of completed implementation slices.
+
+Example:
+
+```text
+Course Stabilization Milestone
+```
+
+may contain:
+
+```text
+Slice 1 — Lesson order
+Slice 2 — Section update validation
+Slice 3 — Course publication rules
+Slice 4 — Course verification
+```
+
+After the milestone:
+
+```text
+Review accumulated decisions
+        ↓
+Check target impact
+        ↓
+Update affected target documents
+```
+
+This is the main mechanism for preventing continuous target-document churn.
+
+---
+
+# 21. Target Document Update Policy
+
+Target documents are updated only when one of the following changes:
+
+### Domain Model
+
+A confirmed business concept or relationship changes.
+
+Update:
+
+```text
+target-domain-model.md
+```
+
+---
+
+### Aggregate Boundary
+
+An Aggregate Root, child boundary, or consistency boundary changes.
+
+Update:
+
+```text
+target-aggregate-boundaries.md
+```
+
+---
+
+### Module Boundary
+
+A business responsibility or internal module boundary changes.
+
+Update:
+
+```text
+target-module-boundaries.md
+```
+
+---
+
+### Architecture
+
+A dependency rule, layer responsibility, architectural style, or context boundary changes.
+
+Update:
+
+```text
+target-architecture.md
+```
+
+---
+
+### No Impact
+
+If the change is only:
+
+* a bug fix;
+* implementation detail;
+* test improvement;
+* adapter correction;
+* naming correction;
+* internal optimization;
+
+and does not alter the target model:
+
+```text
+Do not update target documents.
+```
+
+---
+
+# 22. Handling New Domain Concepts
+
+When implementation reveals a new concept, use this sequence:
+
+```text
+New Concept
+    ↓
+Does it represent a real business responsibility?
+    │
+    ├── No
+    │    ↓
+    │  Do not model it as a domain concept
+    │
+    └── Yes
+         ↓
+Does the current slice require it?
+         │
+         ├── No
+         │    ↓
+         │  Record as deferred
+         │
+         └── Yes
+              ↓
+          Domain Analysis
+              ↓
+          Business Decision
+              ↓
+          Implementation
+```
+
+The existence of a new class requirement does not automatically justify:
+
+```text
+new Aggregate
+new module
+new bounded context
+new repository
+new architecture layer
+```
+
+---
+
+# 23. Handling Unexpected Findings During Implementation
+
+Implementation is allowed to challenge the target model.
+
+For example:
+
+```text
+Target Model
+      ↓
+Implementation
+      ↓
+Concrete inconsistency discovered
+```
+
+The correct response is:
+
+```text
+Stop affected slice
+      ↓
+Document concrete finding
+      ↓
+Re-evaluate domain decision
+      ↓
+Update only affected model
+      ↓
+Continue implementation
+```
+
+Do not perform broad refactoring simply because one assumption was wrong.
+
+---
+
+# 24. Definition of Done for an Implementation Slice
+
+A slice is complete when:
+
+```text
+[ ] Business objective is clear
+
+[ ] Relevant domain decision is known
+
+[ ] Code change is limited to the required scope
+
+[ ] Domain invariants are preserved
+
+[ ] Dependency direction remains valid
+
+[ ] Tests / verification pass
+
+[ ] No unrelated refactoring was introduced
+
+[ ] Target documents were not changed unless target impact exists
+
+[ ] Commit represents the completed slice
+```
+
+---
+
+# 25. Definition of Done for a Milestone
+
+A milestone is complete when:
+
+```text
+[ ] All planned slices are implemented
+
+[ ] Relevant behavior is verified
+
+[ ] No known implementation blocker remains
+
+[ ] Domain decisions discovered during implementation are recorded
+
+[ ] Target impact has been reviewed
+
+[ ] Only affected target documents are synchronized
+
+[ ] Implementation plan is updated
+```
+
+---
+
+# 26. Current V3 Implementation Order
+
+Based on the current backend and established domain decisions, the implementation order is:
+
+```text
+1. Architectural concrete fixes
+        ↓
+2. Course stabilization
+        ↓
+3. Enrollment / Progress stabilization
+        ↓
+4. Learning Evidence stabilization
+        ↓
+5. Quiz / QuizAttempt implementation
+        ↓
+6. Assessment implementation
+        ↓
+7. Learner State implementation
+        ↓
+8. Learning Direction when required
+```
+
+This order is not a requirement to implement every concept in each phase completely.
+
+Each phase is divided into small slices.
+
+---
+
+# 27. Current Implementation Priorities
+
+The immediate priorities are:
+
+## Priority 1 — Concrete Architecture Issue
+
+```text
+MediaTypeResolver
+```
+
+Remove the confirmed framework dependency from the Domain.
+
+---
+
+## Priority 2 — Existing Course Defects
+
+Fix confirmed issues in:
+
+```text
+Lesson.changeOrderIndex
+Section.update
+```
+
+without redesigning the Course Aggregate.
+
+---
+
+## Priority 3 — Enrollment / Progress
+
+Verify the existing:
+
+```text
+Enrollment
+    └── Progress
+```
+
+flow and identify the actual runtime usage of:
+
+```text
+UserProgress
+```
+
+before deciding its final fate.
+
+---
+
+## Priority 4 — Quiz
+
+Implement only the established Quiz / QuizAttempt behavior required by V3.
+
+Do not generalize Quiz rules to Assessment unless explicitly decided.
+
+---
+
+## Priority 5 — Assessment
+
+Implement Assessment incrementally after the required business decisions are closed.
+
+---
+
+## Priority 6 — Learner State
+
+Implement:
+
+```text
+Competency
+Current Level
+```
+
+only after the required evidence-to-state rules are sufficiently defined.
+
+---
+
+# 28. What Is Explicitly Not an Immediate Implementation Target
+
+The following are not implementation targets merely because they appear in the broader domain model:
+
+```text
+XP
+Streak
+Achievement
+Recommendation
+Learning Plan
+Review Due
+Learning Goal
+Exam Preparation
+```
+
+They remain deferred until concrete V3 requirements require them.
+
+Similarly, unresolved structural questions such as:
+
+```text
+Assessment Aggregate boundary
+Competency Aggregate boundary
+Learning Activity Aggregate boundary
+Assessment ↔ Quiz structural relationship
+```
+
+remain deferred unless they block an implementation slice.
+
+---
+
+# 29. Final Implementation Model
+
+The overall development loop is:
+
+```text
+             DOMAIN
+                │
+                ▼
+       Business Decision
+                │
+                ▼
+       Implementation Slice
+                │
+                ▼
+             CODE
+                │
+                ▼
+          TEST / VERIFY
+                │
+                ▼
+             COMMIT
+                │
+                ▼
+           NEXT SLICE
+                │
+                ▼
+            MILESTONE
+                │
+                ▼
+         TARGET IMPACT AUDIT
+                │
+        ┌───────┴────────┐
+        │                │
+      No Impact       Impact
+        │                │
+        ↓                ↓
+   Keep target       Sync affected
+     unchanged       target docs
+        │                │
+        └───────┬────────┘
+                ↓
+          NEXT MILESTONE
+```
+
+The key principle is:
+
+> **Local domain decisions may evolve continuously; target architecture and boundary documents are synchronized at milestones when their accumulated impact is known.**
+
+The implementation process therefore avoids both extremes:
+
+```text
+Extreme 1:
+Never update target documents
+
+Extreme 2:
+Update every target document after every small decision
+```
+
+The intended approach is:
+
+```text
+Local First
+     ↓
+Implement
+     ↓
+Verify
+     ↓
+Milestone
+     ↓
+Target Synchronization
+```
+
+---
+
+# 30. Final Rule
+
+The project should always prefer:
+
+```text
+Small justified change
+```
+
+over:
+
+```text
+Large speculative refactor
+```
+
+and:
+
+```text
+Concrete evidence
+```
+
+over:
+
+```text
+Architectural preference
+```
+
+and:
+
+```text
+Explicit business decision
+```
+
+over:
+
+```text
+Assumption
+```
+
+The target architecture is a guide.
+
+The implementation is the validation mechanism.
+
+Neither should become an excuse to redesign parts of the system that have no concrete problem.
 
 ````
-1. discovery
-        ↓
-2. current state
-        ↓
-3. domain analysis
-        ↓
-4. architecture analysis
-        ↓
-5. current boundaries
-        ↓
-6. target boundaries
-        ↓
-7. target domain model
-        ↓
-8. domain decisions
-        ↓
-9. aggregate boundaries
-        ↓
-10. target architecture
-        ↓
-11. target module boundaries
-        ↓
-12. implementation plan

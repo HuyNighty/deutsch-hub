@@ -2,34 +2,46 @@
 
 ## 1. Purpose
 
-This document defines the target business module boundaries for DeutschHub V3 within the Modular Monolith.
+This document defines the target business module boundaries for the Learning Context in DeutschHub V3 within the Modular Monolith.
 
-The purpose is to make major business responsibilities explicit while preserving the architectural foundations established in `target-architecture.md`.
+The purpose of this document is to identify coherent business responsibilities and establish the boundaries between them.
 
-This document does not define:
+The module boundaries are derived from:
 
-- the final package structure;
+- the domain analysis;
+- established domain decisions;
+- the target domain model;
+- the target Aggregate boundaries;
+- and the current Learning implementation where it provides relevant evidence.
+
+This document defines business responsibility boundaries.
+
+It does not define:
+
+- final Java package structure;
 - database boundaries;
 - API boundaries;
 - Aggregate implementations;
 - deployment boundaries;
-- every future domain object.
+- infrastructure structure;
+- or every future domain object.
 
-Instead, it defines which business responsibilities belong together and where their boundaries should be maintained.
-
-The module boundaries are derived from the domain analysis and target domain model rather than from existing database tables or technical package structures.
+The target module model should guide implementation without allowing the current technical structure to dictate the target business model.
 
 ---
 
-## 2. Boundary Principles
+# 2. Module Boundary Principles
 
-The target module structure follows several principles.
-
-### 2.1 Business Responsibility Defines Module Boundaries
+## 2.1 Business Responsibility Defines a Module
 
 A module represents a coherent business responsibility.
 
-A module should not exist merely because a set of classes shares a technical type.
+A module should not exist merely because a set of classes:
+
+- shares a package;
+- uses the same database tables;
+- belongs to the same technical layer;
+- or has similar implementation details.
 
 For example:
 
@@ -40,23 +52,23 @@ Lesson
 LessonItem
 ````
 
-belong to Learning Structure because they collectively represent the organization of learning content.
+belong to the Learning Structure responsibility because together they represent the organization of learning content.
 
 ---
 
-### 2.2 Module Does Not Equal Aggregate
+## 2.2 Module Does Not Equal Aggregate
 
-A business module may contain multiple Aggregates.
+A module may contain multiple Aggregates.
 
 For example:
 
 ```text
 Learning Evidence
 ├── LessonCompletion
-└── QuizAttempt
+└── Assessment Evidence
 ```
 
-The existence of a shared business responsibility does not require these concepts to belong to the same Aggregate.
+does not imply that all Evidence concepts belong to one Aggregate.
 
 Similarly:
 
@@ -65,33 +77,53 @@ Learning Structure
 └── Course Aggregate
 ```
 
-does not imply that every future learning-structure concept must become part of the Course Aggregate.
+does not mean that the module and Aggregate are the same boundary.
+
+Therefore:
+
+```text
+Module
+    ≠
+Aggregate
+```
 
 ---
 
-### 2.3 Module Does Not Equal Bounded Context
+## 2.3 Module Does Not Equal Bounded Context
 
-The business responsibilities defined in this document are internal boundaries within the Learning domain.
+The target modules are internal business boundaries within the broader Learning Context.
 
 They do not automatically represent separate Bounded Contexts.
 
-The target Learning Context remains:
+The current target is:
 
 ```text
-Learning
+Learning Context
+    ├── Learning Structure
+    ├── Enrollment
+    ├── Learning Activities
+    ├── Learning Evidence
+    ├── Learner State
+    └── Learning Direction
 ```
 
-with multiple internal business responsibilities.
+A module should become a separate Bounded Context only when its:
 
-A responsibility should become a separate Bounded Context only when its language, model, ownership, and interaction boundaries justify such separation.
+* domain language;
+* ownership;
+* business responsibility;
+* model;
+* and integration requirements
 
-No such decision is made by this document.
+justify that separation.
+
+No such decision is made here.
 
 ---
 
-### 2.4 Module Does Not Equal Database Structure
+## 2.4 Module Does Not Equal Database Structure
 
-Database tables and foreign-key relationships must not determine module boundaries automatically.
+Database tables and relationships do not determine module boundaries automatically.
 
 For example:
 
@@ -99,17 +131,48 @@ For example:
 lesson_completions
 ```
 
-does not imply that LessonCompletion must become an independent technical module.
+does not automatically imply:
 
-Likewise, the fact that Enrollment references Course does not imply that Course and Enrollment belong to the same business boundary.
+```text
+LessonCompletion Module
+```
 
-Business responsibility and consistency requirements remain the primary criteria.
+Likewise:
+
+```text
+Enrollment → Course
+```
+
+does not imply that Course and Enrollment must belong to the same module.
+
+Business responsibility remains the primary criterion.
+
+---
+
+## 2.5 Module Does Not Require One Aggregate
+
+A module may contain:
+
+* one Aggregate;
+* multiple Aggregates;
+* independent Entities;
+* Value Objects;
+* domain services;
+* domain concepts whose final Aggregate boundary is still OPEN.
+
+Therefore:
+
+```text
+One Module
+    ≠
+One Aggregate
+```
 
 ---
 
 # 3. High-Level Target Structure
 
-The Learning Context is organized around the following business responsibilities:
+The Learning Context is organized around six major business responsibilities:
 
 ```text
 Learning
@@ -122,21 +185,21 @@ Learning
 └── Learning Direction
 ```
 
-These responsibilities form the target internal boundary model of Learning.
+These six responsibilities form the target internal business boundary model of Learning.
 
-They should not be interpreted as six independent Bounded Contexts.
+They are not automatically six Bounded Contexts.
+
+They are also not required to map one-to-one to Java modules.
 
 ---
 
-# 4. Learning Structure
+# 4. Learning Structure Module
 
 ## 4.1 Responsibility
 
-Learning Structure is responsible for representing what can be learned and how learning content is organized.
+Learning Structure is responsible for defining what can be learned and how learning content is organized.
 
-It defines the structural organization through which learning resources are presented to learners.
-
-The currently established structure is:
+The established structure is:
 
 ```text
 Course
@@ -145,78 +208,127 @@ Course
         └── LessonItem
 ```
 
+The module therefore owns the business responsibility for:
+
+* Courses;
+* Sections;
+* Lessons;
+* Lesson Items;
+* organization of learning content;
+* content-level classification associated with learning structures.
+
 ---
 
-## 4.2 Current Domain Representation
+## 4.2 Current Domain Foundation
 
-The current Course Aggregate is located at:
+The current implementation provides:
 
 ```text
 src/main/java/com/deutschhub/domain/learning/model/aggregate/Course.java
-```
 
-with supporting entities:
-
-```text
 src/main/java/com/deutschhub/domain/learning/model/entity/Section.java
+
 src/main/java/com/deutschhub/domain/learning/model/entity/Lesson.java
+
 src/main/java/com/deutschhub/domain/learning/model/entity/LessonItem.java
 ```
 
-The current implementation therefore provides a concrete foundation for the Learning Structure responsibility.
-
----
-
-## 4.3 Aggregate Boundary
-
-The established Course Aggregate remains:
+The established Aggregate boundary is:
 
 ```text
-Course
-└── Section
-    └── Lesson
-        └── LessonItem
+Course Aggregate
+└── Course
+    └── Section
+        └── Lesson
+            └── LessonItem
 ```
 
-This boundary should not be split without a concrete business consistency requirement.
+---
 
-The module boundary therefore contains the Course Aggregate but is not defined exclusively by the Course Aggregate.
+## 4.3 Responsibility Boundary
+
+Learning Structure answers:
+
+```text
+What can be learned?
+How is it organized?
+```
+
+It does not own:
+
+```text
+Who is participating?
+What did the learner do?
+What is the learner's current capability?
+What should the learner do next?
+```
+
+Those responsibilities belong to other modules.
 
 ---
 
-## 4.4 Future Scope
+## 4.4 Course Level
 
-Domain discovery indicates that Learning Structure may eventually include additional structures such as:
+Course Level belongs to Learning Structure because it describes the level associated with the learning content.
 
-* vocabulary learning structures;
-* grammar learning structures;
-* language skill structures;
-* levels;
-* topics;
-* specialized learning areas.
+The existing representation is:
 
-These concepts are target capabilities or areas of responsibility.
+```text
+src/main/java/com/deutschhub/domain/learning/model/valueobject/CEFRLevel.java
+```
 
-They are not automatically separate Aggregates or modules.
+However:
+
+```text
+Course Level
+    ≠
+Learner Current Level
+    ≠
+Certification Level
+```
+
+Learning Structure must not become responsible for maintaining learner Current Level.
 
 ---
 
-# 5. Enrollment
+## 4.5 Module Boundary
+
+The Learning Structure module contains the Course-related domain model.
+
+The module boundary is:
+
+```text
+Learning Structure
+└── Course Aggregate
+    ├── Section
+    ├── Lesson
+    └── LessonItem
+```
+
+Additional future learning structures may be added when concrete business requirements require them.
+
+They do not automatically require new modules.
+
+---
+
+# 5. Enrollment Module
 
 ## 5.1 Responsibility
 
-Enrollment is responsible for representing a learner's participation in a learning structure, particularly course participation.
+Enrollment is responsible for representing learner participation in a specific learning structure.
 
-Its responsibility includes:
+For the current product, this primarily means Course enrollment.
+
+The module owns:
 
 * enrollment lifecycle;
 * participation status;
-* course-scoped progress;
-* completion state associated with enrollment.
+* Course-scoped Progress;
+* enrollment completion state.
 
 ---
 
-## 5.2 Current Domain Representation
+## 5.2 Current Domain Foundation
 
 The current Aggregate Root is:
 
@@ -224,44 +336,82 @@ The current Aggregate Root is:
 src/main/java/com/deutschhub/domain/learning/model/aggregate/Enrollment.java
 ```
 
-The Aggregate contains:
+Progress is:
+
+```text
+src/main/java/com/deutschhub/domain/learning/model/valueobject/Progress.java
+```
+
+The established Aggregate boundary is:
+
+```text
+Enrollment Aggregate
+└── Enrollment
+    └── Progress
+```
+
+---
+
+## 5.3 Responsibility Boundary
+
+Enrollment answers:
+
+```text
+Who is participating in what?
+What is this learner's progress within that enrollment?
+```
+
+It does not own:
+
+```text
+Course structure
+Learner Competency
+Learner Current Level
+Global learner history
+Learning Direction
+```
+
+---
+
+## 5.4 Relationship with Learning Structure
+
+The conceptual relationship is:
+
+```text
+Learning Structure
+        ↓
+     Course
+        ↑
+        │
+    Enrollment
+```
+
+Course and Enrollment remain separate business responsibilities.
+
+Therefore:
+
+```text
+Learning Structure
+    ≠
+Enrollment
+```
+
+even though Enrollment refers to a Course.
+
+---
+
+## 5.5 Progress Boundary
+
+Course-scoped Progress belongs to Enrollment.
+
+Therefore:
 
 ```text
 Enrollment
 └── Progress
 ```
 
-where `Progress` is represented as a Value Object.
-
----
-
-## 5.3 Boundary
-
-Enrollment is intentionally separated from Learning Structure.
-
-The distinction is:
-
-```text
-Learning Structure
-    = What can be learned?
-
-Enrollment
-    = Who is participating in what?
-```
-
-Course and Enrollment are related, but their business responsibilities are different.
-
-The fact that Enrollment references a Course does not make Course and Enrollment a single Aggregate or module.
-
----
-
-## 5.4 Progress
-
-Course-scoped Progress belongs to the Enrollment responsibility.
-
-It should not be interpreted as the complete state of the learner.
-
-The target distinction is:
+Progress must not be treated as the complete state of the learner.
 
 ```text
 Enrollment.Progress
@@ -271,89 +421,136 @@ Learner State
 
 ---
 
-# 6. Learning Activities
+# 6. Learning Activities Module
 
 ## 6.1 Responsibility
 
-Learning Activities represent actions or learning interactions performed by a learner.
+Learning Activities represent learner-facing actions or interactions through which learning takes place.
 
-They exist for purposes such as:
+Examples include:
 
-* learning;
-* practicing;
-* reviewing;
-* listening;
-* speaking;
-* reading;
-* writing;
-* demonstrating knowledge or skills.
+* Practice;
+* Review;
+* Listening;
+* Speaking;
+* Reading;
+* Writing;
+* Assessment-related activities.
+
+The module answers:
+
+```text
+What does the learner do?
+```
 
 ---
 
-## 6.2 Distinction from Learning Structure
+## 6.2 Relationship with Learning Structure
 
-The target architecture explicitly distinguishes:
+Learning Structure defines what can be learned.
+
+Learning Activity represents what the learner does.
+
+Conceptually:
 
 ```text
-LessonItem
-≠
+Learning Structure
+        ↓
 Learning Activity
 ```
 
-A LessonItem primarily represents content or a learning resource within a Lesson.
-
-A Learning Activity represents what the learner does with or through that learning resource.
-
-For example:
-
-```text
-LessonItem
-    = vocabulary exercise content
-
-Learning Activity
-    = learner performs the vocabulary exercise
-```
-
-The exact implementation relationship depends on the future domain model.
+However, this relationship does not imply that Learning Activity is owned by the Course Aggregate.
 
 ---
 
-## 6.3 Current State
+## 6.3 LessonItem Is Not Automatically Learning Activity
 
-The current Learning implementation does not contain a complete generic Learning Activity model.
+The current implementation contains:
 
-Existing concepts include:
+```text
+src/main/java/com/deutschhub/domain/learning/model/entity/LessonItem.java
+```
+
+with types such as:
+
+```text
+TEXT
+MEDIA
+QUIZ
+```
+
+LessonItem is part of the Course Aggregate.
+
+It should not automatically be interpreted as the generic representation of Learning Activity.
+
+Therefore:
 
 ```text
 LessonItem
+    ≠
+Generic Learning Activity
+```
+
+The exact relationship remains open.
+
+---
+
+## 6.4 Assessment Relationship
+
+Assessment is a broader domain concept used to structure evaluation.
+
+An Assessment may involve multiple Components and Tasks.
+
+Conceptually:
+
+```text
+Learning Activity
+        ↓
+Assessment-related Activity
+        ↓
+Assessment
+```
+
+However, the exact relationship between:
+
+```text
+Learning Activity
+Assessment
 Quiz
-QuizAttempt
-CompleteLessonService
+Task
 ```
 
-These provide partial foundations but do not establish a generic Learning Activity Aggregate.
+is not fully established.
 
-Therefore, the target boundary is established at the business-responsibility level while its internal domain model remains open.
-
----
-
-## 6.4 Aggregate Decision
-
-No generic `LearningActivity` Aggregate is established.
-
-Different activity types may have different lifecycles and consistency requirements.
-
-The implementation should therefore avoid creating a generic Aggregate merely to unify activity terminology.
+No generic Activity Aggregate is introduced at this stage.
 
 ---
 
-# 7. Learning Evidence
+## 6.5 Module Boundary
+
+**Status: Confirmed as Business Responsibility / Internal Structure OPEN**
+
+The Learning Activities module exists as a target responsibility.
+
+However, its internal Aggregate structure remains OPEN / DEFERRED.
+
+No generic:
+
+```text
+LearningActivity Aggregate
+```
+
+is introduced merely to unify different activity types.
+
+---
+
+# 7. Learning Evidence Module
 
 ## 7.1 Responsibility
 
-Learning Evidence represents observable outcomes produced by learner activities or assessment interactions.
+Learning Evidence represents observable historical facts produced by learner activities and assessment interactions.
 
-The central question answered by Evidence is:
+The module answers:
 
 ```text
 What happened?
@@ -364,23 +561,40 @@ Examples include:
 ```text
 LessonCompletion
 QuizAttempt
+QuestionResult
+ComponentResult
+AssessmentResult
 ```
+
+These concepts do not necessarily share one Aggregate.
 
 ---
 
 ## 7.2 LessonCompletion
 
-The current entity is:
+The current implementation is:
 
 ```text
 src/main/java/com/deutschhub/domain/learning/model/entity/LessonCompletion.java
 ```
 
-It represents observable evidence that a learner completed a specific lesson.
+LessonCompletion represents evidence that a learner completed a lesson.
 
-It is treated as an independent Evidence entity rather than a child entity of Enrollment.
+The target classification is:
 
-The relationship is:
+```text
+LessonCompletion
+    → Learning Evidence
+    → Independent Evidence Entity
+```
+
+It is not an internal entity of Enrollment.
+
+---
+
+## 7.3 LessonCompletion and Progress
+
+The conceptual flow is:
 
 ```text
 LessonCompletion
@@ -392,560 +606,760 @@ contributes to
 Enrollment.Progress
 ```
 
----
-
-## 7.3 Assessment Evidence
-
-The current assessment model includes:
+This does not imply:
 
 ```text
-Quiz
-QuizAttempt
+Enrollment
+└── LessonCompletion
 ```
 
-`Quiz` represents the assessment definition.
-
-`QuizAttempt` represents a learner's attempt and may serve as assessment-derived Learning Evidence.
-
-The target relationship is:
-
-```text
-Quiz
-    = assessment definition
-
-QuizAttempt
-    = learner attempt
-    = assessment evidence
-```
-
-Quiz and QuizAttempt remain distinct Aggregates.
+The two concepts remain in different business boundaries.
 
 ---
 
-## 7.4 Evidence Does Not Equal Learner State
+## 7.4 Assessment Evidence
 
-Learning Evidence must remain distinct from Learner State.
+Assessment produces historical information through an Assessment Attempt.
+
+The conceptual structure is:
 
 ```text
-Evidence
-    = observable event or outcome
-
-Learner State
-    = current representation of what is known about the learner
+Assessment
+    ↓
+Assessment Attempt
+    ├── Component Result(s)
+    └── Assessment Result
 ```
+
+For the existing Quiz model:
+
+```text
+Quiz
+    ↓
+QuizAttempt
+    ├── UserAnswer(s)
+    └── QuestionResult(s)
+```
+
+QuizAttempt may serve as Learning Evidence.
+
+---
+
+## 7.5 Historical Nature of Evidence
+
+Evidence represents historical facts.
+
+Examples:
+
+```text
+LessonCompletion
+QuestionResult
+ComponentResult
+AssessmentResult
+```
+
+should preserve what happened at the relevant point in time.
+
+Therefore:
+
+```text
+Historical Evidence
+    ≠
+Current Learner State
+```
+
+A later assessment or learning event should not rewrite the historical meaning of an earlier event.
+
+---
+
+## 7.6 Evidence and Learner State
+
+Evidence may contribute to Learner State.
 
 Conceptually:
 
 ```text
-Learning Activity
-        ↓
 Learning Evidence
+        ↓
+Interpretation / Domain Rule
         ↓
 Learner State
 ```
 
-The exact rules for transforming Evidence into Learner State remain open.
+However, not every Evidence record automatically changes Learner State.
+
+For example:
+
+```text
+Ordinary Quiz Result
+    ≠
+Automatic Current Level update
+```
+
+A Current Level update requires the appropriate Level Assessment rule.
 
 ---
 
-# 8. Learner State
+## 7.7 Module Boundary
+
+**Status: Confirmed Business Responsibility**
+
+Learning Evidence is an established business responsibility.
+
+Its concepts may have different Aggregate boundaries.
+
+The module therefore does not require:
+
+```text
+LearningEvidence Aggregate
+```
+
+as a single Aggregate Root.
+
+---
+
+# 8. Assessment Capability
 
 ## 8.1 Responsibility
 
-Learner State represents what the system knows about the learner's learning condition, progress beyond a specific course, and demonstrated capabilities.
+Assessment is a structured evaluation capability within the Learning Context.
 
-The business question is:
+Assessment is broader than Quiz.
+
+It may evaluate one or more Skill Dimensions, including:
+
+```text
+Listening
+Speaking
+Reading
+Writing
+Grammar
+Vocabulary
+```
+
+An Assessment does not have to evaluate all dimensions.
+
+---
+
+## 8.2 Assessment Structure
+
+The target conceptual structure is:
+
+```text
+Assessment
+    │
+    ├── Component
+    │      └── Task(s)
+    │
+    ├── Completion Policy
+    │
+    ├── Time Limit
+    │
+    └── Attempt Rules
+```
+
+A Component belongs to one Skill Dimension.
+
+A Component may contain multiple Tasks.
+
+---
+
+## 8.3 Assessment and Learning Activities
+
+Assessment is related to Learning Activities but is not automatically identical to them.
+
+The exact relationship remains open:
+
+```text
+Learning Activity
+        ↕
+Assessment
+        ↕
+Quiz
+```
+
+The current target model does not assert:
+
+```text
+Assessment
+    =
+Learning Activity
+```
+
+or:
+
+```text
+Assessment
+    =
+Quiz
+```
+
+or:
+
+```text
+Quiz
+    =
+Assessment Task
+```
+
+---
+
+## 8.4 Assessment and Evidence
+
+Assessment execution can produce historical evidence.
+
+Conceptually:
+
+```text
+Assessment
+    ↓
+Assessment Attempt
+    ↓
+Component Result(s)
+    ↓
+Assessment Result
+    ↓
+Learning Evidence
+```
+
+The Assessment capability therefore interacts strongly with the Learning Evidence module.
+
+---
+
+## 8.5 Assessment and Learner State
+
+A Level Assessment may establish or update Competency and Current Level when its required result is valid.
+
+Conceptually:
+
+```text
+Level Assessment
+        ↓
+Passed Assessment Result
+        ↓
+Competency
+        ↓
+Current Level
+```
+
+This relationship does not apply automatically to every Assessment.
+
+Ordinary practice, Course Quiz, or external quiz may support learning without directly establishing Current Level.
+
+---
+
+## 8.6 Module Placement
+
+Assessment remains within the Learning Context.
+
+It is not currently established as a separate Bounded Context.
+
+Its final module placement relative to:
+
+```text
+Learning Activities
+Learning Evidence
+Quiz
+Learner State
+```
+
+is an internal module design decision that must remain consistent with the established business responsibilities.
+
+---
+
+# 9. Learner State Module
+
+## 9.1 Responsibility
+
+Learner State represents the current state that DeutschHub establishes about a learner.
+
+The module answers:
 
 ```text
 What do we currently know about this learner?
 ```
 
-Potential concepts include:
+The responsibility includes learner-centered concepts such as:
 
 ```text
 Competency
 Current Level
-Vocabulary State
-Grammar State
-Skill State
-XP
-Streak
-Achievement
-Statistics
 ```
 
-These concepts are not required to share one Aggregate.
+Other concepts may be added later when concrete requirements justify them.
 
 ---
 
-## 8.2 Relationship with Enrollment
+## 9.2 Learner State Is Not One Aggregate
 
-Learner State is intentionally separated from Enrollment.
+Learner State is a business responsibility.
+
+It is not automatically one Aggregate Root.
+
+Different learner-state concepts may have different:
+
+* identities;
+* lifecycles;
+* invariants;
+* update rules;
+* consistency requirements.
+
+Therefore:
+
+```text
+Learner State
+    ≠
+Single Aggregate
+```
+
+---
+
+## 9.3 Competency
+
+Competency represents demonstrated capability within a defined learning domain.
+
+The current target identity is:
+
+```text
+User
++
+Competency Scope
+```
+
+For a given User and Competency Scope:
+
+```text
+At most one Competency
+```
+
+exists.
+
+Competency has a lifecycle:
+
+```text
+UNASSESSED
+    ↓
+ASSESSED
+```
+
+with:
+
+```text
+Current Level = UNKNOWN
+```
+
+before a valid Level Assessment establishes a level.
+
+---
+
+## 9.4 Competency Boundary
+
+Competency is a confirmed Learner State domain concept.
+
+However:
+
+```text
+Competency
+    → Aggregate boundary OPEN / DEFERRED
+```
+
+No independent Competency Aggregate is introduced until its consistency requirements justify one.
+
+---
+
+## 9.5 Current Level
+
+Current Level represents the CEFR proficiency classification established for a learner's Competency.
+
+Conceptually:
+
+```text
+Competency
+    └── Current Level
+```
+
+Current Level has no independent identity.
+
+Therefore:
+
+```text
+Current Level
+    ≠
+Independent Aggregate
+```
+
+and:
+
+```text
+Current Level
+    ≠
+Independent Entity
+```
+
+The existing:
+
+```text
+src/main/java/com/deutschhub/domain/learning/model/valueobject/CEFRLevel.java
+```
+
+provides the CEFR classification baseline:
+
+```text
+A1
+A2
+B1
+B2
+C1
+C2
+```
+
+---
+
+## 9.6 Current Level Rules
+
+A valid passed Level Assessment may establish Current Level.
+
+The learner does not need to progress sequentially through every CEFR level.
+
+For example:
+
+```text
+UNKNOWN
+    ↓
+B2
+```
+
+is valid when supported by a valid passed Level Assessment.
+
+A lower-level passed Assessment does not reduce an established higher level.
+
+A failed Assessment does not automatically downgrade Current Level.
+
+---
+
+## 9.7 Learner State and Enrollment
+
+Learner State is broader than Course-scoped Enrollment Progress.
 
 ```text
 Enrollment
-    = participation in a specific learning structure
+    = participation in a specific Course
 
 Learner State
-    = broader state of the learner across learning experiences
+    = learner-level state across learning experiences
 ```
 
 Therefore:
 
 ```text
-Course Progress
+Enrollment.Progress
     ≠
-Learner State
+Complete Learner State
 ```
 
 ---
 
-## 8.3 UserProgress
+# 10. Learning Direction Module
 
-The current:
-
-```text
-src/main/java/com/deutschhub/domain/learning/model/aggregate/UserProgress.java
-```
-
-does not represent the target Learner State boundary.
-
-Its current scope overlaps with:
-
-```text
-Enrollment
-Progress
-```
-
-and is strongly associated with a specific course and enrollment.
-
-The target architecture therefore does not use `UserProgress` as the canonical Learner State model.
-
-Future implementation should introduce learner-state concepts based on explicit domain decisions rather than extending the current `UserProgress` model indefinitely.
-
----
-
-## 8.4 Competency
-
-Competency represents demonstrated capability or knowledge.
-
-It is intentionally distinct from:
-
-```text
-Progress
-Evidence
-Assessment Score
-```
-
-Conceptually:
-
-```text
-Evidence
-    ↓
-demonstrated capability
-    ↓
-Competency
-```
-
-The exact Aggregate boundary of Competency remains open.
-
----
-
-## 8.5 Current Level
-
-Current Level represents the learner's current language level.
-
-It is distinct from:
-
-```text
-Course Level
-Certification Level
-```
-
-The target model does not assume that:
-
-```text
-Course Completion
-        =
-Current Level
-```
-
-or that:
-
-```text
-Assessment Score
-        =
-Current Level
-```
-
-without explicit domain rules.
-
-The existing `CEFRLevel` value object provides level classification, but the complete learner-level state model remains open.
-
----
-
-# 9. Learning Direction
-
-## 9.1 Responsibility
+## 10.1 Responsibility
 
 Learning Direction represents what the learner should do next.
 
-The business question is:
+The module answers:
 
 ```text
 What should this learner do next?
 ```
 
-Potential capabilities include:
-
-```text
-Daily Learning
-Learning Plans
-Recommendations
-Review Due
-Weakness-oriented Practice
-Learning Goals
-Exam Preparation
-```
-
----
-
-## 9.2 Relationship with Learner State
-
-Learning Direction consumes information about Learner State.
-
-The conceptual relationship is:
-
-```text
-Learner State
-      ↓
-Learning Direction
-      ↓
-Next Learning Activity
-```
-
-Learning Direction does not own the learner's state.
-
----
-
-## 9.3 Persistence and Aggregate Boundary
-
-No generic `LearningDirection` Aggregate is established.
-
-Different capabilities may have different business semantics.
-
-For example:
+Potential concepts include:
 
 ```text
 Learning Plan
 Recommendation
 Review Due
 Learning Goal
+Exam Preparation
 ```
-
-may eventually require different models or persistence strategies.
-
-The target module boundary is therefore established without prematurely deciding the internal Aggregate structure.
 
 ---
 
-# 10. Assessment Within Learning
+## 10.2 Relationship with Learner State
 
-Assessment is an important Learning capability but is not currently established as a separate Bounded Context.
+Learning Direction uses information about Learner State.
 
-The current domain model contains:
-
-```text
-Quiz
-QuizAttempt
-```
-
-with the following distinction:
+Conceptually:
 
 ```text
-Quiz
-    = defines an assessment
-
-QuizAttempt
-    = represents a learner's assessment attempt
-```
-
-Assessment interacts strongly with Learning Evidence and Learner State:
-
-```text
-Quiz
-   ↓
-QuizAttempt
-   ↓
-Learning Evidence
-   ↓
 Learner State
+        ↓
+Learning Direction
+        ↓
+Next Learning Activity
 ```
 
-The target architecture therefore keeps Assessment within the broader Learning boundary unless future business requirements justify a separate boundary.
+Learning Direction does not own Learner State.
 
 ---
 
-# 11. Certification Within Learning
+## 10.3 Boundary Status
 
-Certification is conceptually distinct from learner state.
+**Status: Confirmed Business Responsibility / Internal Structure OPEN**
 
-Certification may eventually represent:
+The responsibility is recognized in the target Learning model.
+
+However, the exact internal Aggregates and persisted concepts remain OPEN / DEFERRED.
+
+No generic:
 
 ```text
-certificates
-certification requirements
-certification status
-certification levels
+LearningDirection Aggregate
 ```
 
-The current implementation contains domain concepts related to certification, but the complete application and persistence capability is not established.
+is introduced.
+
+---
+
+# 11. UserProgress
+
+## 11.1 Current Implementation
+
+The current implementation contains:
+
+```text
+src/main/java/com/deutschhub/domain/learning/model/aggregate/UserProgress.java
+```
+
+The current model overlaps with Course-scoped Progress represented by:
+
+```text
+Enrollment
+└── Progress
+```
+
+---
+
+## 11.2 Target Decision
+
+`UserProgress` is not retained as the canonical representation of Learner State.
+
+The target responsibilities are:
+
+```text
+Enrollment
+└── Progress
+    → Course-scoped progress
+
+LessonCompletion
+    → Learning Evidence
+
+QuizAttempt
+    → Assessment execution
+    → may serve as Learning Evidence
+
+Competency
+    → Demonstrated capability
+
+Current Level
+    → Established CEFR proficiency state
+```
 
 Therefore:
 
-* Certification remains a recognized Learning capability.
-* It is not currently established as an independent Bounded Context.
-* It must not be used as the definition of Learner Current Level.
-* Its future module boundary remains open until its business rules are sufficiently understood.
-
----
-
-# 12. Relationships Between Learning Modules
-
-The target business relationships can be represented as:
-
 ```text
-                    Learning Structure
-                           │
-                           ↓
-                      Enrollment
-                           │
-                           ↓
-                   Learning Activities
-                           │
-                           ↓
-                    Learning Evidence
-                           │
-                           ↓
-                     Learner State
-                           │
-                           ↓
-                   Learning Direction
-                           │
-                           ↓
-                Next Learning Activity
+UserProgress
+    ≠
+Target Learner State
 ```
 
-This represents a business flow, not a direct technical dependency graph.
+---
 
-The technical dependency direction remains governed by `target-architecture.md`.
+# 12. Module Interaction Model
+
+The target business flow is:
+
+```text
+Learning Structure
+        │
+        ↓
+    Enrollment
+        │
+        ↓
+Learning Activities
+        │
+        ↓
+ Learning Evidence
+        │
+        ↓
+   Learner State
+        │
+        ↓
+ Learning Direction
+        │
+        ↓
+Next Learning Activity
+```
+
+This represents a business relationship rather than a strict technical dependency graph.
+
+Not every flow must pass through every module.
+
+For example:
+
+```text
+Learning Structure
+    → Course
+
+Enrollment
+    → Course participation
+
+Lesson Activity
+    → LessonCompletion
+
+Assessment
+    → Assessment Result
+
+Level Assessment
+    → Competency
+    → Current Level
+```
 
 ---
 
-# 13. Module Interaction Principles
+# 13. Module Interaction Rules
 
-## 13.1 Structure Does Not Own Learner State
+## 13.1 Learning Structure Does Not Own Learner State
 
-Learning Structure defines what can be learned.
+Learning Structure owns the organization of learning content.
 
 It does not own:
 
 ```text
 Competency
 Current Level
-Streak
 XP
+Streak
 ```
 
 ---
 
 ## 13.2 Enrollment Does Not Own Global Learner State
 
-Enrollment owns participation in a particular learning structure and its associated course-scoped progress.
+Enrollment owns Course participation and Course-scoped Progress.
 
 It does not become the owner of the learner's complete state.
 
 ---
 
-## 13.3 Evidence Does Not Automatically Own State
+## 13.3 Learning Evidence Does Not Automatically Own Learner State
 
-Evidence records what happened.
+Evidence records historical facts.
 
-It may contribute to learner state, but Evidence and Learner State remain separate responsibilities.
+Learner State represents the current state established by the system.
 
----
-
-## 13.4 Direction Does Not Own State
-
-Learning Direction uses learner information to determine appropriate next actions.
-
-It does not become the canonical storage location for learner state.
-
----
-
-## 13.5 Activity Does Not Automatically Equal Evidence
-
-An activity represents an interaction.
-
-Evidence represents an observable outcome.
-
-One activity may produce evidence, but the concepts should not be collapsed by default.
-
----
-
-# 14. Target Module Model
-
-The current target model can therefore be summarized as:
+Therefore:
 
 ```text
-Learning Context
-│
-├── Learning Structure
-│   └── Course Aggregate
-│
-├── Enrollment
-│   └── Enrollment Aggregate
-│       └── Progress
-│
-├── Learning Activities
-│
-├── Learning Evidence
-│   ├── LessonCompletion
-│   └── Assessment Evidence
-│       └── QuizAttempt
-│
-├── Learner State
-│   ├── Competency
-│   ├── Current Level
-│   ├── Vocabulary State
-│   ├── Grammar State
-│   └── Skill State
-│
-└── Learning Direction
-    ├── Learning Plan
-    ├── Review
-    ├── Recommendation
-    ├── Learning Goal
-    └── Exam Preparation
+Evidence
+    ≠
+Learner State
 ```
 
-This is a **business boundary model**, not a final package tree.
-
 ---
 
-# 15. Confirmed Module Boundaries
+## 13.4 Assessment Does Not Automatically Establish Competency
 
-The following boundaries are established at the business-responsibility level:
+Only the appropriate Level Assessment rules may establish or update Competency and Current Level.
 
-| Boundary            | Responsibility                                   | Status                             |
-| ------------------- | ------------------------------------------------ | ---------------------------------- |
-| Learning Structure  | What can be learned and how it is organized      | Confirmed                          |
-| Enrollment          | Learner participation in learning structures     | Confirmed                          |
-| Learning Activities | Learner interactions and learning actions        | Confirmed as target responsibility |
-| Learning Evidence   | Observable learning outcomes                     | Confirmed                          |
-| Learner State       | What is known about learner state and capability | Confirmed as target responsibility |
-| Learning Direction  | What the learner should do next                  | Confirmed as target responsibility |
-
-These boundaries do not imply independent Bounded Contexts.
-
----
-
-# 16. Open Internal Modeling Decisions
-
-The following concepts belong to established target responsibilities but do not yet have final internal boundaries.
-
-### Learning Activities
-
-* Generic activity model or activity-specific models.
-* Persistence requirements.
-* Relationship between activity and learning content.
-* Activity lifecycle.
-
-### Learner State
-
-* Competency Aggregate boundary.
-* Current Level Aggregate boundary.
-* Vocabulary State model.
-* Grammar State model.
-* Skill State model.
-* Persisted versus derived state.
-* XP, Streak, Achievement, and Statistics models.
-
-### Learning Direction
-
-* Learning Plan model.
-* Recommendation model.
-* Review Due model.
-* Learning Goal model.
-* Exam Preparation model.
-* Persisted versus derived direction.
-
-### Evidence
-
-* Evidence aggregation rules.
-* Evidence-to-Competency rules.
-* Evidence-to-Level rules.
-* Additional evidence types.
-
-These decisions should be made when the relevant business rules are sufficiently understood.
-
----
-
-# 17. Relationship to Existing Architecture
-
-The target module boundaries do not require an immediate replacement of the existing:
+Therefore:
 
 ```text
-Domain
-Application
-Infrastructure
+Quiz Result
+    ≠
+Automatic Current Level
 ```
 
-structure.
+---
 
-The architectural layers remain governed by Hexagonal principles.
+## 13.5 Learning Direction Does Not Own Learner State
 
-Business boundaries should become increasingly visible within the existing modular structure as implementation evolves.
+Learning Direction consumes learner information to determine or recommend next actions.
 
-The desired relationship is:
+It does not become the canonical source of Learner State.
+
+---
+
+# 14. Module and Aggregate Relationship
+
+The target relationship between Modules and Aggregates is:
 
 ```text
-Business Module
-        +
-Hexagonal Layers
+Learning Structure
+    └── Course Aggregate
+
+Enrollment
+    └── Enrollment Aggregate
+
+Learning Activities
+    └── Aggregate boundaries OPEN
+
+Learning Evidence
+    ├── LessonCompletion
+    └── Assessment Evidence
+        └── Aggregate boundaries depend on source concept
+
+Learner State
+    ├── Competency
+    │    └── Aggregate boundary OPEN / DEFERRED
+    └── Current Level
+         └── state/value of Competency
+
+Learning Direction
+    └── Aggregate boundaries OPEN / DEFERRED
 ```
 
-rather than choosing one over the other.
+The existing Quiz model remains:
+
+```text
+Quiz Module Responsibility
+    └── Quiz Aggregate
+        └── QuizRevision
+            └── Question
+                └── Answer
+```
+
+with:
+
+```text
+QuizAttempt
+    → separate Aggregate Root
+    → may serve as Learning Evidence
+```
+
+Assessment is broader than Quiz and does not automatically inherit the Quiz Aggregate boundary.
 
 ---
 
-# 18. Implementation Guidance
+# 15. Target Module Classification
 
-When implementation begins, module boundaries should be introduced incrementally.
+| Business Responsibility | Main Concepts                                                                    | Aggregate Status                                            | Module Status            |
+| ----------------------- | -------------------------------------------------------------------------------- | ----------------------------------------------------------- | ------------------------ |
+| Learning Structure      | Course, Section, Lesson, LessonItem                                              | Course Aggregate confirmed                                  | Confirmed                |
+| Enrollment              | Enrollment, Progress                                                             | Enrollment Aggregate confirmed                              | Confirmed                |
+| Learning Activities     | Practice, Review, Activity-related concepts                                      | OPEN / DEFERRED                                             | Confirmed responsibility |
+| Learning Evidence       | LessonCompletion, QuizAttempt, QuestionResult, ComponentResult, AssessmentResult | Multiple boundaries                                         | Confirmed responsibility |
+| Assessment              | Assessment, Component, Task, Attempt, Result                                     | OPEN                                                        | Confirmed capability     |
+| Learner State           | Competency, Current Level                                                        | Competency boundary deferred; Current Level not independent | Confirmed responsibility |
+| Learning Direction      | Learning Plan, Recommendation, Review Due, Goal, Exam Preparation                | OPEN / DEFERRED                                             | Confirmed responsibility |
 
-Existing working components should remain where their current responsibility is already clear.
+Assessment is shown separately in the table because it is a major domain capability, but this does not imply that it must become a seventh top-level module.
 
-Changes should be made when:
-
-* an existing component crosses a documented business boundary;
-* a domain concept has been assigned a new responsibility;
-* an existing model creates concrete duplication;
-* a framework dependency violates the target dependency rules;
-* or a new feature requires a boundary that is already supported by the domain model.
-
-No module should be created solely to satisfy a naming convention.
-
-No Aggregate should be created solely because a module exists.
-
-No Bounded Context should be created solely because a business responsibility has been identified.
+Its final placement inside the Learning module model remains an implementation-level decision constrained by the business boundaries defined here.
 
 ---
 
-# 19. Summary
+# 16. Confirmed Module Boundaries
 
-DeutschHub V3 retains Learning as a major business context within the Modular Monolith.
-
-Inside Learning, the target architecture recognizes six major business responsibilities:
+The following business responsibilities are confirmed:
 
 ```text
 Learning Structure
@@ -956,23 +1370,239 @@ Learner State
 Learning Direction
 ```
 
-These responsibilities provide a clearer model of Learning than the current predominantly Course-centered organization.
-
-The target structure preserves established domain boundaries:
+The following domain capability is also confirmed:
 
 ```text
-Course
-Enrollment
-Quiz
-QuizAttempt
-LessonCompletion
+Assessment
 ```
 
-while recognizing that additional learner-centered capabilities will be introduced over time.
+However, Assessment is currently treated as part of the broader Learning domain rather than as an independently established Bounded Context.
 
-The central principle is:
+The exact internal module placement of Assessment remains OPEN.
 
-> **Business responsibilities define module boundaries, while Aggregate boundaries are defined by consistency requirements and Bounded Contexts are defined by larger domain-language and responsibility boundaries.**
+---
 
-The target module structure therefore provides direction without prematurely fixing every Aggregate, entity, value object, package, persistence model, or Bounded Context.
+# 17. Open / Deferred Module Decisions
 
+The following decisions remain intentionally unresolved.
+
+## 17.1 Learning Activities
+
+Open questions include:
+
+* generic activity model versus activity-specific models;
+* activity lifecycle;
+* activity persistence;
+* relationship between LessonItem and Activity;
+* relationship between Activity and Assessment.
+
+---
+
+## 17.2 Assessment
+
+Open questions include:
+
+* exact module placement;
+* Assessment Revision model;
+* Evaluation Mechanism model;
+* Assessment Attempt Aggregate boundary;
+* Component Result representation;
+* Assessment Result representation;
+* structural relationship between Assessment and Quiz.
+
+The business rules already established for Assessment must be preserved when these technical boundaries are decided.
+
+---
+
+## 17.3 Competency
+
+The business meaning, scope, lifecycle, and core invariants are established.
+
+The remaining question is:
+
+```text
+What is the final Aggregate boundary of Competency?
+```
+
+This is deferred until concrete consistency requirements require the decision.
+
+---
+
+## 17.4 Learner State
+
+The following remain deferred:
+
+```text
+Vocabulary State
+Grammar State
+Skill State
+XP
+Streak
+Achievement
+Statistics
+```
+
+Their existence does not automatically imply separate modules or Aggregates.
+
+---
+
+## 17.5 Learning Direction
+
+The following remain deferred:
+
+```text
+Learning Plan
+Recommendation
+Review Due
+Learning Goal
+Exam Preparation
+```
+
+Their final module and Aggregate boundaries should be decided individually when concrete requirements emerge.
+
+---
+
+# 18. Implementation Principles
+
+The target module model should be introduced incrementally.
+
+Existing code should not be reorganized merely to make the package tree visually match this document.
+
+Changes should be made when there is a concrete reason, such as:
+
+* an existing component crosses a documented business boundary;
+* an existing model represents an outdated domain concept;
+* two responsibilities have become concretely coupled in a way that violates their intended boundary;
+* a new feature requires a boundary already supported by the domain model;
+* or an architectural dependency violates established rules.
+
+No module should be created solely because a domain concept exists.
+
+No Aggregate should be created solely because a module exists.
+
+No Bounded Context should be created solely because a module exists.
+
+---
+
+# 19. Final Target Module Model
+
+The current target Learning module model is:
+
+```text
+Learning Context
+│
+├── Learning Structure
+│   └── Course
+│       └── Section
+│           └── Lesson
+│               └── LessonItem
+│
+├── Enrollment
+│   └── Enrollment
+│       └── Progress
+│
+├── Learning Activities
+│   └── Internal structure deferred
+│
+├── Learning Evidence
+│   ├── LessonCompletion
+│   └── Assessment Evidence
+│       ├── QuizAttempt
+│       ├── QuestionResult
+│       ├── ComponentResult
+│       └── AssessmentResult
+│
+├── Learner State
+│   └── Competency
+│       └── Current Level
+│
+└── Learning Direction
+    └── Internal structure deferred
+```
+
+Assessment operates across the relevant responsibilities:
+
+```text
+Assessment
+├── Component
+│   └── Task(s)
+├── Completion Policy
+├── Time Limit
+├── Attempt
+└── Result
+```
+
+with important relationships to:
+
+```text
+Learning Activities
+        ↓
+Assessment
+        ↓
+Learning Evidence
+        ↓
+Learner State
+```
+
+The exact internal Aggregate boundaries of Assessment remain OPEN.
+
+---
+
+# 20. Final Boundary Principle
+
+The target module model follows this hierarchy:
+
+```text
+Business Responsibility
+        ↓
+Module Boundary
+        ↓
+Aggregate Boundary
+        ↓
+Entity / Value Object
+```
+
+but the boundaries must not be inferred mechanically from one another.
+
+In particular:
+
+```text
+Module
+    ≠
+Aggregate
+
+Aggregate
+    ≠
+Bounded Context
+
+Domain Concept
+    ≠
+Module
+
+Database Table
+    ≠
+Module
+```
+
+The target module boundaries exist to keep business responsibilities coherent while allowing Aggregate boundaries and technical implementation structures to evolve according to concrete domain requirements.
+
+The current target therefore establishes:
+
+```text
+Learning Structure
+Enrollment
+Learning Activities
+Learning Evidence
+Learner State
+Learning Direction
+```
+
+as the six major internal business responsibilities of the Learning Context.
+
+Assessment is a confirmed broader Learning capability that interacts with Learning Activities, Learning Evidence, and Learner State, but its final internal module and Aggregate placement remains OPEN.
+
+Competency is a confirmed Learner State concept with its Aggregate boundary deferred.
+
+Current Level is a state/value belonging to Competency and is not an independent module or Aggregate.
+
+This provides the current module boundary foundation for the next architectural decisions without prematurely restructuring the codebase.

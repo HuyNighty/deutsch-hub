@@ -4,237 +4,32 @@
 
 This document defines the target architectural direction for DeutschHub V3.
 
-The target architecture is not intended to replace the existing architecture wholesale. The current system already contains a working modular-monolith structure, Domain/Application/Infrastructure separation, and Ports & Adapters patterns.
+The target architecture is not intended to replace the existing architecture wholesale.
+
+The current system already provides:
+
+- a Modular Monolith structure;
+- Domain / Application / Infrastructure separation;
+- Ports & Adapters patterns;
+- domain-oriented behavior in several core models.
 
 The purpose of the target architecture is to:
 
 - preserve architectural foundations that already work;
-- make business boundaries more explicit;
-- strengthen the separation between Domain, Application, and Infrastructure;
-- align the code organization with the business model established through domain analysis;
-- prevent identified architectural problems from being reproduced during future implementation;
-- provide architectural constraints for future development without prematurely deciding unresolved domain concepts.
+- make established business boundaries more explicit;
+- strengthen separation between Domain, Application, and Infrastructure;
+- align implementation with the target domain model;
+- prevent identified architectural problems from being reproduced;
+- provide clear architectural constraints for future development;
+- avoid prematurely fixing unresolved domain concepts.
 
-The target architecture therefore represents an **evolution of the existing architecture**, rather than a complete architectural rewrite.
-
----
-
-## 2. Current Architectural Foundation
-
-The current DeutschHub V3 implementation is a modular monolith organized around three primary layers:
-
-```text
-Domain
-Application
-Infrastructure
-````
-
-The system also applies Ports & Adapters principles.
-
-At the application boundary, input ports represent use cases and output ports represent required external capabilities such as persistence.
-
-Infrastructure implements those ports through concrete adapters.
-
-The resulting dependency direction is:
-
-```text
-Infrastructure / Interface Adapters
-                ↓
-           Application
-                ↓
-             Domain
-```
-
-The target architecture retains this fundamental direction.
-
-### 2.1 Existing Architectural Strengths
-
-The current implementation already provides several sound architectural foundations.
-
-#### Domain model
-
-The Learning domain contains behavior-rich domain objects rather than being purely data-oriented.
-
-For example:
-
-* `Course` owns course-structure behavior and publication rules.
-* `Enrollment` owns enrollment lifecycle and course-scoped progress.
-* `Progress` represents progress as a value object.
-* `Quiz` owns assessment-definition behavior.
-* `QuizAttempt` owns attempt lifecycle and answer behavior.
-
-#### Application layer
-
-Application services generally orchestrate use cases rather than directly implementing all domain behavior.
-
-For example, course publication is orchestrated by the application service while the publication rules are enforced by `Course`.
-
-#### Ports and Adapters
-
-Repository ports are defined at the application boundary and implemented by infrastructure adapters.
-
-For example:
-
-```text
-CourseRepositoryPort
-        ↑
-JpaCourseRepositoryAdapter
-```
-
-The same pattern is used for enrollment and lesson-completion persistence.
-
-#### Persistence isolation
-
-JPA persistence entities are kept in Infrastructure rather than being used as Domain entities.
-
-This keeps persistence concerns separate from the domain model.
-
-These foundations should be preserved.
+The target architecture therefore represents an **evolution of the existing architecture**, not a complete architectural rewrite.
 
 ---
 
-# 3. Identified Architectural Problems
+# 2. Architectural Foundation
 
-The target architecture is driven by concrete observations from the current implementation.
-
-## 3.1 Framework Leakage into the Domain
-
-The current implementation contains a Domain component that directly depends on Spring.
-
-The file:
-
-```text
-src/main/java/com/deutschhub/domain/media/service/MediaTypeResolver.java
-```
-
-uses Spring's `@Component`.
-
-This creates the following dependency:
-
-```text
-Domain
-  ↓
-Spring Framework
-```
-
-The target architecture requires the Domain layer to remain independent of framework-specific infrastructure concerns.
-
-The intended dependency rule is:
-
-```text
-Domain
-  ✕ Spring
-  ✕ JPA
-  ✕ Infrastructure implementation
-```
-
-Framework dependencies belong outside the Domain.
-
-This is a concrete architectural correction rather than a stylistic preference.
-
----
-
-## 3.2 Business Boundaries Are Not Sufficiently Visible
-
-The current Learning implementation is organized primarily around the Learning context and architectural layers:
-
-```text
-domain/learning/
-application/learning/
-infrastructure/learning/
-```
-
-However, domain analysis shows that Learning contains several distinct business responsibilities:
-
-```text
-Learning
-├── Learning Structure
-├── Learning Activities
-├── Learning Evidence
-├── Learner State
-└── Learning Direction
-```
-
-These responsibilities are not automatically separate Bounded Contexts.
-
-They represent business responsibility groups that should become increasingly visible in the internal organization of the Learning module as the domain evolves.
-
-The target architecture therefore favors **business-oriented organization inside the modular monolith**, while retaining Hexagonal dependency rules.
-
-Business-oriented organization is an organizational principle, not a replacement for Hexagonal Architecture.
-
----
-
-## 3.3 UserProgress Does Not Represent the Target Learner State
-
-The current:
-
-```text
-src/main/java/com/deutschhub/domain/learning/model/aggregate/UserProgress.java
-```
-
-contains state that overlaps substantially with:
-
-```text
-Enrollment
-Progress
-```
-
-For example, both models represent course-scoped progress and study activity information.
-
-The current `UserProgress` model is also scoped by:
-
-```text
-userId
-courseId
-enrollmentId
-```
-
-rather than representing a complete learner-level state.
-
-The target architecture therefore does not treat `UserProgress` as the target representation of Learner State.
-
-Learner State remains a broader business responsibility whose internal domain model is not yet fully decided.
-
----
-
-## 3.4 Some Business Decisions Remain in Application Services
-
-Application services generally perform appropriate orchestration, but some use-case-specific business decisions remain in the Application layer.
-
-A concrete example is:
-
-```text
-src/main/java/com/deutschhub/application/learning/service/CompleteLessonService.java
-```
-
-which calculates the amount of study time that can be recorded and coordinates lesson completion with enrollment progress.
-
-This does not mean that the service is architecturally invalid.
-
-Application services are expected to coordinate multiple domain objects and boundaries.
-
-However, the target architecture establishes a clearer responsibility rule:
-
-```text
-Application
-    → orchestrates use cases
-
-Domain
-    → owns domain invariants and business rules
-```
-
-Future implementation should therefore avoid allowing Application Services to become the primary location for business rules that properly belong to domain concepts.
-
-This rule does not require moving every calculation into the Domain.
-
-Responsibility must be decided according to the domain model and the specific business rule.
-
----
-
-# 4. Target Architectural Style
-
-DeutschHub V3 targets the following architectural combination:
+DeutschHub V3 uses the following architectural combination:
 
 ```text
 Modular Monolith
@@ -244,44 +39,259 @@ Domain-Driven Design
 Hexagonal Architecture
         +
 Business-oriented organization
-```
+````
 
 Each principle has a different responsibility.
 
-### Domain-Driven Design
-
-DDD provides the approach for modeling the business domain.
-
-It defines and guides:
-
-* bounded contexts;
-* aggregates;
-* entities;
-* value objects;
-* domain behavior;
-* domain invariants;
-* ubiquitous language;
-* domain boundaries.
-
 ### Modular Monolith
 
-The modular monolith defines the system-level deployment and module boundaries.
+The system remains a single deployable application while maintaining explicit internal business boundaries.
 
-DeutschHub remains a single deployable application while maintaining explicit internal business boundaries.
+### Domain-Driven Design
+
+DDD provides the approach for modeling:
+
+* business concepts;
+* Aggregates;
+* Entities;
+* Value Objects;
+* domain behavior;
+* domain invariants;
+* business boundaries.
 
 ### Hexagonal Architecture
 
-Hexagonal Architecture defines dependency direction and isolation from external technologies.
-
-The core domain and application logic should not depend on infrastructure implementations.
+Hexagonal Architecture protects the application and domain from infrastructure and external technology concerns.
 
 ### Business-oriented organization
 
-Business-oriented organization makes important business responsibilities visible in the internal code structure.
+Business-oriented organization makes established business responsibilities visible in the internal code organization where doing so improves clarity.
 
-It should be used where it improves clarity of the domain boundaries.
+It does not require every business concept to become:
 
-It is not a requirement that every concept become a separate module, package, or Bounded Context.
+* a module;
+* an Aggregate;
+* a package;
+* or a Bounded Context.
+
+---
+
+# 3. Current Architectural Foundation
+
+The current implementation is organized around:
+
+```text
+Domain
+Application
+Infrastructure
+```
+
+and applies Ports & Adapters principles.
+
+The target architecture preserves this foundation.
+
+The intended dependency direction is:
+
+```text
+Infrastructure
+       ↓
+Application
+       ↓
+Domain
+```
+
+with external input entering through appropriate adapters and infrastructure implementing application-defined output ports.
+
+---
+
+## 3.1 Existing Architectural Strengths
+
+Several architectural foundations already work and should be preserved.
+
+### Domain Model
+
+The Learning domain contains behavior-rich domain objects.
+
+Examples include:
+
+```text
+Course
+Enrollment
+Progress
+Quiz
+QuizAttempt
+```
+
+These objects contain domain behavior rather than functioning only as persistence data structures.
+
+### Application Layer
+
+Application services generally orchestrate use cases while delegating domain behavior to domain objects.
+
+### Ports and Adapters
+
+Repository ports are defined as abstractions and implemented by Infrastructure adapters.
+
+Conceptually:
+
+```text
+Application Port
+       ↑
+Infrastructure Adapter
+```
+
+### Persistence Isolation
+
+JPA persistence entities are kept in Infrastructure rather than being used directly as Domain entities.
+
+These existing foundations are retained.
+
+---
+
+# 4. Identified Architectural Problems
+
+The target architecture is driven by concrete problems observed in the current implementation.
+
+---
+
+## 4.1 Framework Leakage into the Domain
+
+The current implementation contains:
+
+```text
+src/main/java/com/deutschhub/domain/media/service/MediaTypeResolver.java
+```
+
+which uses Spring's `@Component`.
+
+This creates a dependency from Domain toward the Spring framework:
+
+```text
+Domain
+   ↓
+Spring
+```
+
+This violates the intended architectural dependency rule.
+
+The target architecture therefore requires:
+
+```text
+Domain
+  ✕ Spring
+  ✕ JPA
+  ✕ Infrastructure implementation
+```
+
+The correction is specifically to remove the Domain layer's dependency on framework-specific concerns.
+
+This is a concrete architectural problem, not a stylistic preference.
+
+---
+
+## 4.2 Business Boundaries Are Not Sufficiently Visible
+
+The current Learning implementation is primarily organized around:
+
+```text
+domain/learning/
+application/learning/
+infrastructure/learning/
+```
+
+Domain analysis has established several distinct business responsibilities inside Learning:
+
+```text
+Learning
+├── Learning Structure
+├── Enrollment
+├── Learning Activities
+├── Learning Evidence
+├── Learner State
+└── Learning Direction
+```
+
+These are internal business responsibilities.
+
+They do not automatically represent six Bounded Contexts.
+
+The target architecture therefore allows business-oriented organization to become more visible inside Learning as implementation evolves.
+
+However, this should happen only where the established business boundaries justify it.
+
+---
+
+## 4.3 UserProgress Does Not Represent the Target Learner State
+
+The current implementation contains:
+
+```text
+src/main/java/com/deutschhub/domain/learning/model/aggregate/UserProgress.java
+```
+
+Its responsibility overlaps with:
+
+```text
+Enrollment
+└── Progress
+```
+
+particularly around Course-scoped progress and learner activity information.
+
+The current `UserProgress` representation is also associated with:
+
+```text
+userId
+courseId
+enrollmentId
+```
+
+rather than representing the complete learner-level state.
+
+The target architecture therefore does not use `UserProgress` as the canonical Learner State model.
+
+The target Learner State responsibility is represented through domain concepts such as:
+
+```text
+Competency
+Current Level
+```
+
+while other learner-state concepts remain deferred.
+
+---
+
+## 4.4 Business Rules Must Not Accumulate in Application Services
+
+The current implementation contains application services that coordinate multiple domain concepts.
+
+For example:
+
+```text
+src/main/java/com/deutschhub/application/learning/service/CompleteLessonService.java
+```
+
+calculates study-time-related information and coordinates lesson completion with enrollment progress.
+
+This is not inherently invalid.
+
+Application services are expected to orchestrate use cases and may coordinate multiple domain boundaries.
+
+However, the target responsibility rule is:
+
+```text
+Application
+    → orchestrates use cases
+
+Domain
+    → owns domain invariants and business rules
+```
+
+Therefore, future implementation should avoid allowing Application Services to become the primary location for business rules that belong to established domain concepts.
+
+This does not mean every calculation must be moved into the Domain.
+
+The correct location depends on the actual business meaning and ownership of the rule.
 
 ---
 
@@ -290,78 +300,250 @@ It is not a requirement that every concept become a separate module, package, or
 The target dependency direction is:
 
 ```text
-                 Infrastructure
-                /              \
-               ↓                ↓
-       Input Adapters      Output Adapters
-               ↓                ↑
-               ↓                │
-           Application ─────────┘
-               ↓
-             Domain
+             Infrastructure
+             /            \
+            ↓              ↓
+    Input Adapters     Output Adapters
+            ↓              ↑
+            ↓              │
+        Application ───────┘
+            ↓
+          Domain
 ```
 
-A simplified dependency model is:
+The simplified rule is:
 
 ```text
 Infrastructure
-      ↓
+       ↓
 Application
-      ↓
+       ↓
 Domain
 ```
 
-Dependencies must not point inward from the Domain toward Infrastructure.
+Dependencies must not point inward from Domain toward Infrastructure.
 
-### 5.1 Domain
+---
 
-The Domain contains business concepts and business rules.
+# 6. Domain Layer
 
-It must not depend on:
+The Domain layer contains business concepts and business behavior.
+
+It must remain independent from:
 
 * Spring;
 * JPA;
 * database implementations;
 * HTTP;
 * controllers;
-* infrastructure adapters;
-* external framework implementations.
+* Infrastructure adapters;
+* framework-specific infrastructure concerns.
 
-### 5.2 Application
+The Domain layer may contain:
 
-The Application layer defines and executes application use cases.
+```text
+Entities
+Value Objects
+Aggregates
+Domain Services
+Domain Rules
+Domain Exceptions
+```
 
-It may depend on:
-
-* Domain objects;
-* input ports;
-* output ports;
-* application-level abstractions.
-
-It must not depend on concrete infrastructure implementations.
-
-### 5.3 Infrastructure
-
-Infrastructure provides implementations for external concerns, including:
-
-* persistence;
-* JPA;
-* database access;
-* HTTP adapters;
-* framework integration;
-* external services.
-
-Infrastructure may depend on Application and Domain abstractions where required by the adapter implementation.
+when justified by the domain model.
 
 ---
 
-# 6. Target Domain Model Direction
+## 6.1 Domain Independence Rule
 
-The target architecture preserves the domain decisions already established.
+The intended dependency rule is:
 
-## 6.1 Course Aggregate
+```text
+Domain
+  ✕ Spring
+  ✕ JPA
+  ✕ Infrastructure
+  ✕ Database
+```
 
-The Course Aggregate remains responsible for course structure.
+If an external framework capability is required, the dependency should be introduced at an outer architectural layer or represented through an appropriate abstraction.
+
+---
+
+# 7. Application Layer
+
+The Application layer defines and executes application use cases.
+
+Its responsibilities include:
+
+* receiving commands or queries;
+* loading required domain objects;
+* invoking domain behavior;
+* coordinating multiple Aggregates;
+* coordinating persistence through output ports;
+* defining application transaction boundaries;
+* returning application-level results.
+
+The Application layer may depend on:
+
+```text
+Domain
+Application Ports
+```
+
+but should not depend on concrete Infrastructure implementations.
+
+---
+
+## 7.1 Application Orchestration
+
+The Application layer answers:
+
+```text
+How is this use case executed?
+```
+
+The Domain answers:
+
+```text
+What must be true for this operation to be valid?
+```
+
+For example:
+
+```text
+Complete Lesson
+      │
+      ├── Lesson / Course Structure
+      ├── LessonCompletion
+      ├── Enrollment
+      └── Progress
+```
+
+A single use case may therefore coordinate multiple domain boundaries.
+
+This does not imply that those concepts belong to one Aggregate.
+
+---
+
+# 8. Infrastructure Layer
+
+Infrastructure contains technical implementations of external concerns.
+
+Examples include:
+
+* JPA;
+* database access;
+* repository adapters;
+* framework integration;
+* HTTP adapters;
+* external service integrations.
+
+Infrastructure may depend on:
+
+```text
+Application abstractions
+Domain abstractions
+```
+
+where required to implement adapters.
+
+Infrastructure must not become a dependency of Domain.
+
+---
+
+# 9. Ports and Adapters
+
+The target architecture retains Ports & Adapters.
+
+---
+
+## 9.1 Input Ports
+
+Input Ports represent application use cases.
+
+Conceptually:
+
+```text
+External Request
+      ↓
+Input Adapter
+      ↓
+Input Port
+      ↓
+Application Service
+```
+
+Controllers and other external adapters should not directly manipulate domain persistence.
+
+---
+
+## 9.2 Output Ports
+
+Output Ports represent external capabilities required by the Application layer.
+
+Examples include:
+
+```text
+CourseRepositoryPort
+EnrollmentRepositoryPort
+LessonCompletionRepositoryPort
+```
+
+Infrastructure implements these ports.
+
+Conceptually:
+
+```text
+Application
+    │
+    ↓
+Repository Port
+    ↑
+Repository Adapter
+    ↑
+JPA / Database
+```
+
+The Application layer therefore depends on the abstraction rather than the persistence implementation.
+
+---
+
+# 10. Business Module Architecture
+
+The Learning Context contains six major business responsibilities:
+
+```text
+Learning
+│
+├── Learning Structure
+├── Enrollment
+├── Learning Activities
+├── Learning Evidence
+├── Learner State
+└── Learning Direction
+```
+
+These are internal business boundaries.
+
+They are not automatically:
+
+```text
+6 Bounded Contexts
+6 Aggregates
+6 Java packages
+6 database schemas
+```
+
+The actual technical organization should follow the domain decisions established for each responsibility.
+
+---
+
+# 11. Learning Structure Architecture
+
+Learning Structure represents what can be learned and how learning content is organized.
+
+The established domain boundary is:
 
 ```text
 Course
@@ -370,54 +552,348 @@ Course
         └── LessonItem
 ```
 
-The existing Course Aggregate boundary should not be split without a concrete business consistency requirement.
+The corresponding current implementation is:
 
-Course structure remains part of the Learning Structure responsibility.
+```text
+src/main/java/com/deutschhub/domain/learning/model/aggregate/Course.java
+
+src/main/java/com/deutschhub/domain/learning/model/entity/Section.java
+
+src/main/java/com/deutschhub/domain/learning/model/entity/Lesson.java
+
+src/main/java/com/deutschhub/domain/learning/model/entity/LessonItem.java
+```
+
+The Course Aggregate remains the primary consistency boundary for Course structure.
 
 ---
 
-## 6.2 Enrollment Aggregate
+## 11.1 Course Structure
+
+The target architecture preserves:
+
+```text
+Course Aggregate
+└── Section
+    └── Lesson
+        └── LessonItem
+```
+
+No structural split is introduced without a concrete business consistency requirement.
+
+---
+
+## 11.2 Course Level
+
+Course Level is associated with learning content.
+
+The existing representation:
+
+```text
+src/main/java/com/deutschhub/domain/learning/model/valueobject/CEFRLevel.java
+```
+
+provides CEFR classification.
+
+Course Level remains distinct from learner state:
+
+```text
+Course Level
+    ≠
+Learner Current Level
+    ≠
+Certification Level
+```
+
+---
+
+# 12. Enrollment Architecture
+
+Enrollment represents learner participation in a specific Course.
+
+The established boundary is:
+
+```text
+Enrollment Aggregate
+└── Enrollment
+    └── Progress
+```
+
+The current implementation is:
+
+```text
+src/main/java/com/deutschhub/domain/learning/model/aggregate/Enrollment.java
+
+src/main/java/com/deutschhub/domain/learning/model/valueobject/Progress.java
+```
 
 Enrollment remains an independent Aggregate Root.
 
-```text
-Enrollment
-└── Progress
-```
-
-Enrollment is responsible for the learner's participation in a specific course and its course-scoped progress.
-
-The target architecture does not treat course progress as the complete learner state.
-
 ---
 
-## 6.3 Progress
+## 12.1 Enrollment Responsibility
 
-`Progress` remains a Value Object.
+Enrollment owns:
 
-It represents course-scoped progress information associated with Enrollment.
+* participation lifecycle;
+* enrollment state;
+* Course-scoped Progress;
+* completion state associated with the enrollment.
 
-The following concepts remain distinct:
+It does not own:
 
 ```text
-Course Progress
-≠
-Learner State
+Course Structure
+Learner Competency
+Learner Current Level
+Complete Learner State
+Learning Direction
 ```
 
 ---
 
-## 6.4 LessonCompletion
+# 13. Learning Activities Architecture
 
-Lesson completion is treated as independent Learning Evidence.
+Learning Activities represent learner-facing actions or interactions.
+
+Examples include:
+
+```text
+Practice
+Review
+Listening
+Speaking
+Reading
+Writing
+Assessment-related activities
+```
+
+The current implementation does not establish a complete generic Learning Activity model.
+
+Therefore:
+
+```text
+Learning Activities
+    → confirmed business responsibility
+    → internal domain structure OPEN / DEFERRED
+```
+
+---
+
+## 13.1 LessonItem and Learning Activity
+
+The current:
+
+```text
+src/main/java/com/deutschhub/domain/learning/model/entity/LessonItem.java
+```
+
+belongs to the Course Aggregate.
+
+It must not automatically be treated as the generic Learning Activity model.
+
+Therefore:
+
+```text
+LessonItem
+    ≠
+Generic Learning Activity
+```
+
+The exact relationship remains open.
+
+---
+
+## 13.2 Learning Activity Boundary
+
+The target architecture does not introduce a generic:
+
+```text
+LearningActivity Aggregate
+```
+
+without a concrete business requirement.
+
+Activity-specific models may be introduced when their business semantics and consistency requirements justify them.
+
+---
+
+# 14. Assessment Architecture
+
+Assessment is a broader evaluation capability within Learning.
+
+It is broader than Quiz.
+
+An Assessment may contain:
+
+```text
+Assessment
+    │
+    ├── Component
+    │      └── Task(s)
+    │
+    ├── Completion Policy
+    │
+    ├── Time Limit
+    │
+    └── Attempt Rules
+```
+
+A Component is associated with one Skill Dimension.
+
+Possible dimensions include:
+
+```text
+Listening
+Speaking
+Reading
+Writing
+Grammar
+Vocabulary
+```
+
+An Assessment does not have to evaluate every dimension.
+
+---
+
+## 14.1 Assessment and Learning Activities
+
+Assessment is related to Learning Activities but is not automatically identical to them.
+
+The exact relationship between:
+
+```text
+Learning Activity
+Assessment
+Task
+Quiz
+```
+
+remains open.
+
+The architecture therefore does not assert:
+
+```text
+Assessment
+    =
+Learning Activity
+```
+
+or:
+
+```text
+Assessment
+    =
+Quiz
+```
+
+---
+
+## 14.2 Assessment and Quiz
+
+Quiz remains an established assessment-related domain concept.
+
+The target distinction is:
+
+```text
+Quiz
+    = assessment definition
+
+QuizAttempt
+    = learner-specific execution
+```
+
+Assessment is broader than Quiz.
+
+The exact structural relationship between Assessment and Quiz remains open.
+
+No separate Assessment Bounded Context is introduced at this stage.
+
+---
+
+## 14.3 Assessment Attempt
+
+Each execution of an Assessment by a learner is an Assessment Attempt.
+
+The business rule is:
+
+```text
+One User
++
+One Assessment
+    ↓
+At most one active Attempt
+```
+
+An Attempt may be resumed across:
+
+* browser sessions;
+* devices;
+* connection interruptions.
+
+The final Aggregate boundary of Assessment Attempt remains OPEN.
+
+The existing QuizAttempt Aggregate is a concrete precedent, but Quiz-specific rules must not automatically be applied to all Assessment types.
+
+---
+
+## 14.4 Assessment Result
+
+An Assessment Result is the official historical result of an Assessment Attempt.
+
+Conceptually:
+
+```text
+Assessment Attempt
+        ↓
+Component Result(s)
+        ↓
+Assessment Result
+```
+
+The result is historical and must remain associated with the Attempt that produced it.
+
+A later Attempt does not modify an earlier Assessment Result.
+
+---
+
+# 15. Learning Evidence Architecture
+
+Learning Evidence represents observable historical outcomes.
+
+The module answers:
+
+```text
+What happened?
+```
+
+Examples include:
 
 ```text
 LessonCompletion
+QuizAttempt
+QuestionResult
+ComponentResult
+AssessmentResult
 ```
 
-It is not required to become a child entity of the Enrollment Aggregate merely because completing a lesson affects enrollment progress.
+These concepts do not automatically belong to one Aggregate.
 
-The relationship is conceptually:
+---
+
+## 15.1 LessonCompletion
+
+The current implementation is:
+
+```text
+src/main/java/com/deutschhub/domain/learning/model/entity/LessonCompletion.java
+```
+
+LessonCompletion is treated as independent Learning Evidence.
+
+It is not an internal entity of Enrollment.
+
+The relationship is:
 
 ```text
 LessonCompletion
@@ -429,165 +905,236 @@ contributes to
 Enrollment.Progress
 ```
 
-Application services may coordinate these changes within a use case.
-
 ---
 
-## 6.5 Quiz and QuizAttempt
+## 15.2 QuizAttempt as Evidence
 
-Quiz and QuizAttempt remain distinct concepts.
+The current implementation contains:
 
 ```text
-Quiz
-    = assessment definition
+src/main/java/com/deutschhub/domain/learning/model/aggregate/QuizAttempt.java
+```
 
+QuizAttempt represents a learner-specific assessment execution and may serve as Learning Evidence.
+
+These are different classifications:
+
+```text
+Aggregate Root
+    → consistency ownership
+
+Learning Evidence
+    → business meaning
+```
+
+Therefore:
+
+```text
 QuizAttempt
-    = learner attempt / assessment evidence
+    = Aggregate Root
+    = may serve as Learning Evidence
 ```
-
-QuizAttempt is treated as an independent Aggregate Root and may represent Learning Evidence generated through assessment.
-
-No decision is made here to create a generic Assessment Bounded Context.
 
 ---
 
-# 7. Learning Business Boundaries
+## 15.3 Evidence and Learner State
 
-The Learning Context is understood through five major business responsibilities:
+Evidence may contribute to Learner State.
 
-```text
-Learning
-├── Learning Structure
-├── Learning Activities
-├── Learning Evidence
-├── Learner State
-└── Learning Direction
-```
-
-These are business boundaries within the Learning domain.
-
-They are not automatically five Bounded Contexts or five Aggregates.
-
----
-
-## 7.1 Learning Structure
-
-Learning Structure represents what can be learned and how learning content is organized.
-
-The current Course Aggregate belongs here:
+Conceptually:
 
 ```text
-Course
-└── Section
-    └── Lesson
-        └── LessonItem
-```
-
-Learning Structure may also contain or reference other learning resources as the domain evolves.
-
----
-
-## 7.2 Learning Activities
-
-Learning Activities represent actions or learning interactions performed by a learner for the purpose of:
-
-* learning;
-* practicing;
-* reviewing;
-* listening;
-* speaking;
-* reading;
-* writing;
-* demonstrating knowledge or skills.
-
-The target architecture explicitly distinguishes:
-
-```text
-LessonItem
-≠
-Learning Activity
-```
-
-A LessonItem primarily represents content or a learning resource within a lesson.
-
-A Learning Activity represents the learner's interaction or action.
-
-The exact domain model for Learning Activities remains open.
-
----
-
-## 7.3 Learning Evidence
-
-Learning Evidence represents observable outcomes produced by learner activity or assessment.
-
-Examples include:
-
-```text
-LessonCompletion
-QuizAttempt
-```
-
-Evidence is distinct from learner state.
-
-```text
-Activity
-    ↓
-Evidence
-    ↓
+Learning Evidence
+        ↓
+Domain Interpretation
+        ↓
 Learner State
 ```
 
-This does not require every activity to generate persistent evidence.
+However, not every Evidence record changes Learner State.
 
-The exact evidence model depends on the semantics and lifecycle of each learning capability.
+For example:
+
+```text
+Ordinary Quiz Result
+    ≠
+Automatic Current Level update
+```
+
+A Current Level update requires the appropriate Level Assessment rule.
 
 ---
 
-## 7.4 Learner State
+# 16. Learner State Architecture
 
-Learner State represents what the system knows about the learner's learning condition and demonstrated capability.
+Learner State represents the current state that DeutschHub establishes about a learner.
 
-Potential concepts include:
+The responsibility includes:
 
 ```text
 Competency
 Current Level
-Vocabulary State
-Grammar State
-Skill State
-XP
-Streak
-Achievement
-Statistics
 ```
 
-These concepts have not all been established as domain objects.
-
-The target architecture therefore treats Learner State as a **business responsibility**, not as a single Aggregate Root.
-
-Further aggregate and persistence decisions must be made based on concrete domain rules.
+Other learner-state concepts remain deferred unless concrete requirements establish them.
 
 ---
 
-## 7.5 Learning Direction
+## 16.1 Learner State Is Not One Aggregate
+
+Learner State is a business responsibility.
+
+It is not automatically one Aggregate Root.
+
+Different learner-state concepts may have different:
+
+* identity;
+* lifecycle;
+* invariants;
+* consistency requirements;
+* update mechanisms.
+
+Therefore:
+
+```text
+Learner State
+    ≠
+Single Aggregate
+```
+
+---
+
+## 16.2 Competency
+
+Competency represents demonstrated capability within a defined learning domain.
+
+The current scope is represented conceptually by:
+
+```text
+User
++
+Competency Scope
+```
+
+For a given User and Competency Scope:
+
+```text
+At most one Competency
+```
+
+exists.
+
+Competency has the business lifecycle:
+
+```text
+UNASSESSED
+    ↓
+ASSESSED
+```
+
+with:
+
+```text
+Current Level = UNKNOWN
+```
+
+before a valid Level Assessment establishes a level.
+
+The Aggregate boundary of Competency remains:
+
+```text
+OPEN / DEFERRED
+```
+
+---
+
+## 16.3 Current Level
+
+Current Level represents the CEFR proficiency classification established for the learner's Competency.
+
+Conceptually:
+
+```text
+Competency
+    └── Current Level
+```
+
+Current Level has no independent identity.
+
+Therefore:
+
+```text
+Current Level
+    ≠
+Independent Aggregate
+```
+
+and:
+
+```text
+Current Level
+    ≠
+Independent Entity
+```
+
+The existing:
+
+```text
+src/main/java/com/deutschhub/domain/learning/model/valueobject/CEFRLevel.java
+```
+
+provides the CEFR classification baseline:
+
+```text
+A1
+A2
+B1
+B2
+C1
+C2
+```
+
+The value object should not be confused with the complete business concept of learner Current Level.
+
+---
+
+## 16.4 Current Level Establishment
+
+A valid passed Level Assessment may establish Current Level.
+
+Sequential progression is not required.
+
+For example:
+
+```text
+UNKNOWN
+    ↓
+B2
+```
+
+is valid when supported by the appropriate assessment result.
+
+A lower-level passed Assessment does not decrease an already established higher level.
+
+A failed Assessment does not automatically downgrade Current Level.
+
+---
+
+# 17. Learning Direction Architecture
 
 Learning Direction represents what the learner should do next.
 
 Potential capabilities include:
 
 ```text
-Daily Learning
-Learning Plans
-Recommendations
+Learning Plan
+Recommendation
 Review Due
-Weakness-oriented Practice
-Learning Goals
+Learning Goal
 Exam Preparation
 ```
 
-Learning Direction is distinct from Learner State.
-
-Conceptually:
+The conceptual relationship is:
 
 ```text
 Learner State
@@ -597,272 +1144,158 @@ Learning Direction
 Next Learning Activity
 ```
 
-The target architecture does not yet determine whether these capabilities should be persisted, derived, or modeled as independent domain concepts.
+The exact internal model and Aggregate boundaries remain OPEN / DEFERRED.
+
+No generic:
+
+```text
+LearningDirection Aggregate
+```
+
+is introduced.
 
 ---
 
-# 8. Application Layer Responsibility
+# 18. Certification
 
-The Application layer is responsible for use-case orchestration.
+Certification remains conceptually distinct from Learner State.
 
-Typical responsibilities include:
-
-* receiving use-case commands or queries;
-* loading required domain objects;
-* coordinating multiple Aggregates;
-* invoking domain behavior;
-* coordinating persistence through output ports;
-* defining transaction boundaries;
-* returning application results.
-
-The Application layer should not become the primary owner of domain invariants.
-
-The desired distinction is:
+The architecture must preserve:
 
 ```text
-Application:
-"How do we execute this use case?"
-
-Domain:
-"What must be true for this operation to be valid?"
+Course Level
+    ≠
+Learner Current Level
+    ≠
+Certification Level
 ```
 
-When a use case crosses multiple domain boundaries, the Application layer may coordinate them.
+Certification is not currently established as a separate Bounded Context.
 
-For example:
+Its exact module and Aggregate boundaries remain open until its business rules are sufficiently understood.
 
-```text
-Complete Lesson
-      │
-      ├── Enrollment
-      ├── Course Structure
-      ├── LessonCompletion
-      └── Progress
-```
-
-The fact that these concepts participate in one use case does not imply that they must belong to the same Aggregate.
+The architecture therefore does not introduce a dedicated Certification context solely because certification concepts exist.
 
 ---
 
-# 9. Ports and Adapters
+# 19. Aggregate and Module Relationship
 
-The target architecture retains the Ports & Adapters approach already present in the system.
+The architecture explicitly distinguishes:
 
-## 9.1 Input Ports
+```text
+Module
+    ≠
+Aggregate
+```
 
-Input ports represent application use cases.
+The current established Aggregate Roots are:
+
+```text
+Course
+Enrollment
+Quiz
+QuizAttempt
+```
+
+The current independent Learning Evidence Entity is:
+
+```text
+LessonCompletion
+```
+
+Other concepts remain open where their Aggregate boundary has not been justified.
 
 Conceptually:
 
 ```text
-Controller
-    ↓
-Input Port
-    ↓
-Application Service
-```
+Learning Structure
+    └── Course Aggregate
 
-External interfaces should depend on application use cases rather than directly manipulating domain persistence.
+Enrollment
+    └── Enrollment Aggregate
+
+Learning Evidence
+    ├── LessonCompletion
+    └── QuizAttempt
+         └── separate Aggregate
+
+Learner State
+    └── Competency
+         └── Current Level
+              └── no independent Aggregate
+```
 
 ---
 
-## 9.2 Output Ports
+# 20. Aggregate and Module Rules
 
-Output ports represent capabilities required by the Application layer.
+The following rules apply to future implementation.
+
+## Rule 1 — Do not create an Aggregate merely because a concept exists
+
+A domain concept becomes an Aggregate only when its:
+
+* identity;
+* lifecycle;
+* invariants;
+* ownership;
+* and consistency requirements
+
+justify an independent boundary.
+
+---
+
+## Rule 2 — Do not merge Aggregates merely because they are related
 
 For example:
 
 ```text
-CourseRepositoryPort
-EnrollmentRepositoryPort
-LessonCompletionRepositoryPort
-```
-
-Infrastructure provides concrete implementations:
-
-```text
-JpaCourseRepositoryAdapter
-JpaEnrollmentRepositoryAdapter
-JpaLessonCompletionRepositoryAdapter
-```
-
-The target architecture preserves this dependency direction:
-
-```text
-Application defines abstraction
-            ↑
-Infrastructure implements abstraction
-```
-
----
-
-# 10. Business-Oriented Organization
-
-The target code organization should make important business boundaries visible without abandoning the existing architectural layers.
-
-The exact final package structure is intentionally not fixed by this document.
-
-The guiding principle is:
-
-```text
-Business boundaries
-        +
-Architectural boundaries
-```
-
-rather than organizing the entire system solely around technical types.
-
-For example, Learning should increasingly make responsibilities such as:
-
-```text
-Course / Structure
-Enrollment
-Evidence
-Learner State
-Learning Direction
-```
-
-visible when the implementation becomes sufficiently mature to justify such organization.
-
-This does not mean that every responsibility must immediately become a separate package or module.
-
-The structure should follow established domain boundaries rather than anticipating every possible future feature.
-
----
-
-# 11. Aggregate Boundary Rules
-
-Aggregates are consistency boundaries, not simply collections of related objects.
-
-The target architecture follows these rules:
-
-1. Each Aggregate has a clear Aggregate Root.
-2. The Aggregate Root controls invariants within its boundary.
-3. Relationships between concepts do not automatically imply ownership.
-4. An application transaction may coordinate multiple Aggregates.
-5. Aggregates should not be split or merged without a concrete consistency requirement.
-6. Persistence relationships do not determine Aggregate boundaries automatically.
-
-Currently established boundaries are:
-
-```text
-Course Aggregate
-Enrollment Aggregate
-Quiz Aggregate
-QuizAttempt Aggregate
-```
-
-and:
-
-```text
 LessonCompletion
-    = independent Learning Evidence Entity
-```
-
-The following remain open:
-
-```text
-Competency
-Current Level
-Learning Activity
-Learning Plan
-Recommendation
-Review Due
-```
-
-No Aggregate boundary is established for these concepts until their business invariants and consistency requirements are understood.
-
----
-
-# 12. Domain State and Evidence
-
-The target architecture explicitly separates three concepts:
-
-```text
-Evidence
-Progress
-Learner State
-```
-
-They answer different questions.
-
-### Evidence
-
-"What happened?"
-
-Examples:
-
-```text
-LessonCompletion
-QuizAttempt
-```
-
-### Progress
-
-"How much of a particular learning structure has been completed?"
-
-Example:
-
-```text
+        ↓
 Enrollment.Progress
 ```
 
-### Learner State
-
-"What does the system currently know about the learner's learning condition and demonstrated capability?"
-
-Examples may eventually include:
+does not imply:
 
 ```text
-Competency
-Current Level
-Vocabulary State
-Skill State
+Enrollment
+└── LessonCompletion
 ```
-
-These concepts must not be collapsed into a single generic progress model.
 
 ---
 
-# 13. Level Semantics
+## Rule 3 — Do not split Aggregates without a concrete consistency problem
 
-The target architecture preserves the distinction between:
-
-```text
-Course Level
-Learner Current Level
-Certification Level
-```
-
-These concepts represent different business meanings.
-
-In particular:
-
-```text
-Course completion
-≠
-Learner Current Level
-```
-
-and:
-
-```text
-Assessment score
-≠
-Learner Current Level
-```
-
-unless explicit domain rules establish how evidence contributes to level determination.
-
-The current `CEFRLevel` value object represents level classification used by learning content, but a complete learner-level Current Level model has not yet been established.
-
-Therefore, the target architecture does not prescribe a specific level-calculation mechanism.
+Existing established boundaries should remain stable unless a concrete business or consistency requirement requires change.
 
 ---
 
-# 14. Cross-Context Responsibilities
+## Rule 4 — Application Transactions May Cross Aggregates
 
-The system should maintain clear responsibility boundaries between major contexts.
+A single use case may coordinate:
+
+```text
+Course
+Enrollment
+LessonCompletion
+Assessment
+Learner State
+```
+
+without requiring those concepts to become one Aggregate.
+
+---
+
+# 21. Cross-Context Architecture
+
+The system contains broader contexts such as:
+
+```text
+Identity
+Learning
+Content
+Media
+```
 
 At a high level:
 
@@ -874,23 +1307,210 @@ Learning
     = how the user learns
 
 Content
-    = learning resources and content
+    = learning resources
 
 Media
     = media resources
 ```
 
-Learning may reference identity information such as a user identifier, but Learning should not become responsible for Identity management.
+Learning may use identity information such as a User identifier.
 
-Similarly, learning activities may consume Content or Media resources without taking ownership of those contexts' responsibilities.
+It should not become responsible for Identity management.
 
-Cross-context relationships should be expressed through appropriate abstractions rather than direct coupling to another context's infrastructure.
+Similarly, Learning may consume Content or Media capabilities without owning those contexts' responsibilities.
 
 ---
 
-# 15. Target Learning Flow
+## 21.1 Cross-Context Dependency
 
-The target Learning model can be summarized as a continuous learning loop:
+Cross-context dependencies should use appropriate abstractions.
+
+The Learning Domain should not directly depend on:
+
+```text
+Identity Infrastructure
+Content Infrastructure
+Media Infrastructure
+```
+
+Concrete integrations belong outside the Domain.
+
+---
+
+# 22. Business-Oriented Code Organization
+
+The target architecture allows business responsibilities to become visible in the code organization as implementation evolves.
+
+The current structure is broadly:
+
+```text
+domain/learning/
+application/learning/
+infrastructure/learning/
+```
+
+The target direction is to make established responsibilities increasingly visible without prematurely forcing every responsibility into a separate technical module.
+
+Conceptually:
+
+```text
+Learning
+├── Learning Structure
+├── Enrollment
+├── Learning Activities
+├── Learning Evidence
+├── Learner State
+└── Learning Direction
+```
+
+This is an organizational direction, not a mandatory package tree.
+
+---
+
+## 22.1 Avoid Mechanical Package Mapping
+
+The following should not be assumed:
+
+```text
+One Concept
+    =
+One Package
+```
+
+or:
+
+```text
+One Module
+    =
+One Aggregate
+```
+
+or:
+
+```text
+One Business Responsibility
+    =
+One Bounded Context
+```
+
+Technical organization should follow the established domain model and concrete implementation needs.
+
+---
+
+# 23. Domain State, Progress, and Evidence
+
+The architecture explicitly separates:
+
+```text
+Evidence
+Progress
+Learner State
+```
+
+They answer different business questions.
+
+### Evidence
+
+```text
+What happened?
+```
+
+Examples:
+
+```text
+LessonCompletion
+QuizAttempt
+AssessmentResult
+```
+
+### Progress
+
+```text
+How far has the learner advanced through a specific learning structure?
+```
+
+Example:
+
+```text
+Enrollment.Progress
+```
+
+### Learner State
+
+```text
+What does DeutschHub currently know about this learner?
+```
+
+Examples:
+
+```text
+Competency
+Current Level
+```
+
+Therefore:
+
+```text
+Evidence
+    ≠
+Progress
+```
+
+```text
+Progress
+    ≠
+Learner State
+```
+
+```text
+Evidence
+    ≠
+Learner State
+```
+
+---
+
+# 24. Assessment, Evidence, and Learner State Flow
+
+The target architecture supports the following conceptual flow:
+
+```text
+Learning Activity
+        ↓
+Assessment
+        ↓
+Assessment Attempt
+        ↓
+Component Result(s)
+        ↓
+Assessment Result
+        ↓
+Learning Evidence
+        ↓
+Learner State
+```
+
+For a Level Assessment:
+
+```text
+Level Assessment
+        ↓
+PASSED Assessment Result
+        ↓
+Competency
+        ↓
+Current Level
+```
+
+This flow does not mean that every Assessment changes Learner State.
+
+Only the appropriate business rules determine whether an Assessment Result can establish or update learner state.
+
+---
+
+# 25. Learning Flow
+
+The broader Learning loop is:
 
 ```text
 Learning Structure
@@ -904,205 +1524,230 @@ Learner State
 Learning Direction
         ↓
 Next Learning Activity
-        ↓
-...
 ```
 
-This loop represents the intended business model.
+This is a business model rather than a strict technical dependency graph.
 
-It does not require every step to be implemented as a separate technical component.
-
-For example, an activity may produce evidence, while some learner state may be derived from accumulated evidence.
-
-The implementation mechanism remains dependent on future domain decisions.
+Not every use case must pass through every responsibility.
 
 ---
 
-# 16. Architectural Principles
+# 26. Architectural Constraints
 
-The following principles guide future implementation.
+The following constraints apply to future development.
 
-### Principle 1 — Preserve working boundaries
+### Constraint 1 — Domain independence
 
-Existing architectural boundaries should not be changed without a concrete problem or business requirement.
+The Domain must remain independent of framework and infrastructure technologies.
 
-### Principle 2 — Domain independence
+### Constraint 2 — Dependency inversion
 
-The Domain must remain independent of framework and infrastructure concerns.
+Application and Domain code must not depend on concrete Infrastructure implementations.
 
-### Principle 3 — Dependency inversion
+### Constraint 3 — Preserve established Aggregates
 
-Application and Domain code must not depend on concrete infrastructure implementations.
+Existing Aggregate boundaries should not be changed without concrete justification.
 
-### Principle 4 — Business rules belong to the domain model
+### Constraint 4 — Business rules belong to the appropriate domain concept
 
-Business invariants should be expressed in the appropriate Domain concept whenever the concept and rule are sufficiently understood.
+Application Services should orchestrate rather than becoming the default location for business rules.
 
-### Principle 5 — Application services orchestrate
+### Constraint 5 — Do not over-model unresolved concepts
 
-Application Services coordinate use cases and multiple boundaries rather than becoming the default location for all business logic.
+OPEN domain decisions should remain open until concrete requirements justify implementation.
 
-### Principle 6 — Aggregates are consistency boundaries
+### Constraint 6 — Do not introduce architecture for hypothetical problems
 
-Aggregate boundaries are determined by business consistency requirements, not database relationships or package organization.
+Events, new Bounded Contexts, generic abstractions, additional layers, or new modules should only be introduced when a concrete problem or requirement justifies them.
 
-### Principle 7 — Do not over-model unresolved concepts
+### Constraint 7 — Current code is evidence, not absolute target truth
 
-Unresolved concepts should remain open until their business semantics are sufficiently understood.
+Existing V3 implementation may contain legacy or conceptually outdated structures.
 
-### Principle 8 — Business organization follows evidence
+The target architecture should follow established domain decisions where they intentionally differ from the current implementation.
 
-Code organization may become more business-oriented where current boundaries justify it.
+### Constraint 8 — Do not rewrite working code without a concrete reason
 
-It should not anticipate hypothetical future requirements.
+Existing working architecture should be preserved unless:
 
-### Principle 9 — Do not introduce architectural mechanisms without a problem
-
-Events, additional abstraction layers, new Bounded Contexts, or other architectural mechanisms should only be introduced when a concrete requirement justifies them.
-
----
-
-# 17. Confirmed Architectural Decisions
-
-The following decisions are established for the target architecture.
-
-| Decision                                                                     | Status    |
-| ---------------------------------------------------------------------------- | --------- |
-| Modular Monolith remains the system architecture                             | Confirmed |
-| Hexagonal / Ports & Adapters remains the dependency architecture             | Confirmed |
-| Domain/Application/Infrastructure separation remains                         | Confirmed |
-| Course remains an Aggregate Root                                             | Confirmed |
-| Enrollment remains an Aggregate Root                                         | Confirmed |
-| Progress remains a Value Object                                              | Confirmed |
-| Quiz remains an Aggregate Root                                               | Confirmed |
-| QuizAttempt remains an independent Aggregate Root                            | Confirmed |
-| LessonCompletion is independent Learning Evidence                            | Confirmed |
-| Course Progress is distinct from Learner State                               | Confirmed |
-| Evidence is distinct from Learner State                                      | Confirmed |
-| Competency is distinct from Progress and Evidence                            | Confirmed |
-| Course Level is distinct from Learner Current Level                          | Confirmed |
-| UserProgress is not the target representation of Learner State               | Confirmed |
-| Domain must not depend on Spring/JPA/Infrastructure                          | Confirmed |
-| Application must not depend on concrete Infrastructure implementations       | Confirmed |
-| Business-oriented organization may be used to make domain boundaries visible | Confirmed |
+* a documented architectural problem exists;
+* a target domain decision requires a change;
+* a new feature exposes a concrete limitation;
+* or an established dependency rule is violated.
 
 ---
 
-# 18. Open Architectural and Domain Decisions
+# 27. Implementation Evolution
 
-The following decisions remain intentionally open.
+The target architecture should be introduced incrementally.
 
-### Learner State
+The intended evolution is:
 
-* Whether Learner State requires one or multiple Aggregates.
-* The Aggregate boundary of Competency.
-* The Aggregate boundary of Current Level.
-* Whether vocabulary, grammar, and skills require separate domain models.
-* Which learner state is persisted and which state is derived.
+```text
+Current Working Architecture
+        ↓
+Fix Concrete Architectural Problems
+        ↓
+Align New Implementation with Target Domain Boundaries
+        ↓
+Gradually Increase Business Boundary Visibility
+        ↓
+Preserve Stable Existing Foundations
+```
 
-### Learning Activities
+This is not:
 
-* The exact representation of Learning Activity.
-* Whether different activity types share a common abstraction.
-* Which activities require persistence.
-* Which activities generate Learning Evidence.
+```text
+Current Code
+        ↓
+Complete Rewrite
+        ↓
+New Architecture
+```
 
-### Learning Direction
-
-* The model of Learning Plan.
-* The model of Recommendations.
-* Review Due representation.
-* Learning Goals.
-* Exam Preparation.
-* Whether direction is persisted or derived.
-
-### Evidence
-
-* Rules for transforming evidence into learner state.
-* Rules for aggregating multiple evidence types.
-* Whether additional evidence concepts are required.
-
-### Learner progression
-
-* XP semantics.
-* Streak semantics.
-* Achievement semantics.
-* Statistics and derived metrics.
-* Rules connecting evidence, competency, and level.
-
-These decisions must not be assumed merely from the existence of similarly named features.
+The goal is controlled evolution.
 
 ---
 
-# 19. Implementation Constraints for Future Development
+# 28. Concrete Architectural Corrections
 
-When implementation begins, new code should follow the target architecture rather than reproducing the identified problems.
+The current evidence establishes several concrete areas for correction or prevention.
 
-In particular:
+## 28.1 MediaTypeResolver
+
+Current location:
+
+```text
+src/main/java/com/deutschhub/domain/media/service/MediaTypeResolver.java
+```
+
+Problem:
 
 ```text
 Domain
     ↓
-must remain framework-independent
+Spring @Component
 ```
+
+Target rule:
 
 ```text
-Application
-    ↓
-may orchestrate multiple domain boundaries
-    ↓
-but should not become a repository of business rules
+Domain
+    ✕
+Spring dependency
 ```
 
-```text
-Infrastructure
-    ↓
-implements ports and external concerns
-```
-
-Existing working implementations should be changed only when:
-
-* a documented architectural problem requires the change;
-* a new domain decision requires a different boundary;
-* an implementation violates an established target rule;
-* or a concrete feature exposes a limitation in the current design.
-
-The target architecture is therefore a constraint for **future evolution**, not a requirement to immediately rewrite all existing code.
+The future implementation should preserve framework independence in the Domain.
 
 ---
 
-# 20. Target Architecture Summary
+## 28.2 UserProgress
 
-DeutschHub V3 targets a modular monolith using DDD for domain modeling and Hexagonal Architecture for dependency isolation.
-
-The architecture preserves the current working Domain/Application/Infrastructure and Ports & Adapters foundations while making business responsibilities more explicit.
-
-The Learning Context evolves from a predominantly Course-centered implementation toward a broader learner-centered learning experience:
+Current location:
 
 ```text
-Learning
-├── Learning Structure
-├── Learning Activities
-├── Learning Evidence
-├── Learner State
-└── Learning Direction
+src/main/java/com/deutschhub/domain/learning/model/aggregate/UserProgress.java
 ```
 
-The target model preserves established boundaries such as:
+Problem:
+
+```text
+UserProgress
+        ↕
+Enrollment.Progress
+```
+
+overlapping Course-scoped progress responsibilities.
+
+Target direction:
+
+```text
+Enrollment
+└── Progress
+    → Course-scoped progress
+
+Learner State
+└── Competency
+    └── Current Level
+```
+
+`UserProgress` should not become the foundation for the target Learner State model.
+
+---
+
+## 28.3 Application-Level Business Logic
+
+Current example:
+
+```text
+src/main/java/com/deutschhub/application/learning/service/CompleteLessonService.java
+```
+
+The service coordinates multiple responsibilities.
+
+This is acceptable as orchestration.
+
+The architectural constraint is that domain invariants should not gradually accumulate in Application Services when an established Domain concept is responsible for them.
+
+---
+
+# 29. Target Architecture Summary
+
+DeutschHub V3 retains:
+
+```text
+Modular Monolith
++
+DDD
++
+Hexagonal Architecture
+```
+
+The system remains a single deployable application with explicit internal business boundaries.
+
+The Learning Context contains six major responsibilities:
+
+```text
+Learning Structure
+Enrollment
+Learning Activities
+Learning Evidence
+Learner State
+Learning Direction
+```
+
+Assessment is a broader Learning capability that interacts with:
+
+```text
+Learning Activities
+Learning Evidence
+Learner State
+```
+
+The established Aggregate boundaries remain:
 
 ```text
 Course
 Enrollment
 Quiz
 QuizAttempt
-LessonCompletion
 ```
 
-while leaving unresolved concepts open until their business semantics are sufficiently understood.
+with:
 
-The central architectural principle is:
+```text
+LessonCompletion
+    → independent Learning Evidence Entity
+```
 
-> **Refine the existing architecture according to identified business and dependency problems; do not introduce structural change without concrete justification.**
+Competency is a confirmed Learner State concept whose Aggregate boundary remains deferred.
 
-The target architecture therefore provides direction without prematurely fixing every domain concept, Aggregate, Bounded Context, package, or persistence model.
+Current Level is a state/value belonging to Competency and is not an independent Aggregate.
 
+The target architecture therefore preserves the current architectural foundation while making the domain model more explicit.
+
+The central principle is:
+
+> **Evolve the existing architecture according to concrete business and architectural problems; do not introduce structural change without justification.**
+
+The target architecture is therefore a guide for controlled implementation evolution rather than a mandate for a wholesale rewrite.
