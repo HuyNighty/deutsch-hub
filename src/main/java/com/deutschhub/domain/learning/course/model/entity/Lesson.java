@@ -1,10 +1,10 @@
-package com.deutschhub.domain.learning.model.entity;
+package com.deutschhub.domain.learning.course.model.entity;
 
 import com.deutschhub.common.domain.Auditable;
 import com.deutschhub.common.domain.SoftDeletable;
 import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
-import com.deutschhub.domain.learning.model.valueobject.CEFRLevel;
+import com.deutschhub.domain.learning.course.model.valueobject.CEFRLevel;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -101,6 +101,8 @@ public class Lesson implements Auditable, SoftDeletable {
         if (orderIndex < 0) {
             throw new BusinessException(ErrorCode.INVALID_LESSON_ORDER);
         }
+
+        this.orderIndex = orderIndex;
     }
 
     public void addItem(LessonItem item) {

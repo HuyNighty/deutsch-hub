@@ -1,4 +1,4 @@
-package com.deutschhub.domain.learning.model.entity;
+package com.deutschhub.domain.learning.course.model.entity;
 
 import com.deutschhub.common.domain.Auditable;
 import com.deutschhub.common.domain.SoftDeletable;
@@ -55,11 +55,11 @@ public class Section implements Auditable, SoftDeletable {
     }
 
     public void update(String title, String description, Integer orderIndex) {
-        if (this.title != null) {
+        if (title != null) {
             changeTitle(title);
         }
 
-        if (this.description != null) {
+        if (description != null) {
             this.description = description.trim();
         }
 
