@@ -1,13 +1,13 @@
 package com.deutschhub.infrastructure.learning.persistence.adapter;
 
 import com.deutschhub.common.util.PageResponse;
-import com.deutschhub.domain.learning.model.aggregate.Course;
-import com.deutschhub.domain.learning.model.entity.Lesson;
-import com.deutschhub.domain.learning.model.entity.LessonItem;
-import com.deutschhub.domain.learning.model.entity.Section;
-import com.deutschhub.domain.learning.model.valueobject.CEFRLevel;
-import com.deutschhub.domain.learning.model.enums.LessonItemType;
-import com.deutschhub.domain.learning.model.valueobject.Money;
+import com.deutschhub.domain.learning.course.model.aggregate.Course;
+import com.deutschhub.domain.learning.course.model.entity.Lesson;
+import com.deutschhub.domain.learning.course.model.entity.LessonItem;
+import com.deutschhub.domain.learning.course.model.entity.Section;
+import com.deutschhub.domain.learning.course.model.valueobject.CEFRLevel;
+import com.deutschhub.domain.learning.course.model.enums.LessonItemType;
+import com.deutschhub.domain.learning.course.model.valueobject.Money;
 import com.deutschhub.infrastructure.learning.persistence.entity.CourseJpaEntity;
 import com.deutschhub.infrastructure.learning.persistence.entity.LessonItemJpaEntity;
 import com.deutschhub.infrastructure.learning.persistence.entity.LessonJpaEntity;

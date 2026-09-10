@@ -3,11 +3,9 @@ package com.deutschhub.domain.media.service;
 import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
 import com.deutschhub.domain.media.model.valueobject.MediaType;
-import org.springframework.stereotype.Component;
 
 import java.util.Locale;
 
-@Component
 public class MediaTypeResolver {
 
     public MediaType resolve(String mimeType){

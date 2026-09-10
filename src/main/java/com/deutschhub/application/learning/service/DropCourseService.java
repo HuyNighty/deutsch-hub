@@ -4,7 +4,7 @@ import com.deutschhub.application.learning.port.in.DropCourseUseCase;
 import com.deutschhub.application.learning.port.out.EnrollmentRepositoryPort;
 import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
-import com.deutschhub.domain.learning.model.aggregate.Enrollment;
+import com.deutschhub.domain.learning.enrollment.model.aggregate.Enrollment;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;

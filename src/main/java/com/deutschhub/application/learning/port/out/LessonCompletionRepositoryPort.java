@@ -1,6 +1,6 @@
 package com.deutschhub.application.learning.port.out;
 
-import com.deutschhub.domain.learning.model.entity.LessonCompletion;
+import com.deutschhub.domain.learning.evidence.model.LessonCompletion;
 
 import java.util.List;
 import java.util.UUID;

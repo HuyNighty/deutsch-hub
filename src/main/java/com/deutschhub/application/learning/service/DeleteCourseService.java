@@ -3,7 +3,7 @@ package com.deutschhub.application.learning.service;
 import com.deutschhub.application.learning.port.in.DeleteCourseUseCase;
 import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
-import com.deutschhub.domain.learning.model.aggregate.Course;
+import com.deutschhub.domain.learning.course.model.aggregate.Course;
 import com.deutschhub.application.learning.port.out.CourseRepositoryPort;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;

@@ -1,7 +1,7 @@
 package com.deutschhub.infrastructure.learning.persistence.adapter;
 
 import com.deutschhub.application.learning.port.out.LessonCompletionRepositoryPort;
-import com.deutschhub.domain.learning.model.entity.LessonCompletion;
+import com.deutschhub.domain.learning.evidence.model.LessonCompletion;
 import com.deutschhub.infrastructure.learning.persistence.entity.LessonCompletionJpaEntity;
 import com.deutschhub.infrastructure.learning.persistence.repository.SpringDataLessonCompletionRepository;
 import lombok.AccessLevel;

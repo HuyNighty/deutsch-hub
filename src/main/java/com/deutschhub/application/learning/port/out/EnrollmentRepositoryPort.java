@@ -1,6 +1,6 @@
 package com.deutschhub.application.learning.port.out;
 
-import com.deutschhub.domain.learning.model.aggregate.Enrollment;
+import com.deutschhub.domain.learning.enrollment.model.aggregate.Enrollment;
 
 import java.util.List;
 import java.util.Optional;

@@ -4,7 +4,7 @@ import com.deutschhub.application.learning.port.in.DeleteLessonUseCase;
 import com.deutschhub.application.learning.port.out.CourseRepositoryPort;
 import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
-import com.deutschhub.domain.learning.model.aggregate.Course;
+import com.deutschhub.domain.learning.course.model.aggregate.Course;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;

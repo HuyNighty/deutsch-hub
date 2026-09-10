@@ -24,7 +24,7 @@ public class UploadMediaService implements UploadMediaUseCase {
     MediaRepositoryPort mediaRepositoryPort;
     MediaStoragePort mediaStoragePort;
     MediaUploadPolicy mediaUploadPolicy;
-    MediaTypeResolver mediaTypeResolver;
+    MediaTypeResolver mediaTypeResolver = new MediaTypeResolver();
 
     @Override
     public MediaResponse upload(UploadMediaCommand command) {

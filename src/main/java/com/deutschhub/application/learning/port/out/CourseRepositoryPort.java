@@ -1,7 +1,7 @@
 package com.deutschhub.application.learning.port.out;
 
 import com.deutschhub.common.util.PageResponse;
-import com.deutschhub.domain.learning.model.aggregate.Course;
+import com.deutschhub.domain.learning.course.model.aggregate.Course;
 
 import java.util.Optional;
 import java.util.UUID;
