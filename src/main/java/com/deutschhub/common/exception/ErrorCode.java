@@ -119,6 +119,7 @@ public enum ErrorCode {
     QUIZ_ALREADY_DELETED("error.quiz.already.deleted", 10012, ErrorHttpStatus.CONFLICT),
     QUIZ_REQUIREMENT_NOT_MET("error.quiz.requirement.not.met", 10013, ErrorHttpStatus.BAD_REQUEST),
     QUIZ_FORBIDDEN_ACTION("error.quiz.forbidden.action", 10014, ErrorHttpStatus.FORBIDDEN),
+    INVALID_QUIZ_MAX_ATTEMPTS("error.quiz.invalid.max.attempts", 10015, ErrorHttpStatus.BAD_REQUEST),
 
     INVALID_QUESTION_CONTENT("error.question.invalid.content", 11001, ErrorHttpStatus.BAD_REQUEST),
     INVALID_QUESTION_SCORE("error.question.invalid.score", 11002, ErrorHttpStatus.BAD_REQUEST),
@@ -227,6 +228,13 @@ public enum ErrorCode {
     CONTENT_FORBIDDEN_ACTION("error.content.forbidden.action", 20000, ErrorHttpStatus.FORBIDDEN),
     MEDIA_NOT_SUITABLE_FOR_COVER("error.content.media.not.suitable.for.cover", 20001, ErrorHttpStatus.BAD_REQUEST),
 
+    QUIZ_REVISION_INVALID_STATUS("error.quiz.revision.invalid.status", 21000, ErrorHttpStatus.BAD_REQUEST),
+    QUIZ_REVISION_HAS_NO_QUESTIONS("error.quiz.revision.has.no.questions",21001,ErrorHttpStatus.BAD_REQUEST),
+    QUIZ_ALREADY_HAS_DRAFT_REVISION("error.quiz.already.has.draft.revision", 21002, ErrorHttpStatus.CONFLICT),
+    QUIZ_ALREADY_HAS_PUBLISHED_REVISION("error.quiz.already.has.published.revision", 21003, ErrorHttpStatus.CONFLICT),
+    INVALID_QUIZ_REVISION("error.quiz.revision.invalid", 21004, ErrorHttpStatus.BAD_REQUEST),
+    QUIZ_ALREADY_HAS_IN_REVIEW_REVISION("error.quiz.already.has.in.review.revision", 21004, ErrorHttpStatus.CONFLICT),
+    QUIZ_REVISION_NOT_FOUND("error.quiz.revision.not.found", 21005, ErrorHttpStatus.NOT_FOUND),
     ;
 
     private final String messageKey;

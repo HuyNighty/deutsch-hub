@@ -129,7 +129,7 @@ public class Lesson implements Auditable, SoftDeletable {
         LessonItem item = items.stream()
                 .filter(lessonItem -> lessonItem.getId().equals(itemId))
                 .findFirst()
-                .orElseThrow(() -> new BusinessException(ErrorCode.LESSON_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.LESSON_ITEM_NOT_FOUND));
 
         item.softDelete();
         touch();
