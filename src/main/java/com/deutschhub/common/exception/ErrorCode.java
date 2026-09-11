@@ -247,6 +247,7 @@ public enum ErrorCode {
     INVALID_QUIZ_AVAILABILITY_DATA("error.quiz.availability.invalid.data", 22006, ErrorHttpStatus.BAD_REQUEST),
     INVALID_QUIZ_AVAILABILITY_WINDOW("error.quiz.availability.window.invalid", 22007, ErrorHttpStatus.BAD_REQUEST),
     INVALID_QUIZ_AVAILABILITY_TIME("error.quiz.availability.time.invalid", 22008, ErrorHttpStatus.BAD_REQUEST),
+    INVALID_QUIZ_COMPLETION_POLICY("error.quiz.completion.policy.invalid", 22009, ErrorHttpStatus.BAD_REQUEST),
     ;
 
     private final String messageKey;

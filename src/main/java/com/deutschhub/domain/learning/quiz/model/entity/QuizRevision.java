@@ -2,6 +2,7 @@ package com.deutschhub.domain.learning.quiz.model.entity;
 
 import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
+import com.deutschhub.domain.learning.quiz.model.enums.CompletionPolicy;
 import com.deutschhub.domain.learning.quiz.model.enums.DifficultyLevel;
 import com.deutschhub.domain.learning.quiz.model.enums.QuizRevisionStatus;
 import com.deutschhub.domain.learning.quiz.model.valueobject.AvailabilityWindow;
@@ -22,6 +23,7 @@ public class QuizRevision {
     private String description;
     private DifficultyLevel difficulty;
     private Availability availability;
+    private CompletionPolicy completionPolicy;
 
     private Integer timeLimitMinutes;
     private Integer passingPercentage;
@@ -186,6 +188,16 @@ public class QuizRevision {
         return availability.isAvailableAt(now);
     }
 
+    public void updateCompletionPolicy(CompletionPolicy completionPolicy) {
+        ensureEditable();
+
+        if (completionPolicy == null) {
+            throw new BusinessException(ErrorCode.INVALID_QUIZ_COMPLETION_POLICY);
+        }
+
+        this.completionPolicy = completionPolicy;
+    }
+
     private void ensureEditable() {
         if (status != QuizRevisionStatus.DRAFT) {
             throw new BusinessException(ErrorCode.QUIZ_REVISION_INVALID_STATUS);
@@ -223,6 +235,10 @@ public class QuizRevision {
 
         if (questions.isEmpty()) {
             throw new BusinessException(ErrorCode.QUIZ_REVISION_HAS_NO_QUESTIONS);
+        }
+
+        if (completionPolicy == null) {
+            throw new BusinessException(ErrorCode.INVALID_QUIZ_COMPLETION_POLICY);
         }
 
         validateTimeLimit(timeLimitMinutes);
@@ -310,5 +326,9 @@ public class QuizRevision {
 
     public Availability getAvailability() {
         return availability;
+    }
+
+    public CompletionPolicy getCompletionPolicy() {
+        return completionPolicy;
     }
 }
