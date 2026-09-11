@@ -248,6 +248,8 @@ public enum ErrorCode {
     INVALID_QUIZ_AVAILABILITY_WINDOW("error.quiz.availability.window.invalid", 22007, ErrorHttpStatus.BAD_REQUEST),
     INVALID_QUIZ_AVAILABILITY_TIME("error.quiz.availability.time.invalid", 22008, ErrorHttpStatus.BAD_REQUEST),
     INVALID_QUIZ_COMPLETION_POLICY("error.quiz.completion.policy.invalid", 22009, ErrorHttpStatus.BAD_REQUEST),
+    INVALID_QUIZ_LEARNING_PREREQUISITE_DATA("error.quiz.learning.prerequisite.invalid.data", 22010, ErrorHttpStatus.BAD_REQUEST),
+    QUIZ_LEARNING_PREREQUISITE_NOT_FOUND("error.quiz.learning.prerequisite.not.found", 22011, ErrorHttpStatus.NOT_FOUND),
     ;
 
     private final String messageKey;

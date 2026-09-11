@@ -31,6 +31,7 @@ public class QuizRevision {
 
     private final List<Question> questions = new ArrayList<>();
     private final List<ReviewCycle> reviewCycles = new ArrayList<>();
+    private final List<LearningPrerequisite> learningPrerequisites = new ArrayList<>();
 
     private QuizRevision(UUID id, int revisionNumber, String title, String description, DifficultyLevel difficulty,
                          Integer timeLimitMinutes, Integer passingPercentage, Integer maxAttempts) {
@@ -198,6 +199,30 @@ public class QuizRevision {
         this.completionPolicy = completionPolicy;
     }
 
+    public void addLearningPrerequisite(LearningPrerequisite prerequisite) {
+        ensureEditable();
+
+        if (prerequisite == null) {throw new BusinessException(
+                ErrorCode.INVALID_QUIZ_LEARNING_PREREQUISITE_DATA);
+        }
+
+        learningPrerequisites.add(prerequisite);
+    }
+
+    public void removeLearningPrerequisite(UUID prerequisiteId) {
+        ensureEditable();
+
+        if (prerequisiteId == null) {
+            throw new BusinessException(ErrorCode.INVALID_QUIZ_LEARNING_PREREQUISITE_DATA);
+        }
+
+        boolean removed = learningPrerequisites.removeIf(prerequisite -> prerequisite.getId().equals(prerequisiteId));
+
+        if (!removed) {
+            throw new BusinessException(ErrorCode.QUIZ_LEARNING_PREREQUISITE_NOT_FOUND);
+        }
+    }
+
     private void ensureEditable() {
         if (status != QuizRevisionStatus.DRAFT) {
             throw new BusinessException(ErrorCode.QUIZ_REVISION_INVALID_STATUS);
@@ -330,5 +355,9 @@ public class QuizRevision {
 
     public CompletionPolicy getCompletionPolicy() {
         return completionPolicy;
+    }
+
+    public List<LearningPrerequisite> getLearningPrerequisites() {
+        return Collections.unmodifiableList(learningPrerequisites);
     }
 }
