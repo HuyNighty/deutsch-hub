@@ -151,7 +151,12 @@ public class QuizRevision {
 
     public void updateDifficulty(DifficultyLevel difficulty) {
         ensureEditable();
-        this.difficulty = Objects.requireNonNull(difficulty);
+
+        if (difficulty == null) {
+            throw new BusinessException(ErrorCode.QUIZ_INVALID_DIFFICULTY);
+        }
+
+        this.difficulty = difficulty;
     }
 
     public void updateTimeLimit(int minutes) {
@@ -170,18 +175,22 @@ public class QuizRevision {
     }
 
     public void activateAvailability() {
+        ensureEditable();
         availability.activate();
     }
 
     public void deactivateAvailability() {
+        ensureEditable();
         availability.deactivate();
     }
 
     public void setAvailabilityWindow(AvailabilityWindow window) {
+        ensureEditable();
         availability.setWindow(window);
     }
 
     public void clearAvailabilityWindow() {
+        ensureEditable();
         availability.clearWindow();
     }
 
