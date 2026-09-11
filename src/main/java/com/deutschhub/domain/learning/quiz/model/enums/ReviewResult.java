@@ -1,4 +1,4 @@
-package com.deutschhub.domain.content.article.enums;
+package com.deutschhub.domain.learning.quiz.model.enums;
 
 public enum ReviewResult {
     PENDING,

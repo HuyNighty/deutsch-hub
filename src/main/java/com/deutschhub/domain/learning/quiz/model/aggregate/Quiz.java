@@ -6,8 +6,12 @@ import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
 import com.deutschhub.domain.learning.quiz.model.entity.QuizRevision;
 import com.deutschhub.domain.learning.quiz.model.enums.QuizRevisionStatus;
+import com.deutschhub.domain.learning.quiz.model.enums.QuizStatus;
 import com.deutschhub.domain.learning.quiz.model.enums.QuizVisibility;
+import com.deutschhub.domain.learning.quiz.model.valueobject.ReviewFeedback;
+import com.deutschhub.domain.shared.valueobject.UserId;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -21,6 +25,7 @@ public class Quiz implements Auditable, SoftDeletable {
     private final UUID createdBy;
 
     private QuizVisibility visibility;
+    private QuizStatus status;
 
     private final LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -28,11 +33,12 @@ public class Quiz implements Auditable, SoftDeletable {
 
     private final List<QuizRevision> revisions = new ArrayList<>();
 
-    private Quiz(UUID id, UUID createdBy, QuizVisibility visibility) {
+    private Quiz(UUID id, UUID createdBy, QuizVisibility visibility, QuizStatus status) {
         this.id = Objects.requireNonNull(id);
         this.createdBy = Objects.requireNonNull(createdBy);
 
         this.visibility = Objects.requireNonNull(visibility);
+        this.status = Objects.requireNonNull(status);
 
         this.createdAt = LocalDateTime.now();
         this.updatedAt = this.createdAt;
@@ -40,7 +46,28 @@ public class Quiz implements Auditable, SoftDeletable {
     }
 
     public static Quiz createDraft(UUID createdBy) {
-        return new Quiz(UUID.randomUUID(), createdBy, QuizVisibility.PRIVATE);
+        Quiz quiz = new Quiz(UUID.randomUUID(), createdBy, QuizVisibility.PRIVATE, QuizStatus.DRAFT);
+
+        quiz.revisions.add(QuizRevision.createDraft(1));
+
+        return quiz;
+    }
+
+    public QuizRevision createRevision() {
+        ensureNotDeleted();
+
+        if (hasDraftRevision()) {
+            throw new BusinessException(ErrorCode.QUIZ_ALREADY_HAS_DRAFT_REVISION);
+        }
+
+        int nextRevisionNumber = getNextRevisionNumber();
+
+        QuizRevision revision = QuizRevision.createDraft(nextRevisionNumber);
+
+        revisions.add(revision);
+        touch();
+
+        return revision;
     }
 
     public void addRevision(QuizRevision revision) {
@@ -53,7 +80,7 @@ public class Quiz implements Auditable, SoftDeletable {
         addRevisionInternal(revision);
     }
 
-    public void submitRevisionForReview(UUID revisionId) {
+    public void submitRevisionForReview(UUID revisionId, UserId submittedBy, Instant submittedAt) {
         ensureNotDeleted();
 
         QuizRevision revision = findRevision(revisionId);
@@ -62,18 +89,21 @@ public class Quiz implements Auditable, SoftDeletable {
             throw new BusinessException(ErrorCode.QUIZ_ALREADY_HAS_IN_REVIEW_REVISION);
         }
 
-        revision.submitForReview();
+        revision.submitForReview(submittedBy, submittedAt);
+        touch();
     }
 
-    public void withdrawRevisionSubmission(UUID revisionId) {
+    public void withdrawRevisionSubmission(UUID revisionId, UserId withdrawnBy, Instant withdrawnAt) {
         ensureNotDeleted();
 
         QuizRevision revision = findRevision(revisionId);
 
-        revision.withdrawSubmission();
+        revision.withdrawSubmission(withdrawnBy, withdrawnAt);
+
+        touch();
     }
 
-    public void publishRevision(UUID revisionId) {
+    public void publishRevision(UUID revisionId, UserId reviewer, Instant reviewedAt) {
         ensureNotDeleted();
 
         QuizRevision revision = findRevision(revisionId);
@@ -82,12 +112,67 @@ public class Quiz implements Auditable, SoftDeletable {
             throw new BusinessException(ErrorCode.QUIZ_REVISION_INVALID_STATUS);
         }
 
-        if (hasPublishedRevision()) {
-            QuizRevision currentPublished = findPublishedRevision();
+        QuizRevision currentPublished = hasPublishedRevision() ? findPublishedRevision() : null;
+
+        revision.publish(reviewer, reviewedAt);
+
+        if (currentPublished != null) {
             currentPublished.markHistorical();
         }
 
-        revision.publish();
+        touch();
+    }
+
+    public void discardDraftRevision(UUID revisionId) {
+        ensureNotDeleted();
+
+        QuizRevision revision = findRevision(revisionId);
+
+        if (revision.getStatus() != QuizRevisionStatus.DRAFT) {
+            throw new BusinessException(ErrorCode.QUIZ_REVISION_INVALID_STATUS);
+        }
+
+        revisions.remove(revision);
+        touch();
+    }
+
+    public void activate() {
+        ensureNotDeleted();
+
+        if (status == QuizStatus.ACTIVE) {
+            throw new BusinessException(ErrorCode.QUIZ_INVALID_STATUS);
+        }
+
+        status = QuizStatus.ACTIVE;
+        touch();
+    }
+
+    public void deactivate() {
+        ensureNotDeleted();
+
+        if (status != QuizStatus.ACTIVE) {
+            throw new BusinessException(ErrorCode.QUIZ_INVALID_STATUS);
+        }
+
+        status = QuizStatus.DRAFT;
+        touch();
+    }
+
+    public void requestRevisionChanges(UUID revisionId, UserId reviewer, ReviewFeedback feedback, Instant reviewedAt) {
+        ensureNotDeleted();
+
+        QuizRevision revision = findRevision(revisionId);
+
+        revision.requestChanges(reviewer, feedback, reviewedAt);
+
+        touch();
+    }
+
+    private int getNextRevisionNumber() {
+        return revisions.stream()
+                .mapToInt(QuizRevision::getRevisionNumber)
+                .max()
+                .orElse(0) + 1;
     }
 
     private QuizRevision findRevision(UUID revisionId) {
@@ -96,14 +181,14 @@ public class Quiz implements Auditable, SoftDeletable {
         }
 
         return revisions.stream()
-                .filter(r -> r.getId().equals(revisionId))
+                .filter(revision -> revision.getId().equals(revisionId))
                 .findFirst()
                 .orElseThrow(() -> new BusinessException(ErrorCode.QUIZ_REVISION_NOT_FOUND));
     }
 
     private QuizRevision findPublishedRevision() {
         return revisions.stream()
-                .filter(r -> r.getStatus() == QuizRevisionStatus.PUBLISHED)
+                .filter(revision -> revision.getStatus() == QuizRevisionStatus.PUBLISHED)
                 .findFirst()
                 .orElseThrow(() -> new BusinessException(ErrorCode.QUIZ_REVISION_NOT_FOUND));
     }
@@ -132,15 +217,18 @@ public class Quiz implements Auditable, SoftDeletable {
     }
 
     private boolean hasDraftRevision() {
-        return revisions.stream().anyMatch(r -> r.getStatus() == QuizRevisionStatus.DRAFT);
+        return revisions.stream()
+                .anyMatch(revision -> revision.getStatus() == QuizRevisionStatus.DRAFT);
     }
 
     private boolean hasPublishedRevision() {
-        return revisions.stream().anyMatch(r -> r.getStatus() == QuizRevisionStatus.PUBLISHED);
+        return revisions.stream()
+                .anyMatch(revision -> revision.getStatus() == QuizRevisionStatus.PUBLISHED);
     }
 
     private boolean hasInReviewRevision() {
-        return revisions.stream().anyMatch(r -> r.getStatus() == QuizRevisionStatus.IN_REVIEW);
+        return revisions.stream()
+                .anyMatch(revision -> revision.getStatus() == QuizRevisionStatus.IN_REVIEW);
     }
 
     private void ensureNotDeleted() {
@@ -197,6 +285,10 @@ public class Quiz implements Auditable, SoftDeletable {
 
     public QuizVisibility getVisibility() {
         return visibility;
+    }
+
+    public QuizStatus getStatus() {
+        return status;
     }
 
     public List<QuizRevision> getRevisions() {

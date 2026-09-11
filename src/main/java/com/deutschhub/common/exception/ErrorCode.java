@@ -120,6 +120,7 @@ public enum ErrorCode {
     QUIZ_REQUIREMENT_NOT_MET("error.quiz.requirement.not.met", 10013, ErrorHttpStatus.BAD_REQUEST),
     QUIZ_FORBIDDEN_ACTION("error.quiz.forbidden.action", 10014, ErrorHttpStatus.FORBIDDEN),
     INVALID_QUIZ_MAX_ATTEMPTS("error.quiz.invalid.max.attempts", 10015, ErrorHttpStatus.BAD_REQUEST),
+    QUIZ_INVALID_STATUS("error.quiz.invalid.status", 10016, ErrorHttpStatus.BAD_REQUEST),
 
     INVALID_QUESTION_CONTENT("error.question.invalid.content", 11001, ErrorHttpStatus.BAD_REQUEST),
     INVALID_QUESTION_SCORE("error.question.invalid.score", 11002, ErrorHttpStatus.BAD_REQUEST),
@@ -233,8 +234,19 @@ public enum ErrorCode {
     QUIZ_ALREADY_HAS_DRAFT_REVISION("error.quiz.already.has.draft.revision", 21002, ErrorHttpStatus.CONFLICT),
     QUIZ_ALREADY_HAS_PUBLISHED_REVISION("error.quiz.already.has.published.revision", 21003, ErrorHttpStatus.CONFLICT),
     INVALID_QUIZ_REVISION("error.quiz.revision.invalid", 21004, ErrorHttpStatus.BAD_REQUEST),
-    QUIZ_ALREADY_HAS_IN_REVIEW_REVISION("error.quiz.already.has.in.review.revision", 21004, ErrorHttpStatus.CONFLICT),
-    QUIZ_REVISION_NOT_FOUND("error.quiz.revision.not.found", 21005, ErrorHttpStatus.NOT_FOUND),
+    QUIZ_ALREADY_HAS_IN_REVIEW_REVISION("error.quiz.already.has.in.review.revision", 21005, ErrorHttpStatus.CONFLICT),
+    QUIZ_REVISION_NOT_FOUND("error.quiz.revision.not.found", 21006, ErrorHttpStatus.NOT_FOUND),
+    QUIZ_INVALID_DIFFICULTY("error.quiz.invalid.difficulty", 21007, ErrorHttpStatus.BAD_REQUEST),
+
+    QUIZ_REVIEW_INVALID_FEEDBACK("error.quiz.review.feedback.invalid", 22000, ErrorHttpStatus.BAD_REQUEST),
+    QUIZ_REVIEW_INVALID_STATE("error.quiz.review.invalid.state", 22001, ErrorHttpStatus.BAD_REQUEST),
+    INVALID_QUIZ_REVIEW_CYCLE_DATA("error.quiz.review.cycle.invalid.data", 22002, ErrorHttpStatus.BAD_REQUEST),
+    INVALID_QUIZ_REVIEW_COMPLETION_DATA("error.quiz.review.completion.invalid.data", 22003, ErrorHttpStatus.BAD_REQUEST),
+    INVALID_QUIZ_REVIEW_RESULT("error.quiz.review.result.invalid", 22004, ErrorHttpStatus.BAD_REQUEST),
+    INVALID_QUIZ_REVIEW_WITHDRAWAL_DATA("error.quiz.review.withdrawal.invalid.data", 22005, ErrorHttpStatus.BAD_REQUEST),
+    INVALID_QUIZ_AVAILABILITY_DATA("error.quiz.availability.invalid.data", 22006, ErrorHttpStatus.BAD_REQUEST),
+    INVALID_QUIZ_AVAILABILITY_WINDOW("error.quiz.availability.window.invalid", 22007, ErrorHttpStatus.BAD_REQUEST),
+    INVALID_QUIZ_AVAILABILITY_TIME("error.quiz.availability.time.invalid", 22008, ErrorHttpStatus.BAD_REQUEST),
     ;
 
     private final String messageKey;

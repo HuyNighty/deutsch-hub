@@ -4,7 +4,11 @@ import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
 import com.deutschhub.domain.learning.quiz.model.enums.DifficultyLevel;
 import com.deutschhub.domain.learning.quiz.model.enums.QuizRevisionStatus;
+import com.deutschhub.domain.learning.quiz.model.valueobject.AvailabilityWindow;
+import com.deutschhub.domain.learning.quiz.model.valueobject.ReviewFeedback;
+import com.deutschhub.domain.shared.valueobject.UserId;
 
+import java.time.Instant;
 import java.util.*;
 
 public class QuizRevision {
@@ -17,32 +21,35 @@ public class QuizRevision {
     private String title;
     private String description;
     private DifficultyLevel difficulty;
+    private Availability availability;
 
-    private int timeLimitMinutes;
-    private int passingPercentage;
-    private int maxAttempts;
+    private Integer timeLimitMinutes;
+    private Integer passingPercentage;
+    private Integer maxAttempts;
 
     private final List<Question> questions = new ArrayList<>();
+    private final List<ReviewCycle> reviewCycles = new ArrayList<>();
 
     private QuizRevision(UUID id, int revisionNumber, String title, String description, DifficultyLevel difficulty,
-                         int timeLimitMinutes, int passingPercentage, int maxAttempts) {
+                         Integer timeLimitMinutes, Integer passingPercentage, Integer maxAttempts) {
         this.id = Objects.requireNonNull(id);
         this.revisionNumber = revisionNumber;
 
         this.status = QuizRevisionStatus.DRAFT;
 
-        this.title = validateTitle(title);
-        this.description = description != null ? description.trim() : "";
-        this.difficulty = Objects.requireNonNull(difficulty);
+        this.title = title;
+        this.description = description;
+        this.difficulty = difficulty;
 
-        this.timeLimitMinutes = validateTimeLimit(timeLimitMinutes);
-        this.passingPercentage = validatePassingPercentage(passingPercentage);
-        this.maxAttempts = validateMaxAttempts(maxAttempts);
+        this.timeLimitMinutes = timeLimitMinutes;
+        this.passingPercentage = passingPercentage;
+        this.maxAttempts = maxAttempts;
+        this.availability = Availability.create();
     }
 
-    public static QuizRevision createDraft(int revisionNumber, String title, String description, DifficultyLevel difficulty,
-                                           int timeLimitMinutes, int passingPercentage, int maxAttempts) {
-        return new QuizRevision(UUID.randomUUID(), revisionNumber, title, description, difficulty, timeLimitMinutes, passingPercentage, maxAttempts);
+    public static QuizRevision createDraft(int revisionNumber) {
+        return new QuizRevision(UUID.randomUUID(), revisionNumber, null, null, null,
+                null, null, null);
     }
 
     public int getMaxScore() {
@@ -66,37 +73,47 @@ public class QuizRevision {
             throw new BusinessException(ErrorCode.INVALID_QUESTION);
         }
 
-        boolean removed = questions.removeIf(q -> q.getId().equals(questionId));
+        boolean removed = questions.removeIf(question -> question.getId().equals(questionId));
 
         if (!removed) {
             throw new BusinessException(ErrorCode.QUESTION_NOT_FOUND);
         }
     }
 
-    public void submitForReview() {
+    public void submitForReview(UserId submittedBy, Instant submittedAt) {
         if (status != QuizRevisionStatus.DRAFT) {
             throw new BusinessException(ErrorCode.QUIZ_REVISION_INVALID_STATUS);
         }
 
         validate();
 
+        if (submittedBy == null || submittedAt == null) {
+            throw new BusinessException(ErrorCode.INVALID_QUIZ_REVIEW_CYCLE_DATA);
+        }
+
+        reviewCycles.add(new ReviewCycle(UUID.randomUUID(), submittedBy, submittedAt));
+
         this.status = QuizRevisionStatus.IN_REVIEW;
     }
 
-    public void withdrawSubmission() {
+    public void withdrawSubmission(UserId withdrawnBy, Instant withdrawnAt) {
         if (status != QuizRevisionStatus.IN_REVIEW) {
             throw new BusinessException(ErrorCode.QUIZ_REVISION_INVALID_STATUS);
         }
 
+        getCurrentReviewCycle().markWithdrawn(withdrawnBy, withdrawnAt);
+
         this.status = QuizRevisionStatus.DRAFT;
     }
 
-    public void publish() {
+    public void publish(UserId reviewer, Instant reviewedAt) {
         if (status != QuizRevisionStatus.IN_REVIEW) {
             throw new BusinessException(ErrorCode.QUIZ_REVISION_INVALID_STATUS);
         }
 
         validate();
+
+        getCurrentReviewCycle().markApproved(reviewer, reviewedAt);
 
         this.status = QuizRevisionStatus.PUBLISHED;
     }
@@ -107,6 +124,16 @@ public class QuizRevision {
         }
 
         this.status = QuizRevisionStatus.HISTORICAL;
+    }
+
+    public void requestChanges(UserId reviewer, ReviewFeedback feedback, Instant reviewedAt) {
+        if (status != QuizRevisionStatus.IN_REVIEW) {
+            throw new BusinessException(ErrorCode.QUIZ_REVISION_INVALID_STATUS);
+        }
+
+        getCurrentReviewCycle().markChangesRequested(reviewer, feedback, reviewedAt);
+
+        this.status = QuizRevisionStatus.DRAFT;
     }
 
     public void updateTitle(String title) {
@@ -139,16 +166,68 @@ public class QuizRevision {
         this.maxAttempts = validateMaxAttempts(maxAttempts);
     }
 
+    public void activateAvailability() {
+        availability.activate();
+    }
+
+    public void deactivateAvailability() {
+        availability.deactivate();
+    }
+
+    public void setAvailabilityWindow(AvailabilityWindow window) {
+        availability.setWindow(window);
+    }
+
+    public void clearAvailabilityWindow() {
+        availability.clearWindow();
+    }
+
+    public boolean isAvailableAt(Instant now) {
+        return availability.isAvailableAt(now);
+    }
+
     private void ensureEditable() {
         if (status != QuizRevisionStatus.DRAFT) {
             throw new BusinessException(ErrorCode.QUIZ_REVISION_INVALID_STATUS);
         }
     }
 
+    private ReviewCycle getCurrentReviewCycle() {
+        if (reviewCycles.isEmpty()) {
+            throw new BusinessException(ErrorCode.QUIZ_REVIEW_INVALID_STATE);
+        }
+
+        return reviewCycles.get(reviewCycles.size() - 1);
+    }
+
     private void validate() {
+        if (title == null || title.isBlank()) {
+            throw new BusinessException(ErrorCode.QUIZ_INVALID_TITLE);
+        }
+
+        if (difficulty == null) {
+            throw new BusinessException(ErrorCode.QUIZ_INVALID_DIFFICULTY);
+        }
+
+        if (timeLimitMinutes == null) {
+            throw new BusinessException(ErrorCode.QUIZ_INVALID_TIME_LIMIT);
+        }
+
+        if (passingPercentage == null) {
+            throw new BusinessException(ErrorCode.QUIZ_INVALID_PASSING_SCORE);
+        }
+
+        if (maxAttempts == null) {
+            throw new BusinessException(ErrorCode.INVALID_QUIZ_MAX_ATTEMPTS);
+        }
+
         if (questions.isEmpty()) {
             throw new BusinessException(ErrorCode.QUIZ_REVISION_HAS_NO_QUESTIONS);
         }
+
+        validateTimeLimit(timeLimitMinutes);
+        validatePassingPercentage(passingPercentage);
+        validateMaxAttempts(maxAttempts);
 
         questions.forEach(Question::validate);
     }
@@ -157,6 +236,7 @@ public class QuizRevision {
         if (title == null || title.trim().isEmpty()) {
             throw new BusinessException(ErrorCode.QUIZ_INVALID_TITLE);
         }
+
         return title.trim();
     }
 
@@ -164,6 +244,7 @@ public class QuizRevision {
         if (minutes <= 0) {
             throw new BusinessException(ErrorCode.QUIZ_INVALID_TIME_LIMIT);
         }
+
         return minutes;
     }
 
@@ -171,6 +252,7 @@ public class QuizRevision {
         if (percentage < 0 || percentage > 100) {
             throw new BusinessException(ErrorCode.QUIZ_INVALID_PASSING_SCORE);
         }
+
         return percentage;
     }
 
@@ -178,6 +260,7 @@ public class QuizRevision {
         if (maxAttempts <= 0) {
             throw new BusinessException(ErrorCode.INVALID_QUIZ_MAX_ATTEMPTS);
         }
+
         return maxAttempts;
     }
 
@@ -205,15 +288,15 @@ public class QuizRevision {
         return difficulty;
     }
 
-    public int getTimeLimitMinutes() {
+    public Integer getTimeLimitMinutes() {
         return timeLimitMinutes;
     }
 
-    public int getPassingPercentage() {
+    public Integer getPassingPercentage() {
         return passingPercentage;
     }
 
-    public int getMaxAttempts() {
+    public Integer getMaxAttempts() {
         return maxAttempts;
     }
 
@@ -221,4 +304,11 @@ public class QuizRevision {
         return Collections.unmodifiableList(questions);
     }
 
+    public List<ReviewCycle> getReviewCycles() {
+        return Collections.unmodifiableList(reviewCycles);
+    }
+
+    public Availability getAvailability() {
+        return availability;
+    }
 }
