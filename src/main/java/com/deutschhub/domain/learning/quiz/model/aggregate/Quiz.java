@@ -23,6 +23,7 @@ public class Quiz implements Auditable, SoftDeletable {
 
     private final UUID id;
     private final UUID createdBy;
+    private UUID author;
 
     private QuizVisibility visibility;
     private QuizStatus status;
@@ -33,9 +34,10 @@ public class Quiz implements Auditable, SoftDeletable {
 
     private final List<QuizRevision> revisions = new ArrayList<>();
 
-    private Quiz(UUID id, UUID createdBy, QuizVisibility visibility, QuizStatus status) {
+    private Quiz(UUID id, UUID createdBy, UUID author, QuizVisibility visibility, QuizStatus status) {
         this.id = Objects.requireNonNull(id);
         this.createdBy = Objects.requireNonNull(createdBy);
+        this.author =  Objects.requireNonNull(author);
 
         this.visibility = Objects.requireNonNull(visibility);
         this.status = Objects.requireNonNull(status);
@@ -46,7 +48,7 @@ public class Quiz implements Auditable, SoftDeletable {
     }
 
     public static Quiz createDraft(UUID createdBy) {
-        Quiz quiz = new Quiz(UUID.randomUUID(), createdBy, QuizVisibility.PRIVATE, QuizStatus.DRAFT);
+        Quiz quiz = new Quiz(UUID.randomUUID(), createdBy, createdBy, QuizVisibility.PRIVATE, QuizStatus.DRAFT);
 
         quiz.revisions.add(QuizRevision.createDraft(1));
 
@@ -166,6 +168,50 @@ public class Quiz implements Auditable, SoftDeletable {
         revision.requestChanges(reviewer, feedback, reviewedAt);
 
         touch();
+    }
+
+    public void changeAuthor(UUID authorId, UUID newAuthorId, boolean isAdmin) {
+        ensureNotDeleted();
+        ensureCanChangeAuthor();
+
+        if (newAuthorId == null) {
+            throw new BusinessException(ErrorCode.INVALID_QUIZ_AUTHOR);
+        }
+
+        if (!isAdmin && !author.equals(authorId)) {
+            throw new BusinessException(ErrorCode.QUIZ_FORBIDDEN_ACTION);
+        }
+
+        if (author.equals(newAuthorId)) {
+            throw new BusinessException(ErrorCode.QUIZ_AUTHOR_ALREADY_ASSIGNED);
+        }
+
+        this.author = newAuthorId;
+        touch();
+    }
+
+    public void archive() {
+        ensureNotDeleted();
+
+        if (status != QuizStatus.ACTIVE) {
+            throw new BusinessException(ErrorCode.QUIZ_INVALID_STATUS);
+        }
+
+        status = QuizStatus.ARCHIVED;
+        touch();
+    }
+
+    public void changeVisibility(QuizVisibility visibility, UUID actorId, boolean isAdmin) {
+        ensureCanMutateBy(actorId, isAdmin);
+
+        this.visibility = Objects.requireNonNull(visibility);
+        touch();
+    }
+
+    private void ensureCanChangeAuthor() {
+        if (status != QuizStatus.ACTIVE && status != QuizStatus.ARCHIVED) {
+            throw new BusinessException(ErrorCode.QUIZ_INVALID_STATUS);
+        }
     }
 
     private int getNextRevisionNumber() {
@@ -305,5 +351,9 @@ public class Quiz implements Auditable, SoftDeletable {
 
     public LocalDateTime getDeletedAt() {
         return deletedAt;
+    }
+
+    public UUID getAuthor() {
+        return author;
     }
 }
