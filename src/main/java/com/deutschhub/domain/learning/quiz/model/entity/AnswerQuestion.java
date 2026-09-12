@@ -33,11 +33,11 @@ public class AnswerQuestion {
         this.content = validateContent(content);
     }
 
-    public void markAsCorrect() {
+    void markAsCorrect() {
         this.correct = true;
     }
 
-    public void markAsIncorrect() {
+    void markAsIncorrect() {
         this.correct = false;
     }
 

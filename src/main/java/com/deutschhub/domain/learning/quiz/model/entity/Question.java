@@ -56,8 +56,38 @@ public class Question {
         }
     }
 
+    public void markAnswerAsCorrect(UUID answerId) {
+        AnswerQuestion answer = findAnswer(answerId);
+
+        if (type.isSingleChoice()) {
+            answers.forEach(existingAnswer -> {
+                if (!existingAnswer.getId().equals(answerId)) {
+                    existingAnswer.markAsIncorrect();
+                }
+            });
+        }
+
+        answer.markAsCorrect();
+    }
+
+    public void markAnswerAsIncorrect(UUID answerId) {
+        AnswerQuestion answer = findAnswer(answerId);
+        answer.markAsIncorrect();
+    }
+
     public void validate() {
         validateAnswers(this.answers);
+    }
+
+    private AnswerQuestion findAnswer(UUID answerId) {
+        if (answerId == null) {
+            throw new BusinessException(ErrorCode.ANSWER_NOT_FOUND);
+        }
+
+        return answers.stream()
+                .filter(answer -> answer.getId().equals(answerId))
+                .findFirst()
+                .orElseThrow(() -> new BusinessException(ErrorCode.ANSWER_NOT_FOUND));
     }
 
     private void validateAnswers(List<AnswerQuestion> answers) {
