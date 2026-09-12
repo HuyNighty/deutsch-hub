@@ -98,12 +98,6 @@ public class QuizAttempt implements Auditable, SoftDeletable {
             throw new BusinessException(ErrorCode.QUIZ_HAS_NO_QUESTIONS);
         }
 
-        for (Question q : questions) {
-            if (!q.getQuizId().equals(this.quizId)) {
-                throw new BusinessException(ErrorCode.QUESTION_NOT_BELONG_TO_QUIZ);
-            }
-        }
-
         if (answers.size() != questions.size()) {
             throw new BusinessException(ErrorCode.QUIZ_ATTEMPT_NOT_ALL_ANSWERED);
         }
