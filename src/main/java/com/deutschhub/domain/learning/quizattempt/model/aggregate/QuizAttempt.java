@@ -10,6 +10,7 @@ import com.deutschhub.domain.learning.quizattempt.model.entity.UserAnswer;
 import com.deutschhub.domain.learning.quizattempt.model.enums.AttemptStatus;
 import com.deutschhub.domain.learning.quiz.model.enums.QuestionType;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -19,41 +20,43 @@ public class QuizAttempt implements Auditable, SoftDeletable {
     private final UUID id;
     private final UUID quizId;
     private final UUID userId;
+    private final UUID revisionId;
 
     private AttemptStatus status;
 
-    private Map<UUID, UserAnswer> answers = new HashMap<>();
+    private final Map<UUID, UserAnswer> answers = new HashMap<>();
 
     private int totalScore;
 
-    private final LocalDateTime startedAt;
-    private LocalDateTime submittedAt;
+    private final Instant startedAt;
+    private Instant submittedAt;
+    private Instant expiresAt;
 
     private final LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime deletedAt;
 
-    private QuizAttempt(UUID id, UUID quizId, UUID userId) {
+    private QuizAttempt(UUID id, UUID quizId, UUID revisionId, UUID userId) {
         this.id = Objects.requireNonNull(id);
         this.quizId = Objects.requireNonNull(quizId);
         this.userId = Objects.requireNonNull(userId);
+        this.revisionId = Objects.requireNonNull(revisionId);
 
         this.status = AttemptStatus.IN_PROGRESS;
 
-        this.answers = new HashMap<>();
         this.totalScore = 0;
 
-        this.startedAt = LocalDateTime.now();
-        this.createdAt = this.startedAt;
-        this.updatedAt = this.startedAt;
+        this.startedAt = Instant.now();
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = this.createdAt;
         this.deletedAt = null;
     }
 
-    public static QuizAttempt create(UUID quizId, UUID userId) {
-        if (quizId == null || userId == null) {
+    public static QuizAttempt create(UUID quizId, UUID revisionId,UUID userId) {
+        if (quizId == null || revisionId  == null || userId == null) {
             throw new BusinessException(ErrorCode.INVALID_QUIZ_ATTEMPT_DATA);
         }
-        return new QuizAttempt(UUID.randomUUID(), quizId, userId);
+        return new QuizAttempt(UUID.randomUUID(), quizId, revisionId, userId);
     }
 
     public void answerQuestion(UserAnswer answer) {
@@ -148,7 +151,7 @@ public class QuizAttempt implements Auditable, SoftDeletable {
 
         this.totalScore = score;
         this.status = AttemptStatus.SUBMITTED;
-        this.submittedAt = LocalDateTime.now();
+        this.submittedAt = Instant.now();
 
         touch();
     }
@@ -221,11 +224,15 @@ public class QuizAttempt implements Auditable, SoftDeletable {
         return totalScore;
     }
 
-    public LocalDateTime getStartedAt() {
+    public UUID getRevisionId() {
+        return revisionId;
+    }
+
+    public Instant getStartedAt() {
         return startedAt;
     }
 
-    public LocalDateTime getSubmittedAt() {
+    public Instant getSubmittedAt() {
         return submittedAt;
     }
 

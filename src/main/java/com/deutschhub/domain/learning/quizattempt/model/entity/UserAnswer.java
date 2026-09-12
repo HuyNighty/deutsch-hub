@@ -9,11 +9,9 @@ public class UserAnswer {
 
     private final UUID id;
     private final UUID questionId;
-    private Set<UUID> selectedAnswerIds;
+    private final Set<UUID> selectedAnswerIds;
 
-    private boolean correct;
-
-    private UserAnswer(UUID id, UUID questionId, Set<UUID> selectedAnswerId) {
+    private UserAnswer(UUID id, UUID questionId, Set<UUID> selectedAnswerIds) {
         this.id = Objects.requireNonNull(id);
         this.questionId = validateNotNull(questionId, "QuestionId");
         this.selectedAnswerIds = Collections.unmodifiableSet(new HashSet<>(selectedAnswerIds));
@@ -46,14 +44,6 @@ public class UserAnswer {
         return value;
     }
 
-    public void markCorrect() {
-        this.correct = true;
-    }
-
-    public void markIncorrect() {
-        this.correct = false;
-    }
-
     public UUID getId() {
         return id;
     }
@@ -64,9 +54,5 @@ public class UserAnswer {
 
     public Set<UUID> getSelectedAnswerIds() {
         return selectedAnswerIds;
-    }
-
-    public boolean isCorrect() {
-        return correct;
     }
 }
