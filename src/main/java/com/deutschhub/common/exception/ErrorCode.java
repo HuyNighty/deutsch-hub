@@ -141,8 +141,16 @@ public enum ErrorCode {
     QUIZ_ATTEMPT_ALREADY_DELETED("error.quiz.attempt.already.deleted", 12004, ErrorHttpStatus.CONFLICT),
     QUIZ_ATTEMPT_NOT_ALL_ANSWERED("error.quiz.attempt.not.all.answered", 12005, ErrorHttpStatus.BAD_REQUEST),
     QUIZ_ATTEMPT_FORBIDDEN_ACTION("error.quiz.attempt.forbidden.action", 12006, ErrorHttpStatus.FORBIDDEN),
+
     INVALID_USER_ANSWER("error.user.answer.invalid", 12101, ErrorHttpStatus.BAD_REQUEST),
     INVALID_USER_ANSWER_DATA("error.user.answer.invalid.data", 12102, ErrorHttpStatus.BAD_REQUEST),
+
+    INVALID_QUESTION_RESULT_QUESTION_ID("error.quiz.question.result.question.id.invalid", 12201, ErrorHttpStatus.BAD_REQUEST),
+    INVALID_QUESTION_RESULT_QUESTION_TYPE("error.quiz.question.result.question.type.invalid", 12202, ErrorHttpStatus.BAD_REQUEST),
+    INVALID_QUESTION_RESULT_CORRECT_ANSWERS("error.quiz.question.result.correct.answers.invalid", 12203, ErrorHttpStatus.BAD_REQUEST),
+    INVALID_QUESTION_RESULT_SELECTED_ANSWERS("error.quiz.question.result.selected.answers.invalid", 12204, ErrorHttpStatus.BAD_REQUEST),
+    INVALID_QUESTION_RESULT_SCORE("error.quiz.question.result.score.invalid", 12205, ErrorHttpStatus.BAD_REQUEST),
+    INVALID_QUESTION_TYPE("error.question.type.invalid", 12206, ErrorHttpStatus.BAD_REQUEST),
 
     CERTIFICATE_FORBIDDEN_ACTION("error.certificate.forbidden.action", 13001, ErrorHttpStatus.FORBIDDEN),
 

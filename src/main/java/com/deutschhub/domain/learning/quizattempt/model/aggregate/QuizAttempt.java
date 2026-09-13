@@ -6,9 +6,9 @@ import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
 import com.deutschhub.domain.learning.quiz.model.entity.AnswerQuestion;
 import com.deutschhub.domain.learning.quiz.model.entity.Question;
+import com.deutschhub.domain.learning.quizattempt.model.entity.QuestionResult;
 import com.deutschhub.domain.learning.quizattempt.model.entity.UserAnswer;
 import com.deutschhub.domain.learning.quizattempt.model.enums.AttemptStatus;
-import com.deutschhub.domain.learning.quiz.model.enums.QuestionType;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -25,6 +25,7 @@ public class QuizAttempt implements Auditable, SoftDeletable {
     private AttemptStatus status;
 
     private final Map<UUID, UserAnswer> answers = new HashMap<>();
+    private final Map<UUID, QuestionResult> results = new HashMap<>();
 
     private int totalScore;
 
@@ -101,52 +102,32 @@ public class QuizAttempt implements Auditable, SoftDeletable {
             throw new BusinessException(ErrorCode.QUIZ_HAS_NO_QUESTIONS);
         }
 
-        if (answers.size() != questions.size()) {
-            throw new BusinessException(ErrorCode.QUIZ_ATTEMPT_NOT_ALL_ANSWERED);
-        }
+        results.clear();
 
         int score = 0;
 
         for (Question question : questions) {
             question.validate();
-            UserAnswer userAnswer = answers.get(question.getId());
 
-            QuestionType type = question.getType();
+            UUID questionId = question.getId();
+            UserAnswer userAnswer = answers.get(questionId);
 
-            if (type == QuestionType.MULTIPLE_CHOICE) {
-                Set<UUID> selectedIds = userAnswer.getSelectedAnswerIds();
+            QuestionResult result;
 
-                Set<UUID> correctIds = question.getAnswers().stream()
+            if (userAnswer == null) {
+                result = QuestionResult.unanswered(questionId);
+            } else {
+                Set<UUID> correctAnswerIds = question.getAnswers().stream()
                         .filter(AnswerQuestion::isCorrect)
                         .map(AnswerQuestion::getId)
                         .collect(Collectors.toSet());
 
-                boolean allExist = selectedIds.stream()
-                        .allMatch(id -> question.getAnswers().stream().anyMatch(a -> a.getId().equals(id)));
-
-                if (!allExist) {
-                    throw new BusinessException(ErrorCode.INVALID_USER_ANSWER);
-                }
-
-                boolean isCorrect = selectedIds.equals(correctIds);
-                if (isCorrect) {
-                    score += question.getScore();
-                }
-            } else {
-                UUID selectedId = userAnswer.getSingleSelectedAnswerId();
-
-                boolean isValid = question.getAnswers().stream()
-                        .anyMatch(a -> a.getId().equals(selectedId));
-                if (!isValid) {
-                    throw new BusinessException(ErrorCode.INVALID_USER_ANSWER);
-                }
-
-                boolean isCorrect = question.getAnswers().stream()
-                        .anyMatch(a -> a.getId().equals(selectedId) && a.isCorrect());
-                if (isCorrect) {
-                    score += question.getScore();
-                }
+               result = QuestionResult.evaluate(questionId, question.getType(), correctAnswerIds,
+                       userAnswer.getSelectedAnswerIds(), question.getScore());
             }
+
+            results.put(questionId, result);
+            score += result.getEarnedScore();
         }
 
         this.totalScore = score;
@@ -253,5 +234,9 @@ public class QuizAttempt implements Auditable, SoftDeletable {
     @Override
     public LocalDateTime getDeletedAt() {
         return deletedAt;
+    }
+
+    public Map<UUID, QuestionResult> getResults() {
+        return Collections.unmodifiableMap(results);
     }
 }
