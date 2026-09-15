@@ -255,10 +255,6 @@ public class QuizRevision {
             throw new BusinessException(ErrorCode.QUIZ_INVALID_DIFFICULTY);
         }
 
-        if (timeLimitMinutes == null) {
-            throw new BusinessException(ErrorCode.QUIZ_INVALID_TIME_LIMIT);
-        }
-
         if (passingPercentage == null) {
             throw new BusinessException(ErrorCode.QUIZ_INVALID_PASSING_SCORE);
         }
@@ -275,7 +271,10 @@ public class QuizRevision {
             throw new BusinessException(ErrorCode.INVALID_QUIZ_COMPLETION_POLICY);
         }
 
-        validateTimeLimit(timeLimitMinutes);
+        if (timeLimitMinutes != null) {
+            validateTimeLimit(timeLimitMinutes);
+        }
+
         validatePassingPercentage(passingPercentage);
         validateMaxAttempts(maxAttempts);
 

@@ -1751,3 +1751,39 @@ The central principle is:
 > **Evolve the existing architecture according to concrete business and architectural problems; do not introduce structural change without justification.**
 
 The target architecture is therefore a guide for controlled implementation evolution rather than a mandate for a wholesale rewrite.
+
+## Application-Orchestrated Cross-Aggregate Actions
+
+The following responsibilities have been intentionally placed at the Application layer
+because they require coordination or validation across multiple Aggregates.
+
+| Action / Responsibility | Application Layer | Domain Aggregate | Reason |
+|---|---|---|---|
+| Load QuizRevision for QuizAttempt | Yes | — | QuizAttempt must not access another Aggregate directly. |
+| Resolve CompletionPolicy for QuizAttempt submission | Yes | — | CompletionPolicy belongs to QuizRevision. Application coordinates QuizRevision and QuizAttempt. |
+| Validate that a Question belongs to the Attempt's Revision before answering | Yes | — | Question belongs to QuizRevision; QuizAttempt only keeps revisionId. |
+| Load Published QuizRevision before evaluating an Attempt | Yes | — | QuizAttempt must not load QuizRevision or access its repository. |
+| Provide Questions and CompletionPolicy to QuizAttempt.submit(...) | Yes | QuizAttempt | Application supplies data from the appropriate Aggregate; QuizAttempt performs its own business decision. |
+
+### Domain Responsibility
+
+Application orchestration does not replace domain business rules.
+
+`QuizAttempt` remains responsible for:
+- validating its own lifecycle and authorization;
+- accepting or rejecting submission according to the provided `CompletionPolicy`;
+- creating `QuestionResult` instances;
+- calculating `totalScore`;
+- transitioning its status to `SUBMITTED`.
+
+`QuizRevision` remains responsible for:
+- owning Questions;
+- owning `CompletionPolicy`;
+- maintaining Revision-specific assessment rules.
+
+### Boundary Rule
+
+`QuizAttempt` must not directly load, query, or navigate into `Quiz`,
+`QuizRevision`, or their repositories.
+
+Cross-Aggregate coordination is performed by the Application layer.

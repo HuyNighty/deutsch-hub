@@ -6,6 +6,7 @@ import com.deutschhub.common.exception.BusinessException;
 import com.deutschhub.common.exception.ErrorCode;
 import com.deutschhub.domain.learning.quiz.model.entity.AnswerQuestion;
 import com.deutschhub.domain.learning.quiz.model.entity.Question;
+import com.deutschhub.domain.learning.quiz.model.enums.CompletionPolicy;
 import com.deutschhub.domain.learning.quizattempt.model.entity.QuestionResult;
 import com.deutschhub.domain.learning.quizattempt.model.entity.UserAnswer;
 import com.deutschhub.domain.learning.quizattempt.model.enums.AttemptStatus;
@@ -37,7 +38,7 @@ public class QuizAttempt implements Auditable, SoftDeletable {
     private LocalDateTime updatedAt;
     private LocalDateTime deletedAt;
 
-    private QuizAttempt(UUID id, UUID quizId, UUID revisionId, UUID userId) {
+    private QuizAttempt(UUID id, UUID quizId, UUID revisionId, UUID userId, Integer timeLimitMinutes) {
         this.id = Objects.requireNonNull(id);
         this.quizId = Objects.requireNonNull(quizId);
         this.userId = Objects.requireNonNull(userId);
@@ -48,16 +49,23 @@ public class QuizAttempt implements Auditable, SoftDeletable {
         this.totalScore = 0;
 
         this.startedAt = Instant.now();
+        this.expiresAt = calculateExpiresAt(this.startedAt, timeLimitMinutes);
+
         this.createdAt = LocalDateTime.now();
         this.updatedAt = this.createdAt;
         this.deletedAt = null;
     }
 
-    public static QuizAttempt create(UUID quizId, UUID revisionId,UUID userId) {
+    public static QuizAttempt create(UUID quizId, UUID revisionId,UUID userId, Integer timeLimitMinutes) {
         if (quizId == null || revisionId  == null || userId == null) {
             throw new BusinessException(ErrorCode.INVALID_QUIZ_ATTEMPT_DATA);
         }
-        return new QuizAttempt(UUID.randomUUID(), quizId, revisionId, userId);
+
+        if (timeLimitMinutes != null && timeLimitMinutes <= 0) {
+            throw new BusinessException(ErrorCode.QUIZ_INVALID_TIME_LIMIT);
+        }
+
+        return new QuizAttempt(UUID.randomUUID(), quizId, revisionId, userId, timeLimitMinutes);
     }
 
     public void answerQuestion(UserAnswer answer) {
@@ -84,20 +92,90 @@ public class QuizAttempt implements Auditable, SoftDeletable {
         touch();
     }
 
-    public void submit(List<Question> questions) {
+    public void submit(List<Question> questions, CompletionPolicy completionPolicy, Instant currentTime) {
         ensureCanMutateBy(userId, false);
-        submitInternal(questions);
+        submitInternal(questions, completionPolicy, currentTime);
     }
 
-    public void submit(List<Question> questions, UUID actorId, boolean isAdmin) {
+    public void submit(List<Question> questions, CompletionPolicy completionPolicy, UUID actorId, boolean isAdmin, Instant currentTime) {
         ensureCanMutateBy(actorId, isAdmin);
-        submitInternal(questions);
+        submitInternal(questions, completionPolicy, currentTime);
     }
 
-    private void submitInternal(List<Question> questions) {
+    private void submitInternal(List<Question> questions, CompletionPolicy completionPolicy, Instant currentTime) {
         ensureNotDeleted();
         ensureInProgress();
 
+        if (currentTime == null) {
+            throw new BusinessException(ErrorCode.INVALID_QUIZ_ATTEMPT_DATA);
+        }
+
+        if (expiresAt != null && !currentTime.isBefore(expiresAt)) {
+            throw new BusinessException(ErrorCode.INVALID_QUIZ_ATTEMPT_STATE);
+        }
+
+        if (questions == null || questions.isEmpty()) {
+            throw new BusinessException(ErrorCode.QUIZ_HAS_NO_QUESTIONS);
+        }
+
+        if (completionPolicy == null) {
+            throw new BusinessException(ErrorCode.INVALID_QUIZ_COMPLETION_POLICY);
+        }
+
+        for (Question question : questions) {
+            question.validate();
+
+            if (!answers.containsKey(question.getId()) && completionPolicy == CompletionPolicy.REQUIRED_ALL) {
+                throw new BusinessException(ErrorCode.QUIZ_ATTEMPT_NOT_ALL_ANSWERED);
+            }
+        }
+
+        evaluateInternal(questions);
+
+        this.status = AttemptStatus.SUBMITTED;
+        this.submittedAt = Instant.now();
+
+        touch();
+    }
+
+    public void evaluate(List<Question> questions) {
+        ensureNotDeleted();
+
+        if (status != AttemptStatus.SUBMITTED && status != AttemptStatus.EXPIRED) {
+            throw new BusinessException(ErrorCode.INVALID_QUIZ_ATTEMPT_STATE);
+        }
+
+        evaluateInternal(questions);
+
+        touch();
+    }
+
+    public void expire(Instant currentTime) {
+        ensureNotDeleted();
+        ensureInProgress();
+
+        if (currentTime == null) {
+            throw new BusinessException(ErrorCode.INVALID_QUIZ_ATTEMPT_DATA);
+        }
+
+        if (expiresAt == null) {
+            return;
+        }
+
+        if (currentTime.isBefore(expiresAt)) {
+            throw new BusinessException(ErrorCode.INVALID_QUIZ_ATTEMPT_STATE);
+        }
+
+        this.status = AttemptStatus.EXPIRED;
+        this.touch();
+    }
+
+    public void cancel() {
+        ensureCanMutateBy(userId, false);
+        cancelInternal();
+    }
+
+    private void evaluateInternal(List<Question> questions) {
         if (questions == null || questions.isEmpty()) {
             throw new BusinessException(ErrorCode.QUIZ_HAS_NO_QUESTIONS);
         }
@@ -122,8 +200,8 @@ public class QuizAttempt implements Auditable, SoftDeletable {
                         .map(AnswerQuestion::getId)
                         .collect(Collectors.toSet());
 
-               result = QuestionResult.evaluate(questionId, question.getType(), correctAnswerIds,
-                       userAnswer.getSelectedAnswerIds(), question.getScore());
+                result = QuestionResult.evaluate(questionId, question.getType(), correctAnswerIds,
+                        userAnswer.getSelectedAnswerIds(), question.getScore());
             }
 
             results.put(questionId, result);
@@ -131,10 +209,21 @@ public class QuizAttempt implements Auditable, SoftDeletable {
         }
 
         this.totalScore = score;
-        this.status = AttemptStatus.SUBMITTED;
-        this.submittedAt = Instant.now();
+    }
 
-        touch();
+    private static Instant calculateExpiresAt(Instant startedAt, Integer timeLimitMinutes) {
+        if (timeLimitMinutes == null) {
+            return null;
+        }
+
+        return startedAt.plusSeconds(timeLimitMinutes.longValue() * 60);
+    }
+
+    private void cancelInternal() {
+        ensureInProgress();
+
+        this.status = AttemptStatus.CANCELLED;
+        this.touch();
     }
 
     private void ensureInProgress() {
@@ -234,6 +323,10 @@ public class QuizAttempt implements Auditable, SoftDeletable {
     @Override
     public LocalDateTime getDeletedAt() {
         return deletedAt;
+    }
+
+    public Instant getExpiresAt() {
+        return expiresAt;
     }
 
     public Map<UUID, QuestionResult> getResults() {

@@ -260,6 +260,8 @@ public enum ErrorCode {
     QUIZ_LEARNING_PREREQUISITE_NOT_FOUND("error.quiz.learning.prerequisite.not.found", 22011, ErrorHttpStatus.NOT_FOUND),
     INVALID_QUIZ_AUTHOR("error.quiz.author.invalid", 22012, ErrorHttpStatus.BAD_REQUEST),
     QUIZ_AUTHOR_ALREADY_ASSIGNED("error.quiz.author.already.assigned", 22013, ErrorHttpStatus.BAD_REQUEST),
+
+    INVALID_ASSESSMENT_TASK_ORDER("error.assessment.task.invalid.order", 23001, ErrorHttpStatus.BAD_REQUEST),
     ;
 
     private final String messageKey;
