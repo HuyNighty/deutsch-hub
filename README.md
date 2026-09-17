@@ -1,3 +1,17 @@
+## Feedback
+
+Your feedback means a lot.
+
+I'm building DeutschHub with the hope of creating something genuinely useful
+for people learning German and exploring German culture.
+
+If what I'm building has made an impression on you, even just a little,
+I'd really appreciate your feedback. It helps me understand what I'm missing,
+what I can improve, and what I should focus on next.
+
+Thank you for taking the time to share your thoughts.
+Every piece of feedback matters.🌞
+
 # DeutschHub Backend
 
 DeutschHub is the backend for a German learning and culture platform. It is a long-term portfolio project focused on practising business-oriented backend development with **Domain-Driven Design (DDD)**, **Hexagonal Architecture**, and a **modular monolith** approach.
