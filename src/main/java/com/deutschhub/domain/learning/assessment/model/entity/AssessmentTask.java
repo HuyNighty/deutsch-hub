@@ -12,15 +12,13 @@ public class AssessmentTask {
     private int order;
     private final UUID quizRevisionId;
 
-    private AssessmentTask(UUID id, int order, UUID quizRevisionId) {
+    private AssessmentTask(UUID id, UUID quizRevisionId) {
         this.id = Objects.requireNonNull(id);
-        this.order = validateOrder(order);
         this.quizRevisionId = Objects.requireNonNull(quizRevisionId);
     }
 
-
-    public static AssessmentTask create(int order, UUID quizRevisionId) {
-        return new AssessmentTask(UUID.randomUUID(), order, quizRevisionId);
+    public static AssessmentTask create(UUID quizRevisionId) {
+        return new AssessmentTask(UUID.randomUUID(), quizRevisionId);
     }
 
     public UUID getId() {
@@ -35,15 +33,11 @@ public class AssessmentTask {
         return quizRevisionId;
     }
 
-    public void changeOrder(int order) {
-        this.order = validateOrder(order);
-    }
-
-    private int validateOrder(int order) {
+    void changeOrder(int order) {
         if (order <= 0) {
             throw new BusinessException(ErrorCode.INVALID_ASSESSMENT_TASK_ORDER);
         }
 
-        return order;
+        this.order = order;
     }
 }

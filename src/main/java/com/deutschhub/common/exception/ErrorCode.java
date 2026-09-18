@@ -155,6 +155,7 @@ public enum ErrorCode {
     CERTIFICATE_FORBIDDEN_ACTION("error.certificate.forbidden.action", 13001, ErrorHttpStatus.FORBIDDEN),
 
     LESSON_COMPLETION_ID_CAN_NOT_NULL("error.learning.lesson.completion.id.can.not.null", 14001, ErrorHttpStatus.BAD_REQUEST),
+    LESSON_COMPLETION_COMPLETED_AT_CAN_NOT_NULL("error.learning.lesson.completion.completed.at.can.not.null", 14002, ErrorHttpStatus.BAD_REQUEST),
 
     INVALID_MEDIA_FILE_NAME("error.media.invalid.file.name", 15001, ErrorHttpStatus.BAD_REQUEST),
     INVALID_MEDIA_STORAGE_KEY("error.media.invalid.storage.key", 15002, ErrorHttpStatus.BAD_REQUEST),
@@ -262,6 +263,15 @@ public enum ErrorCode {
     QUIZ_AUTHOR_ALREADY_ASSIGNED("error.quiz.author.already.assigned", 22013, ErrorHttpStatus.BAD_REQUEST),
 
     INVALID_ASSESSMENT_TASK_ORDER("error.assessment.task.invalid.order", 23001, ErrorHttpStatus.BAD_REQUEST),
+    ASSESSMENT_TASK_NOT_FOUND("error.assessment.task.not.found", 23002, ErrorHttpStatus.NOT_FOUND),
+    ASSESSMENT_COMPONENT_DUPLICATE_SKILL_DIMENSION("error.assessment.component.duplicate.skill.dimension", 23003, ErrorHttpStatus.BAD_REQUEST),
+    ASSESSMENT_COMPONENT_NOT_FOUND("error.assessment.component.not.found", 23004, ErrorHttpStatus.NOT_FOUND),
+    ASSESSMENT_INVALID_COMPONENT_COUNT("error.assessment.invalid.component.count", 23005, ErrorHttpStatus.BAD_REQUEST),
+    ASSESSMENT_COMPONENT_HAS_NO_TASKS("error.assessment.component.has.no.tasks", 23006, ErrorHttpStatus.BAD_REQUEST),
+    ASSESSMENT_INVALID_STATUS("error.assessment.invalid.status", 23007, ErrorHttpStatus.BAD_REQUEST),
+
+    COMPETENCY_DIMENSION_LEVEL_CANNOT_DECREASE("error.learnerstate.competency.dimension.level.cannot.decrease", 24001, ErrorHttpStatus.BAD_REQUEST),
+    COMPETENCY_DIMENSION_ALREADY_EXISTS("error.learnerstate.competency.dimension.already.exists", 24002, ErrorHttpStatus.CONFLICT),
     ;
 
     private final String messageKey;

@@ -232,6 +232,10 @@ public class QuizRevision {
         }
     }
 
+    public boolean isPublished() {
+        return status == QuizRevisionStatus.PUBLISHED;
+    }
+
     private void ensureEditable() {
         if (status != QuizRevisionStatus.DRAFT) {
             throw new BusinessException(ErrorCode.QUIZ_REVISION_INVALID_STATUS);

@@ -26,6 +26,10 @@ public class LessonCompletion {
             throw new BusinessException(ErrorCode.LESSON_ID_CAN_NOT_NULL);
         }
 
+        if (completionAt == null) {
+            throw new BusinessException(ErrorCode.LESSON_COMPLETION_COMPLETED_AT_CAN_NOT_NULL);
+        }
+
         this.id = id;
         this.enrollmentId = enrollmentId;
         this.lessonId = lessonId;
