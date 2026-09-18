@@ -272,6 +272,13 @@ public enum ErrorCode {
 
     COMPETENCY_DIMENSION_LEVEL_CANNOT_DECREASE("error.learnerstate.competency.dimension.level.cannot.decrease", 24001, ErrorHttpStatus.BAD_REQUEST),
     COMPETENCY_DIMENSION_ALREADY_EXISTS("error.learnerstate.competency.dimension.already.exists", 24002, ErrorHttpStatus.CONFLICT),
+
+    ASSESSMENT_ATTEMPT_INVALID_STATUS("error.assessmentattempt.invalid.status", 25000, ErrorHttpStatus.BAD_REQUEST),
+    ASSESSMENT_ATTEMPT_INVALID_TIME_LIMIT("error.assessmentattempt.invalid.time.limit", 25001, ErrorHttpStatus.BAD_REQUEST),
+    ASSESSMENT_TASK_ATTEMPT_ALREADY_EXISTS("error.assessmentattempt.task.attempt.already.exists", 25002, ErrorHttpStatus.CONFLICT),
+    ASSESSMENT_ATTEMPT_NO_REQUIRED_TASKS("error.assessmentattempt.no.required.tasks", 25003, ErrorHttpStatus.BAD_REQUEST),
+    ASSESSMENT_ATTEMPT_TASKS_NOT_COMPLETED("error.assessmentattempt.tasks.not.completed", 25004, ErrorHttpStatus.BAD_REQUEST),
+    ASSESSMENT_ATTEMPT_NOT_EXPIRED("error.assessmentattempt.not.expired", 25005, ErrorHttpStatus.BAD_REQUEST),
     ;
 
     private final String messageKey;
