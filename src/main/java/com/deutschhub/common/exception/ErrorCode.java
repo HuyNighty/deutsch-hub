@@ -279,6 +279,8 @@ public enum ErrorCode {
     ASSESSMENT_ATTEMPT_NO_REQUIRED_TASKS("error.assessmentattempt.no.required.tasks", 25003, ErrorHttpStatus.BAD_REQUEST),
     ASSESSMENT_ATTEMPT_TASKS_NOT_COMPLETED("error.assessmentattempt.tasks.not.completed", 25004, ErrorHttpStatus.BAD_REQUEST),
     ASSESSMENT_ATTEMPT_NOT_EXPIRED("error.assessmentattempt.not.expired", 25005, ErrorHttpStatus.BAD_REQUEST),
+
+    COMPONENT_RESULT_INVALID_PERFORMANCE("error.assessmentresult.component.result.invalid.performance", 26001, ErrorHttpStatus.BAD_REQUEST),
     ;
 
     private final String messageKey;
